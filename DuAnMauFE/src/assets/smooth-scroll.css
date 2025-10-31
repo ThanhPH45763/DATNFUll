@@ -1,0 +1,21 @@
+/* CSS toàn cục cho hiệu ứng cuộn mượt */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Đảm bảo luôn có thanh cuộn để tránh nhảy layout */
+body {
+  overflow-y: auto;
+}
+
+/* Khoảng cách từ đỉnh khi cuộn đến anchor - điều chỉnh giá trị này nếu bạn có header cố định */
+* {
+  scroll-margin-top: 70px;
+}
+
+/* Tối ưu hiệu ứng cuộn cho các thiết bị cảm ứng */
+@media (pointer: coarse) {
+  html {
+    scroll-behavior: auto;
+  }
+}

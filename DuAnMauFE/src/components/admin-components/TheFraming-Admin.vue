@@ -2,7 +2,7 @@
     <a-layout class="" style="min-height: 100vh">
         <a-layout-sider class="sider " v-model:collapsed="collapsed" :trigger="null" collapsible theme="light">
             <div class="logo p-3 " style="text-align: center;">
-                <img class="w-50 " style="cursor: pointer;" src="../../../public/image/logo/logoGB.png"
+                <img class="w-50 " style="cursor: pointer;" src="../../../public/image/logo"
                     @click="changeRoute('/home')" alt="Logo" />
             </div>
 
@@ -38,10 +38,10 @@
                     <span>Hóa đơn</span>
                 </a-menu-item>
                 
-                <a-menu-item key="9" @click="changeRoute('/admin/traHang');">
+                <!-- <a-menu-item key="9" @click="changeRoute('/admin/traHang');">
                     <RollbackOutlined />
                     <span>Trả hàng tại quầy</span>
-                </a-menu-item>
+                </a-menu-item> -->
                 <a-sub-menu v-if="store.id_roles !== 3" key="sub2">
                     <template #title>
                         <span>

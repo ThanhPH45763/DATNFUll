@@ -10,18 +10,18 @@ const axiosInstance = axios.create({
     }
 })
 // Thêm interceptor để gửi token trong mọi request
-axiosInstance.interceptors.request.use(
-    (config) => {
-        const token = sessionStorage.getItem('token') || localStorage.getItem('token'); // Lấy token từ localStorage
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        } else {
-            console.error('Token not found in localStorage');
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+// axiosInstance.interceptors.request.use(
+//     (config) => {
+//         const token = sessionStorage.getItem('token') || localStorage.getItem('token'); // Lấy token từ localStorage
+//         if (token) {
+//             config.headers.Authorization = `Bearer ${token}`;
+//         } else {
+//             console.error('Token not found in localStorage');
+//         }
+//         return config;
+//     },
+//     (error) => Promise.reject(error)
+// );
 // Response Interceptor để xử lý lỗi 403 toàn cục
 axiosInstance.interceptors.response.use(
     (response) => response,

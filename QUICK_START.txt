@@ -1,0 +1,65 @@
+╔══════════════════════════════════════════════════════════════╗
+║          SỬA LỖI LOGIC KHÁCH HÀNG - QUICK START             ║
+╚══════════════════════════════════════════════════════════════╝
+
+📂 CÁC FILE ĐÃ TẠO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. ✅ README_FIX_KHACHHANG.md      - Hướng dẫn chi tiết đầy đủ
+2. ✅ FIX_KHACHHANG_LOGIC.md       - Phân tích vấn đề và giải pháp
+3. ✅ FIX_KhachHangController_NEW.java - Controller mới (HOÀN CHỈNH)
+4. ✅ UPDATE_KHACHHANG_SCHEMA.sql  - Script SQL update database
+5. ✅ KhachHangRepo.java            - Đã cập nhật methods mới
+
+🚀 CÁC BƯỚC THỰC HIỆN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[1] BACKUP DATABASE
+    → Backup toàn bộ database trước khi sửa
+
+[2] CHẠY SQL SCRIPT
+    → Mở SQL Server Management Studio
+    → File > Open > UPDATE_KHACHHANG_SCHEMA.sql
+    → Execute (F5)
+
+[3] THAY CONTROLLER
+    → Backup file cũ: KhachHangController_OLD.java.bak
+    → Copy FIX_KhachHangController_NEW.java
+    → Đổi tên thành KhachHangController.java
+    → Đặt vào: duanbe/src/main/java/com/example/duanbe/controller/
+
+[4] REBUILD PROJECT
+    cd duanbe
+    mvn clean install
+
+[5] TEST API
+    → POST /api/khach-hang/register
+    → POST /api/khach-hang/login
+    → POST /api/khach-hang/add
+
+📝 THAY ĐỔI CHÍNH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ ĐÃ XÓA:
+   - Bảng tai_khoan riêng biệt
+   - Entity TaiKhoan
+   - TaiKhoanRepo, RolesRepo
+   - JWT authentication phức tạp
+
+✅ ĐÃ THÊM:
+   - ten_dang_nhap, mat_khau trong bảng khach_hang
+   - BCryptPasswordEncoder trực tiếp
+   - Session-based authentication
+   - Methods mới trong KhachHangRepo
+
+⚠️ LƯU Ý:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Mật khẩu mặc định cho KH cũ: "12345678"
+• Username = Email (để đơn giản)
+• Không dùng JWT token (dùng Session)
+• Chỉ có Admin + Khách hàng (không có role phức tạp)
+
+📚 ĐỌC KỸ:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Xem file README_FIX_KHACHHANG.md để biết chi tiết đầy đủ!
+
+╔══════════════════════════════════════════════════════════════╗
+║                    CHÚC BẠN THÀNH CÔNG! 🚀                  ║
+╚══════════════════════════════════════════════════════════════╝

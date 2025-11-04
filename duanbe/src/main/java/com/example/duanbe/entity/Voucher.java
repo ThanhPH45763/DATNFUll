@@ -28,7 +28,7 @@ public class Voucher {
     @Column(name = "ten_voucher")
     private String tenVoucher;
 
-    @Column(name = "ngay_tao")
+    @Column(name = "ngay_bat_dau")
     @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") // Định dạng datetime từ form
     private LocalDateTime ngayBatDau;
 

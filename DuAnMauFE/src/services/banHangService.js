@@ -12,9 +12,9 @@ const getAllHoaDonCTT = async () => {
     }
 }
 
-const createHoaDon = async (idNhanVien) => {
+const createHoaDon = async () => {
     try {
-        const { data } = await axiosInstance.get(banHang + `createHoaDon?idNhanVien=` + idNhanVien);
+        const { data } = await axiosInstance.get(banHang + `createHoaDon`);
         return data;
     } catch (error) {
         console.error('Lỗi API tạo hoá đơn:', error);

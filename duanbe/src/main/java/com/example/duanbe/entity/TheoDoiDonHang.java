@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class TheoDoiDonHang {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_theo_doi_don_hang")
     private Integer id_don_hang;
     @ManyToOne
     @JoinColumn(name = "id_hoa_don")
@@ -21,6 +22,6 @@ public class TheoDoiDonHang {
     private String trang_thai;
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime ngay_chuyen;
-    private String nhan_vien_doi;
+    // private String nhan_vien_doi;
     private String noi_dung_doi;
 }

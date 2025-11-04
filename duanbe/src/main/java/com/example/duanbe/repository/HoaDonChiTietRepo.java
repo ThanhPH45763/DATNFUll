@@ -16,11 +16,11 @@ import java.util.Optional;
 
 public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer> {
     @Query(value = """
-                SELECT DISTINCT hd.id_hoa_don, hd.ma_hoa_don, hd.id_khach_hang, hd.ngay_tao, hd.ho_ten, hd.sdt_nguoi_nhan,
+                SELECT DISTINCT hd.id_hoa_don, hd.ma_hoa_don, hd.id_khach_hang, hd.ngay_tao, hd.ho_ten, hd.sdt,
                     hd.dia_chi, hd.email, hd.tong_tien_truoc_giam, hd.phi_van_chuyen,
                     hd.tong_tien_sau_giam, hd.hinh_thuc_thanh_toan, hd.phuong_thuc_nhan_hang,
                     tdh.trang_thai, hdct.id_hoa_don_chi_tiet, hdct.so_luong, hdct.don_gia,
-                    sp.ten_san_pham, sp.ma_san_pham, nv.ten_nhan_vien, ctsp2.gia_ban, hd.phu_thu,
+                    sp.ten_san_pham, sp.ma_san_pham, ctsp2.gia_ban, hd.phu_thu,
                     COALESCE((
                         SELECT MIN(ctkm.gia_sau_giam)
                         FROM chi_tiet_khuyen_mai ctkm
@@ -30,15 +30,14 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
                           AND GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
                             ), ctsp2.gia_ban) AS gia_sau_giam,
                     ctsp1.so_luong AS so_luong_con_lai, kt.gia_tri AS kich_thuoc, hd.trang_thai AS trang_thai_thanh_toan,
-                    hd.loai_hoa_don, hd.ghi_chu, ms.ten_mau_sac, ctsp2.id_chi_tiet_san_pham, sp.hinh_anh, ha.anh_chinh
+                    hd.loai_hoa_don, hd.ghi_chu, ms.ten_mau_sac, ctsp2.id_chi_tiet_san_pham, sp.anh_dai_dien as hinh_anh, ha.anh_chinh
                 FROM hoa_don hd
                 FULL OUTER JOIN hoa_don_chi_tiet hdct ON hd.id_hoa_don = hdct.id_hoa_don
                 FULL OUTER JOIN (SELECT id_chi_tiet_san_pham, so_luong FROM chi_tiet_san_pham ct
-                				WHERE ct.trang_thai = N'Hoạt động'
+                				WHERE ct.trang_thai = 1
                 				) ctsp1 ON hdct.id_chi_tiet_san_pham = ctsp1.id_chi_tiet_san_pham
                 FULL OUTER JOIN chi_tiet_san_pham ctsp2 ON ctsp2.id_chi_tiet_san_pham = hdct.id_chi_tiet_san_pham
                 FULL OUTER JOIN san_pham sp ON ctsp2.id_san_pham = sp.id_san_pham
-                FULL OUTER JOIN nhan_vien nv ON hd.id_nhan_vien = nv.id_nhan_vien
                 FULL OUTER JOIN kich_thuoc kt ON ctsp2.id_kich_thuoc = kt.id_kich_thuoc
                 FULL OUTER JOIN mau_sac ms ON ctsp2.id_mau_sac = ms.id_mau_sac
                 FULL OUTER JOIN (SELECT t.id_hoa_don, t.trang_thai
@@ -163,7 +162,7 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
             	ctsp.id_chi_tiet_san_pham,
             	sp.ma_san_pham,
             	sp.ten_san_pham,
-            	sp.hinh_anh,
+            	sp.anh_dai_dien as hinh_anh,
             	hdct.so_luong,
             	ctsp.so_luong AS so_luong_ton,
             	COALESCE((
@@ -319,7 +318,7 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
             FULL OUTER JOIN san_pham sp ON sp.id_san_pham = ctsp.id_san_pham
             FULL OUTER JOIN chi_tiet_khuyen_mai ctkm ON ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham
             FULL OUTER JOIN khuyen_mai km ON km.id_khuyen_mai = ctkm.id_khuyen_mai
-            WHERE ctsp.trang_thai like N'Hoạt động' AND ctsp.id_chi_tiet_san_pham = @IDCTSP)
+            WHERE ctsp.trang_thai = 1 AND ctsp.id_chi_tiet_san_pham = @IDCTSP)
                 
             -- Lấy phí vận chuyển từ hoa_don
             SELECT @PHIVANCHUYEN = phi_van_chuyen FROM hoa_don WHERE id_hoa_don = @IDHD;

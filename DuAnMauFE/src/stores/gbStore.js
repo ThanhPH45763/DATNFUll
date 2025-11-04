@@ -1924,10 +1924,9 @@ export const useGbStore = defineStore('gbStore', {
         this.getAllHoaDonCTTArr = []
       }
     },
-    async createHoaDon(idNhanVien) {
-      console.log('idNhanVien hoa don', idNhanVien)
+    async createHoaDon() {
       try {
-        const hoaDon = await banHangService.createHoaDon(idNhanVien)
+        const hoaDon = await banHangService.createHoaDon()
         if (hoaDon.error) {
           toast.error('Không thêm được hoá đơn')
           return

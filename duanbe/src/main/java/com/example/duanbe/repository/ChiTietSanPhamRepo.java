@@ -104,7 +104,7 @@ public interface ChiTietSanPhamRepo
     @Query(value = """
             SELECT ctsp.id_chi_tiet_san_pham, sp.ten_san_pham, dm.ten_danh_muc, ms.ten_mau_sac AS ten_mau, kt.gia_tri,
                     ctsp.so_luong, COALESCE(km_max.giaHienTai, ctsp.gia_ban) AS giaHienTai, ctsp.trang_thai,
-                    ctsp.gia_ban AS giaGoc, sp.hinh_anh, ha.anh_chinh
+                    ctsp.gia_ban AS giaGoc, sp.anh_dai_dien as hinh_anh, ha.anh_chinh
             FROM chi_tiet_san_pham ctsp
             JOIN san_pham sp ON ctsp.id_san_pham = sp.id_san_pham
             JOIN danh_muc_san_pham dm ON sp.id_danh_muc = dm.id_danh_muc
@@ -128,7 +128,7 @@ public interface ChiTietSanPhamRepo
     @Query(value = """
             SELECT ctsp.id_chi_tiet_san_pham, sp.ten_san_pham, dm.ten_danh_muc, ms.ten_mau_sac AS ten_mau, kt.gia_tri,
                     ctsp.so_luong, COALESCE(km_max.giaHienTai, ctsp.gia_ban) AS giaHienTai, ctsp.trang_thai,
-                    ctsp.gia_ban AS giaGoc, sp.hinh_anh, ha.anh_chinh
+                    ctsp.gia_ban AS giaGoc, sp.anhh_dai_dien as hinh_anh, ha.anh_chinh
             FROM chi_tiet_san_pham ctsp
             JOIN san_pham sp ON ctsp.id_san_pham = sp.id_san_pham
             JOIN danh_muc_san_pham dm ON sp.id_danh_muc = dm.id_danh_muc
@@ -203,7 +203,7 @@ public interface ChiTietSanPhamRepo
                 dm.ten_danh_muc,
                 th.ten_thuong_hieu,
                 cl.ten_chat_lieu,
-                COALESCE(asp.hinh_anh, '') AS hinh_anh,
+                COALESCE(asp.anh_dai_dien, '') AS hinh_anh,
                 kt.gia_tri,
                 kt.don_vi,
                 ms.ma_mau_sac,
@@ -266,7 +266,7 @@ public interface ChiTietSanPhamRepo
             ctsp.so_luong,
             COALESCE(km_max.giaHienTai, ctsp.gia_ban) AS gia_ban,
             ctsp.trang_thai,
-            sp.hinh_anh
+            sp.anh_dai_dien as hinh_anh
             FROM chi_tiet_san_pham ctsp
             JOIN san_pham sp ON ctsp.id_san_pham = sp.id_san_pham
             JOIN danh_muc_san_pham dm ON sp.id_danh_muc = dm.id_danh_muc

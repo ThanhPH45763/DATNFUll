@@ -14,6 +14,12 @@ export default defineConfig({
       'jspdf-autotable'
     ]
   },
+  server: {
+    watch: {
+      usePolling: true,
+      interval: 1000
+    }
+  },
   plugins: [
     vue(),
     vueDevTools(),

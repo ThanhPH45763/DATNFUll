@@ -54,9 +54,6 @@
         <!-- Thêm modal cho quét QR -->
         <a-modal v-model:open="qrScannerVisible" title="Quét mã QR sản phẩm" @cancel="stopQrScanner" :footer="null">
             <div id="qr-reader" style="width: 100%;"></div>
-            <!-- <div v-if="qrScanResult" class="mt-2">
-                <p>Kết quả quét: {{ qrScanResult }}</p>
-            </div> -->
         </a-modal>
 
         <!-- Invoice Tabs -->
@@ -81,7 +78,7 @@
                     <template #icon><rollback-outlined /></template>
                 </a-button>
             </a-tooltip>
-            <a-tooltip v-if="store.id_roles !== 3" title="Báo cáo thống kê">
+            <a-tooltip title="Báo cáo thống kê">
                 <a-button type="primary" shape="circle" class="action-btn" @click="changeRoute('/admin/')">
                     <template #icon><bar-chart-outlined /></template>
                 </a-button>
@@ -153,9 +150,7 @@
                     <div class="mb-3">
                         <label class="form-label">Mã hóa đơn: {{ activeTabData.hd.ma_hoa_don }}</label>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Tên nhân viên: {{ activeTabData.hd.ten_nhan_vien }}</label>
-                    </div>
+                   
                     <div class="mb-3">
                         <div class="row align-items-center">
                             <label for="idKhachHang" class="form-label col-6">
@@ -236,10 +231,6 @@
                             <label class="form-check-label" :for="'giaoHang_' + activeKey">Giao hàng</label>
                         </div>
                         <div v-if="activeTabData.hd.phuong_thuc_nhan_hang === 'Giao hàng'" class="mt-2">
-                            <!-- <label class="form-label">Địa chỉ nhận hàng</label>
-                            <input type="text" class="form-control mb-2" placeholder="Nhập địa chỉ"
-                                v-model="activeTabData.hd.dia_chi"> -->
-                            <!-- <label class="form-label">Phí vận chuyển (VNĐ)</label> -->
                             <div class="form-label-with-logo">
                                 <label class="form-label">Phí vận chuyển (VNĐ)</label>
                                 <img src="../../../images/logo/logo_GHTK.png" alt="GHTK Logo" class="ghtk-logo" />
@@ -391,11 +382,7 @@ const initQrScanner = () => {
 // Xử lý kết quả quét QR
 const handleQrResult = async (qrData) => {
     try {
-        // Giả sử mã QR chứa id_chi_tiet_san_pham
         const product = allProducts.value.find(p => p.id_chi_tiet_san_pham === Number(qrData));
-        console.log("qrData: ", qrData);
-        console.log("product: ", product);
-        console.log("allProducts.value: ", allProducts.value);
 
         if (!product) {
             message.error('Không tìm thấy sản phẩm với mã QR này!(Sản phẩm đã ngừng hoạt động)');
@@ -462,14 +449,8 @@ const danhSachKhachHang = computed(() => {
     }));
 });
 
-console.log("danhSachKhachHang: ", danhSachKhachHang.value);
-// const diaChiMap = computed(() => store.diaChiMap);
-
 const chonKhachHang = async (khachHang) => {
     try {
-        console.log('Khách hàng được chọn:', khachHang);
-
-        // Cập nhật thông tin khách hàng
         Object.assign(activeTabData.value.hd, {
             ten_khach_hang: khachHang.tenKhachHang,
             so_dien_thoai: khachHang.soDienThoai,
@@ -477,7 +458,6 @@ const chonKhachHang = async (khachHang) => {
             id_khach_hang: khachHang.idKhachHang
         });
 
-        // Gọi store để thêm khách hàng vào hóa đơn
         await store.addKHHD(
             activeTabData.value.hd.id_hoa_don,
             khachHang.idKhachHang,
@@ -486,33 +466,20 @@ const chonKhachHang = async (khachHang) => {
             khachHang.soDienThoai
         );
 
-        // Làm mới danh sách khách hàng
         await store.getAllKhachHangNoPage();
 
-        // Đóng modal
         open.value = false;
         if (!activeTabData.value.hd.isKhachLe) {
             handlePhuongThucChange();
-
         }
-        // Làm mới dữ liệu hóa đơn
+        
         await refreshHoaDon(activeTabData.value.hd.id_hoa_don);
 
-        // Lưu vào localStorage
-        try {
-            localStorage.setItem('khachHangBH', JSON.stringify(khachHang));
-            localStorage.setItem('chonKH', true);
+        localStorage.setItem('khachHangBH', JSON.stringify(khachHang));
+        localStorage.setItem('chonKH', true);
 
-
-
-            console.log('Đã lưu khách hàng vào localStorage:', khachHang);
-        } catch (error) {
-            console.error('Lỗi khi lưu khách hàng vào localStorage:', error);
-        }
-
-        console.log('activeTabData.hd sau khi làm mới:', activeTabData.value.hd);
         message.success(`Đã chọn khách hàng: ${khachHang.tenKhachHang}`);
-        triggerUpdate.value = Date.now(); // Sau khi chọn xong khách
+        triggerUpdate.value = Date.now();
     } catch (error) {
         console.error('Lỗi khi chọn khách hàng:', error);
         message.error('Không thể chọn khách hàng. Vui lòng thử lại!');
@@ -550,50 +517,14 @@ const handleCancel = () => {
 };
 const ptnh = ref('Nhận tại cửa hàng');
 
-// const openKhachLe = ref(false);
-// const khachLeForm = reactive({
-//     tenKhachHang: "",
-//     soDienThoai: "",
-//     diaChi: ""
-// });
-
-// const handleThemDiaChi = () => {
-//     openKhachLe.value = true;
-// };
-
-// const handleAddKhachLe = () => {
-//     if (!khachLeForm.tenKhachHang || !khachLeForm.soDienThoai || !khachLeForm.diaChi) {
-//         return message.warning("Vui lòng nhập đầy đủ thông tin khách lẻ!");
-//     }
-
-//     activeTabData.value.hd.ten_khach_hang = khachLeForm.tenKhachHang;
-//     activeTabData.value.hd.so_dien_thoai = khachLeForm.soDienThoai;
-//     activeTabData.value.hd.dia_chi = khachLeForm.diaChi;
-//     activeTabData.value.hd.id_khach_hang = null;
-//     store.addKHHD(activeTabData.value.hd.id_hoa_don, null, khachLeForm.diaChi, khachLeForm.tenKhachHang, khachLeForm.soDienThoai);
-//     openKhachLe.value = false;
-// };
-
 const selectedKeys = ref([store.indexMenu]);
-console.log(selectedKeys);
 
 const changeRoute = (path) => {
-    // Update all store properties related to navigation
     store.getPath(path);
     store.getRoutePresent(router.path);
     store.getIndex(path);
-
-    // Log for debugging
-    console.log('TheFraming - Navigating to:', path);
-    console.log('TheFraming - Updated store.checkRouter:', store.checkRouter);
-    console.log('TheFraming - Updated selectedKeys:', store.indexMenu);
-
-    // Update selectedKeys from store
     selectedKeys.value = store.indexMenu;
-
-    // Navigate
     router.push(path);
-
 };
 
 
@@ -618,7 +549,6 @@ const filteredKhachHang = computed(() => {
 // Xử lý sự kiện tìm kiếm
 const handleSearch = () => {
     // Không cần thêm logic vì filteredKhachHang đã tự động cập nhật qua computed
-    console.log('Đang tìm kiếm:', searchQuery.value);
 };
 
 
@@ -674,47 +604,37 @@ const handleSearchInput = (query) => {
         filteredProducts.value = [];
         return;
     }
-    console.log('All products:', allProducts.value.map(p => p.ten_san_pham));
 
     filteredProducts.value = allProducts.value.filter(product => {
         const normalizedProductName = normalizeString(product.ten_san_pham || '');
-        const match = normalizedProductName.includes(normalizedQuery);
-        console.log(`✅ MATCH: ${match} | "${normalizedProductName}" vs "${normalizedQuery}"`);
-        return match;
+        return normalizedProductName.includes(normalizedQuery);
     });
-    console.log('🎯 Kết quả lọc:', filteredProducts.value.map(p => p.ten_san_pham));
-
 };
 
 
 
 
 
-// Xử lý khi nhấn Enter hoặc nút Search (có thể dùng để tìm kiếm chính xác hơn)
+// Xử lý khi nhấn Enter hoặc nút Search
 const performSearch = () => {
     if (!dropdownVisible.value && searchQuery.value) {
         dropdownVisible.value = true;
     }
-    console.log('Performing search for:', searchQuery.value);
 };
 
 const refreshHoaDon = async (idHoaDon) => {
     try {
-        // Gọi API để lấy lại dữ liệu hóa đơn
         await store.getHoaDonByIdHoaDon(idHoaDon);
         const hoaDonInfo = store.getHDBIDHD;
 
         const currentTab = activeTabData.value;
         if (hoaDonInfo && currentTab && currentTab.hd?.id_hoa_don === idHoaDon) {
-            // Gán lại toàn bộ đối tượng hóa đơn cho tab hiện tại
             currentTab.hd = {
-                ...currentTab.hd, // giữ lại tham chiếu nếu cần
-                ...hoaDonInfo     // ghi đè bằng dữ liệu mới từ server
-
+                ...currentTab.hd,
+                ...hoaDonInfo
             };
             ptnh.value = hoaDonInfo.phuong_thuc_nhan_hang
         }
-        console.log("currentTab.hd sau khi làm mới:", currentTab.hd);
     } catch (error) {
         console.error('Lỗi khi cập nhật thông tin hóa đơn:', error);
         message.error('Không thể làm mới thông tin hóa đơn.');
@@ -759,7 +679,6 @@ const addToBill = async (product) => {
         if (!result) return;
 
         await store.getAllSPHD(currentTab.hd.id_hoa_don);
-        console.log("store.getAllSPHDArr: ", store.getAllSPHDArr);
         currentTab.items.value = store.getAllSPHDArr.map(item => ({
             id_hoa_don: item.id_hoa_don,
             id_chi_tiet_san_pham: item.id_chi_tiet_san_pham,
@@ -772,8 +691,6 @@ const addToBill = async (product) => {
             tong_tien: item.don_gia * item.so_luong,
             so_luong_ton_goc: item.so_luong_ton || 0
         }));
-        console.log("currentTab.items.value");
-        console.log(currentTab.items.value);
         await refreshHoaDon(currentTab.hd.id_hoa_don);
 
         dropdownVisible.value = false;
@@ -921,32 +838,10 @@ const removeFromBill = async (productId) => {
 };
 
 
-// Hàm tạo mới một tab hóa đơn (Đã sửa)
+// Hàm tạo mới một tab hóa đơn
 const add = async () => {
     try {
-        // Giới hạn số lượng hóa đơn tối đa là 5
-        // if (panes.value.length >= 5) {
-        //     throw new Error('Bạn chỉ có thể tạo tối đa 5 hóa đơn cùng lúc!');
-        // }
-
-        // Kiểm tra xem người dùng đã đăng nhập và có thông tin chi tiết không
-        if (!store.isLoggedIn || !store.userDetails) {
-            throw new Error('Người dùng chưa đăng nhập hoặc không có thông tin chi tiết!');
-        }
-
-        // Kiểm tra vai trò (chỉ nhân viên mới được tạo hóa đơn)
-        if (![1, 2, 3].includes(store.id_roles)) {
-            throw new Error('Chỉ nhân viên mới có thể tạo hóa đơn!');
-        }
-
-        const idNhanVien = store.userDetails.idNhanVien;
-        if (!idNhanVien) {
-            throw new Error('Không tìm thấy ID nhân viên!');
-        }
-
-        console.log('ID Nhân viên được sử dụng để tạo hóa đơn:', idNhanVien);
-
-        const response = await store.createHoaDon(idNhanVien);
+        const response = await store.createHoaDon();
         if (!response || response.error) {
             throw new Error(response?.message || 'Không thể tạo hóa đơn');
         }
@@ -964,8 +859,6 @@ const add = async () => {
                 ma_hoa_don: response.ma_hoa_don,
                 ngay_tao: response.ngay_tao,
                 trang_thai: response.trang_thai,
-                id_nhan_vien: response.id_nhan_vien,
-                ten_nhan_vien: response.ten_nhan_vien,
                 id_voucher: null,
                 id_khach_hang: null,
                 hinh_thuc_thanh_toan: 'Tiền mặt',
@@ -1089,7 +982,6 @@ const printInvoice = async () => {
     doc.setFontSize(12);
     doc.setFont("Roboto", "normal");
     doc.text(`Mã hóa đơn: ${activeTabData.value.hd.ma_hoa_don || 'N/A'}`, 20, 86);
-    doc.text(`Tên nhân viên: ${activeTabData.value.hd.ten_nhan_vien || 'N/A'}`, 20, 94);
     doc.text(`Ngày: ${formatDate(activeTabData.value.hd.ngay_tao)}`, 20, 102);
     doc.text(`Tên khách hàng: ${activeTabData.value.hd.ho_ten || 'Khách lẻ'}`, 20, 110);
     // Kiểm tra nếu là đơn Online/Offline và giao hàng thì hiển thị thêm số điện thoại và địa chỉ
@@ -1201,7 +1093,7 @@ const printInvoice = async () => {
     doc.save(`HoaDon_${activeTabData.value.hd.ma_hoa_don}.pdf`);
 };
 
-// Xử lý sự kiện edit tab (add hoặc remove) (Đã sửa)
+// Xử lý sự kiện edit tab (add hoặc remove)
 const onEdit = (targetKeyOrAction, action) => {
     if (action === 'add') {
         add();
@@ -1212,21 +1104,19 @@ const onEdit = (targetKeyOrAction, action) => {
 
 const showPrintConfirm = ref(false);
 
-// Hàm xử lý thanh toán (submit form)
-const handlePayment = async () => { // Thêm async nếu gọi API
+// Hàm xử lý thanh toán
+const handlePayment = async () => {
     const currentTab = activeTabData.value;
     if (!currentTab) {
         message.error("Không có hóa đơn nào đang được chọn.");
         return;
     }
 
-    // Truy cập items qua .value
     if (!currentTab.items || currentTab.items.value.length === 0) {
         message.warning("Hóa đơn chưa có sản phẩm nào.");
         return;
     }
 
-    // Validate các trường thông tin... (Giữ nguyên logic validate cũ)
     if (currentTab.hd.phuong_thuc_nhan_hang === 'Giao hàng') {
         if (!currentTab.hd.id_khach_hang && (!currentTab.hd.ho_ten_nguoi_nhan || !currentTab.hd.sdt_nguoi_nhan || !currentTab.hd.dia_chi_nhan_hang)) {
             message.error("Vui lòng nhập đầy đủ thông tin giao hàng (Tên, SĐT, Địa chỉ) hoặc chọn khách hàng.");
@@ -1234,11 +1124,9 @@ const handlePayment = async () => { // Thêm async nếu gọi API
         }
         if (currentTab.hd.phi_van_chuyen <= 0) {
             message.warning("Vui lòng nhập phí vận chuyển cho đơn hàng giao.");
-            // return;
         }
     }
     if (currentTab.hd.hinh_thuc_thanh_toan === 'Tiền mặt') {
-        // Validate tiền khách đưa (nếu cần thiết)
         if (currentTab.hd.tien_khach_dua === null || currentTab.hd.tien_khach_dua < currentTab.hd.tong_tien_sau_giam) {
             message.error("Vui lòng nhập đủ tiền khách đưa.");
             return;
@@ -1246,25 +1134,15 @@ const handlePayment = async () => { // Thêm async nếu gọi API
         currentTab.hd.tien_du = currentTab.hd.tien_khach_dua - currentTab.hd.tong_tien_sau_giam;
     }
 
-
-    console.log("Submitting Invoice Data for Tab:", currentTab.key);
-    // Cần dùng JSON.parse(JSON.stringify(...)) để log giá trị thực sự của reactive object
-    console.log("Invoice Header (hd):", JSON.parse(JSON.stringify(currentTab.hd)));
-    // Items là ref, cần .value
-    console.log("Invoice Items (items):", JSON.parse(JSON.stringify(currentTab.items.value)));
-
     const total = activeTabData.value.hd.tong_tien_sau_giam || 0;
     const cash = tienKhachDua.value || 0;
 
-    // Kiểm tra tiền khách đưa nếu là "Tiền mặt"
     if (activeTabData.value.hd.hinh_thuc_thanh_toan === 'Tiền mặt' && cash < total) {
         message.error('Tiền khách đưa không đủ để thanh toán!');
         return;
     }
 
-    // Hiển thị modal xác nhận in hóa đơn
     showPrintConfirm.value = true;
-
 };
 
 
@@ -1282,17 +1160,15 @@ const confirmPrint = async (shouldPrint) => {
         try {
             await store.trangThaiDonHang(activeTabData.value.hd.id_hoa_don);
             message.success('Thanh toán tiền mặt thành công!');
-            localStorage.removeItem('khachHangBH')
-            window.location.href = 'http://localhost:5173/admin/banhang';
+            localStorage.removeItem('khachHangBH');
+            router.push('/admin/banhang');
+            window.location.reload();
         } catch (error) {
             console.error('Lỗi khi thanh toán:', error);
             message.error('Đã xảy ra lỗi khi thanh toán!');
         }
     } else if (hinhThuc === "Chuyển khoản") {
         try {
-            // const res = await store.thanhToanMomo(activeTabData.value.hd.id_hoa_don);
-            // Điều hướng đến trang thanh toán MoMo
-            // window.location.href = res.payUrl;
             const payment_info = {
                 productName: "Đơn hàng " + `GB-${activeTabData.value.hd.id_hoa_don}-${new Date().getTime()}`,
                 description: `GB Sport - ${allProducts.value.length} sản phẩm`,
@@ -1302,11 +1178,8 @@ const confirmPrint = async (shouldPrint) => {
             }
             localStorage.setItem('checkPaymentStatus', 'true');
             localStorage.setItem('idHDPayMent', JSON.stringify(activeTabData.value.hd.id_hoa_don));
-            localStorage.removeItem('khachHangBH')
-            console.log(payment_info);
+            localStorage.removeItem('khachHangBH');
             await thanhToanService.handlePayOSPayment(payment_info);
-
-
         } catch (error) {
             console.error('Lỗi khi tạo yêu cầu thanh toán PayOS:', error);
             message.error('Không thể tạo thanh toán PayOs!');
@@ -1318,10 +1191,7 @@ const updateHinhThucThanhToan = async () => {
     try {
         const id = activeTabData.value.hd.id_hoa_don;
         const hinhThuc = activeTabData.value.hd.hinh_thuc_thanh_toan;
-
         await store.updateHinhThucTTHoaDon(id, hinhThuc);
-
-        console.log("Đã cập nhật hình thức thanh toán:", hinhThuc);
     } catch (err) {
         console.error("Lỗi cập nhật hình thức thanh toán", err);
     }
@@ -1332,61 +1202,47 @@ const da = ref([]);
 
 // --- Lifecycle Hooks ---
 onMounted(async () => {
-    // Kiểm tra luuTTKHBH ngay khi component được gắn
     await checkAndApplyLocalData();
-    await loadData(); // Gọi lần đầu
-    stopQrScanner();
-    setupAutoReloadAtMidnight(); // Cài lịch chạy hằng ngày
-
-    // Bắt đầu kiểm tra liên tục
-    startChecking();
-
+    await loadData();
     stopQrScanner();
     setupAutoReloadAtMidnight();
+    startChecking();
 
     const checkPaymentStatus = localStorage.getItem('checkPaymentStatus');
     if (checkPaymentStatus === 'true') {
         try {
             const paymentResponse = JSON.parse(localStorage.getItem('paymentResponse'));
             const idhdpay = JSON.parse(localStorage.getItem('idHDPayMent'));
-            console.log("idhdpay: ", idhdpay);
             if (paymentResponse && paymentResponse.data && paymentResponse.data.orderCode) {
                 const paystatus = await thanhToanService.checkStatusPayment(paymentResponse.data.orderCode);
-                console.log("paystatus: ", paystatus);
 
                 if (paystatus.status === "PAID") {
-                    console.log("Paid:", idhdpay);
                     await store.trangThaiDonHang(idhdpay);
                     router.push('/admin/banhang');
                     toast.success('Thanh toán thành công');
                     await refreshHoaDon(idhdpay);
                 } else if (paystatus.status === "PENDING") {
-                    console.log("Pending:", idhdpay);
                     toast.warning('Thanh toán đang chờ xử lý');
                 } else if (paystatus.status === "CANCELLED") {
-                    console.log("CANCELLED:", idhdpay);
                     toast.error('Thanh toán đã bị huỷ');
                 }
-            } else {
-                console.error("Không tìm thấy thông tin thanh toán trong localStorage.");
             }
         } catch (error) {
             console.error("Lỗi khi kiểm tra trạng thái thanh toán:", error);
             toast.error('Không thể kiểm tra trạng thái thanh toán');
         } finally {
-            // Xóa cờ sau khi kiểm tra xong
             localStorage.removeItem('checkPaymentStatus');
         }
     }
 
 });
 
-// Thiết lập setInterval để kiểm tra luuTTKHBH liên tục
+// Thiết lập setInterval để kiểm tra luuTTKHBH
 let intervalId = null;
 const startChecking = () => {
     intervalId = setInterval(async () => {
         await checkAndApplyLocalData();
-    }, 1000); // Kiểm tra mỗi 1000ms
+    }, 3000); // Kiểm tra mỗi 3 giây để tối ưu hiệu năng
 };
 
 // Dọn dẹp interval khi component bị hủy
@@ -1400,7 +1256,6 @@ async function loadData() {
     try {
         await store.getAllHoaDonCTT();
         await store.getAllCTSPKM();
-        await store.getAllNhanVien(0, pageSize.value);
         await store.getAllKhachHangNoPage();
         da.value = store.getAllHoaDonCTTArr;
 
@@ -1434,14 +1289,13 @@ async function loadData() {
 function setupAutoReloadAtMidnight() {
     const now = new Date();
     const midnight = new Date();
-    midnight.setHours(24, 0, 0, 0); // 00:00 của ngày mai
+    midnight.setHours(24, 0, 0, 0);
 
     const timeUntilMidnight = midnight.getTime() - now.getTime();
 
-    // Đợi tới 00:00, rồi gọi loadData, sau đó chạy mỗi 24 giờ
     setTimeout(() => {
-        loadData(); // chạy lần đầu vào 00:00
-        setInterval(loadData, 24 * 60 * 60 * 1000); // gọi lại mỗi ngày
+        loadData();
+        setInterval(loadData, 24 * 60 * 60 * 1000);
     }, timeUntilMidnight);
 }
 
@@ -1462,11 +1316,9 @@ watch(() => activeKey.value, async (newKey) => {
             tong_tien: item.don_gia * item.so_luong,
             so_luong_ton_goc: item.so_luong_ton || 0
         })) || [];
-        console.log("store.getAllSPHDArr: ", currentTab.items.value);
     }
     ptnh.value = currentTab.hd.phuong_thuc_nhan_hang;
     store.setCurrentHoaDonId(currentTab.hd.id_hoa_don);
-
 }, { immediate: true });
 
 watch(() => searchQuery, (newVal) => {
@@ -1484,20 +1336,14 @@ watch(searchQuery, (newQuery) => {
 
 const isLoading = ref(false);
 
-// Hàm kiểm tra luuTTKHBH với timeout
 const checkAndApplyLocalData = async () => {
     const checkluuTTKHBH = JSON.parse(localStorage.getItem('luuTTKHBH'));
     if (checkluuTTKHBH === true) {
-        console.log("Phát hiện luuTTKHBH = true, chờ 500ms để làm mới dữ liệu...");
         isLoading.value = true;
-        // Chờ 500ms để đảm bảo API addKHHD hoàn tất
         await new Promise(resolve => setTimeout(resolve, 500));
         try {
             const idHoaDon = activeTabData.value.hd.id_hoa_don;
-            console.log("ID hóa đơn để làm mới:", idHoaDon);
             await refreshHoaDon(idHoaDon);
-            await handlePhuongThucChange();
-            message.success("Đã làm mới thông tin hóa đơn!");
         } catch (error) {
             console.error("Lỗi khi làm mới dữ liệu:", error);
             message.error("Không thể làm mới dữ liệu hóa đơn!");
@@ -1505,8 +1351,6 @@ const checkAndApplyLocalData = async () => {
             localStorage.removeItem('luuTTKHBH');
             isLoading.value = false;
         }
-    } else {
-        console.log("Không tìm thấy luuTTKHBH trong localStorage.");
     }
 };
 
@@ -1519,23 +1363,22 @@ function tachDiaChi(addressString) {
     const parts = addressString.split(',').map(p => p.trim());
     if (parts.length < 4) return null;
 
-    const diaChi = {
-        address: parts[0],                        // Số nhà 11
-        ward: parts[1],                           // Phường Xuân Đỉnh
-        district: parts[2],                       // Quận Bắc Từ Liêm
-        province: parts[3],                       // Hà Nội
+    return {
+        address: parts[0],
+        ward: parts[1],
+        district: parts[2],
+        province: parts[3],
     };
-    return diaChi;
 }
 
 
 const handlePhuongThucChange = async () => {
     const idHD = activeTabData.value.hd.id_hoa_don;
-    const diaChiNhan = activeTabData.value.hd.dia_chi; // chuỗi full địa chỉ
-    // const khachHangData = localStorage.getItem('khachHangBH');
+    const diaChiNhan = activeTabData.value.hd.dia_chi;
     let phiShip = 0;
-    const weight = 500; // gram — bạn có thể lấy từ thực tế hàng hóa
+    const weight = 500;
     const tongTienHoaDon = activeTabData.value.hd.tong_tien_sau_giam;
+    
     if (activeTabData.value.hd.phuong_thuc_nhan_hang === 'Nhận tại cửa hàng') {
         ptnh.value = 'Nhận tại cửa hàng';
         await store.setTrangThaiNhanHang(idHD, 'Nhận tại cửa hàng', 0);
@@ -1548,29 +1391,22 @@ const handlePhuongThucChange = async () => {
             return;
         }
         const diaChi = tachDiaChi(diaChiNhan);
-        console.log("Địa chỉ giao hàng:", diaChi);
         if (diaChi) {
             const result = await banHangService.tinhPhiShip(
-                "Hà Nội", // pickProvince
-                "Nam Từ Liêm", // pickDistrict
+                "Hà Nội",
+                "Nam Từ Liêm",
                 diaChi.province,
                 diaChi.district,
                 weight,
                 tongTienHoaDon
             );
-            console.log("Kết quả tính phí ship:", result);
             phiShip = result.fee;
             activeTabData.value.hd.phi_van_chuyen = phiShip;
-            console.log("Phí ship:", phiShip);
         } else {
             activeTabData.value.hd.phi_van_chuyen = 0;
-            console.warn('⚠️ Không có địa chỉ giao hàng hợp lệ, phí = 0');
         }
-        // refreshHoaDon(idHD);
         await store.setTrangThaiNhanHang(idHD, 'Giao hàng', phiShip);
     }
-
-    // refreshHoaDon(idHD);
 };
 
 

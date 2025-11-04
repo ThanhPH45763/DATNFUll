@@ -234,14 +234,15 @@ const handleLogin = async () => {
             return;
         }
 
-        // Chỉ cho phép tài khoản khách hàng đăng nhập
-        if (result.id_roles !== 4) {
-            toast.error('Tài khoản không hợp lệ hoặc không có quyền truy cập!');
-            return;
+        // Kiểm tra đăng nhập thành công và có thông tin khách hàng
+        if (result.khachHang) {
+            // Lưu thông tin khách hàng vào localStorage hoặc store
+            localStorage.setItem('khachHang', JSON.stringify(result.khachHang));
+            toast.success('Đăng nhập thành công!');
+            router.push('/home');
+        } else {
+            toast.error('Đăng nhập thất bại!');
         }
-
-        // Khách hàng luôn chuyển đến home
-        router.push('/home');
 
     } catch (error) {
         toast.error('Đăng nhập thất bại. Vui lòng thử lại!');

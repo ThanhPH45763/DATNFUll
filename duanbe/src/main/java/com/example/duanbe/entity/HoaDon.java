@@ -56,7 +56,8 @@ public class HoaDon {
     private String phuong_thuc_nhan_hang;
     private String loai_hoa_don;
     private String ho_ten;
-
+    private String trang_thai;
+    private BigDecimal phu_thu;
     @OneToMany(mappedBy = "hoaDon", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<TheoDoiDonHang> lichSuTrangThai = new ArrayList<>();

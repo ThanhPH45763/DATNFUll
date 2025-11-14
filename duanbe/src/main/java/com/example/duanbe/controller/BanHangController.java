@@ -106,15 +106,24 @@ public class BanHangController {
             HoaDon hoaDon = hoaDonRepo.findById(idHD)
                     .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
 
-            if (idKHStr != null && !idKHStr.equals("null")) {
-                Integer idKH = Integer.valueOf(idKHStr);
-                KhachHang khachHang = khachHangRepo.findById(idKH)
-                        .orElseThrow(() -> new RuntimeException("Khách hàng không tồn tại"));
-                hoaDon.setKhachHang(khachHang);
-                hoaDon.setHo_ten(khachHang.getHoTen());
-                hoaDon.setSdt(khachHang.getSoDienThoai());
-                hoaDon.setDia_chi(diaChi);
-                hoaDon.setEmail(khachHang.getEmail());
+            if (idKHStr != null && !idKHStr.equals("null") && !idKHStr.isEmpty()) {
+                try {
+                    Integer idKH = Integer.valueOf(idKHStr);
+                    KhachHang khachHang = khachHangRepo.findById(idKH)
+                            .orElseThrow(() -> new RuntimeException("Khách hàng không tồn tại"));
+                    hoaDon.setKhachHang(khachHang);
+                    hoaDon.setHo_ten(khachHang.getHoTen());
+                    hoaDon.setSdt(khachHang.getSoDienThoai());
+                    hoaDon.setDia_chi(diaChi);
+                    hoaDon.setEmail(khachHang.getEmail());
+                } catch (NumberFormatException ex) {
+                    // Nếu idKH không phải là số, coi như nhập khách hàng mới
+                    hoaDon.setKhachHang(null);
+                    hoaDon.setHo_ten(tenKhachHang);
+                    hoaDon.setSdt(soDienThoai);
+                    hoaDon.setDia_chi(diaChi);
+                    hoaDon.setEmail(email);
+                }
             } else {
                 hoaDon.setKhachHang(null);
                 hoaDon.setHo_ten(tenKhachHang);
@@ -379,38 +388,56 @@ public class BanHangController {
             ChiTietSanPham ctsp = chiTietSanPhamRepo.findById(idCTSP)
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại!"));
 
-            int soLuongTon = ctsp.getSo_luong();
+            // ✅ 1. KIỂM TRA SẢN PHẨM ĐÃ CÓ TRONG HÓA ĐƠN CHƯA
+            Optional<HoaDonChiTiet> existingItem = hoaDonChiTietRepo
+                    .findByChiTietSanPhamIdAndHoaDonId(idCTSP, idHD);
 
-            // Nếu số lượng yêu cầu > tồn thì đặt lại bằng tồn kho tối đa
-            int soLuong = Math.min(soLuongInput, soLuongTon);
+            int soLuongTonKho = ctsp.getSo_luong();
+            int soLuongTrongHD = existingItem.map(HoaDonChiTiet::getSo_luong).orElse(0);
+            
+            // ✅ 2. Tính số lượng có thể thêm
+            int soLuongCoTheThemToiDa = soLuongTonKho;
+            int soLuong = Math.min(soLuongInput, soLuongCoTheThemToiDa);
+            
             if (soLuong <= 0) {
                 return ResponseEntity.badRequest().body("Sản phẩm đã hết hàng!");
             }
 
-            // ✅ Tìm khuyến mãi có giá giảm tốt nhất cho sản phẩm
+            // ✅ 3. Lấy giá khuyến mãi tốt nhất
             List<ChiTietKhuyenMai> khuyenMais = chiTietKhuyenMaiRepo.findAllByChiTietSanPhamId(idCTSP);
             Optional<BigDecimal> giaGiamTotNhat = khuyenMais.stream()
                     .map(ChiTietKhuyenMai::getGiaSauGiam)
                     .filter(Objects::nonNull)
                     .min(BigDecimal::compareTo);
 
-            BigDecimal giaBan = giaGiamTotNhat.orElse(ctsp.getGia_ban());
+            BigDecimal donGiaLe = giaGiamTotNhat.orElse(ctsp.getGia_ban());
 
-            // ✅ Tạo mới chi tiết hóa đơn
-            HoaDonChiTiet chiTiet = new HoaDonChiTiet();
-            chiTiet.setHoaDon(hoaDon);
-            chiTiet.setChiTietSanPham(ctsp);
-            chiTiet.setSo_luong(soLuong);
-            chiTiet.setDon_gia(giaBan.multiply(BigDecimal.valueOf(soLuong)));
+            HoaDonChiTiet chiTiet;
+            
+            // ✅ 4. NẾU ĐÃ TỒN TẠI -> CỘNG SỐ LƯỢNG
+            if (existingItem.isPresent()) {
+                chiTiet = existingItem.get();
+                int soLuongMoi = chiTiet.getSo_luong() + soLuong;
+                chiTiet.setSo_luong(soLuongMoi);
+                chiTiet.setDon_gia(donGiaLe.multiply(BigDecimal.valueOf(soLuongMoi)));
+            } 
+            // ✅ 5. NẾU CHƯA TỒN TẠI -> TẠO MỚI
+            else {
+                chiTiet = new HoaDonChiTiet();
+                chiTiet.setHoaDon(hoaDon);
+                chiTiet.setChiTietSanPham(ctsp);
+                chiTiet.setSo_luong(soLuong);
+                chiTiet.setDon_gia(donGiaLe.multiply(BigDecimal.valueOf(soLuong)));
+            }
 
-            // ✅ Trừ tồn kho
+            // ✅ 6. Trừ tồn kho
             ctsp.setSo_luong(ctsp.getSo_luong() - soLuong);
             chiTietSanPhamRepo.save(ctsp);
 
-            // ✅ Lưu chi tiết hóa đơn
+            // ✅ 7. Lưu chi tiết hóa đơn
             hoaDonChiTietRepo.save(chiTiet);
 
-            // ✅ Tính lại tổng tiền hóa đơn
+            // ✅ 8. Tính lại tổng tiền
             List<HoaDonChiTiet> danhSachChiTiet = hoaDonChiTietRepo.findByIdHoaDon(idHD);
             BigDecimal tongTien = danhSachChiTiet.stream()
                     .map(HoaDonChiTiet::getDon_gia)
@@ -418,13 +445,15 @@ public class BanHangController {
                     .add(hoaDon.getPhi_van_chuyen());
 
             hoaDon.setTong_tien_truoc_giam(tongTien);
-            hoaDon.setTong_tien_sau_giam(tongTien); // Nếu chưa áp dụng voucher
+            hoaDon.setTong_tien_sau_giam(tongTien);
             hoaDonRepo.save(hoaDon);
 
-            // ✅ Cập nhật voucher (nếu có)
+            // ✅ 9. Cập nhật voucher (nếu có)
             capNhatVoucher(idHD);
 
-            return ResponseEntity.ok("Thêm sản phẩm mới vào hóa đơn thành công");
+            return ResponseEntity.ok(existingItem.isPresent() 
+                ? "Đã cộng số lượng sản phẩm vào hóa đơn" 
+                : "Thêm sản phẩm mới vào hóa đơn thành công");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi khi thêm sản phẩm: " + e.getMessage());

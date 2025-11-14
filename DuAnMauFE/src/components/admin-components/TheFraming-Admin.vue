@@ -37,7 +37,7 @@
                     <AccountBookOutlined />
                     <span>Hóa đơn</span>
                 </a-menu-item>
-                
+
                 <!-- <a-menu-item key="9" @click="changeRoute('/admin/traHang');">
                     <RollbackOutlined />
                     <span>Trả hàng tại quầy</span>
@@ -86,7 +86,7 @@
                 </div>
             </a-layout-content>
             <a-layout-footer style="text-align: center">
-                G-B Sports ©2024 Created by GB-Sports
+              ©2025 Created by
             </a-layout-footer>
         </a-layout>
     </a-layout>
@@ -197,14 +197,25 @@ onMounted(() => {
 </script>
 <style scoped>
 :deep(.ant-menu-item-selected) {
-    box-shadow: 0 0 1px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 1px rgba(255, 102, 0, 0.6);
     border-radius: 5px;
-    background-color: #343434 !important;
+    background-color: #ff6600 !important; /* Deep orange */
     color: white !important;
 }
 
 :deep(.ant-menu-light .ant-menu-submenu-selected>.ant-menu-submenu-title) {
-    color: #030303 !important;
+    color: #ff6600 !important; /* Deep orange */
+}
+
+/* Hover effects for menu items */
+:deep(.ant-menu-light .ant-menu-item:hover) {
+    background-color: rgba(255, 102, 0, 0.1) !important; /* Light orange hover */
+    color: #ff6600 !important;
+}
+
+:deep(.ant-menu-light .ant-menu-submenu-title:hover) {
+    background-color: rgba(255, 102, 0, 0.1) !important; /* Light orange hover */
+    color: #ff6600 !important;
 }
 
 #components-layout-demo-sider .logo {
@@ -229,6 +240,11 @@ onMounted(() => {
 .trigger {
     font-size: 20px;
     margin-left: 1rem;
+    color: #ff6600 !important; /* Deep orange for trigger icons */
+}
+
+.trigger:hover {
+    color: #e55a00 !important; /* Darker orange on hover */
 }
 
 /* Thiết lập thanh menu đứng yên và cố định vị trí */
@@ -248,13 +264,13 @@ onMounted(() => {
 }
 
 .header-admin {
-    /* box-shadow: 0 0 50px rgba(0, 0, 0, 0.6); */
+    border-bottom: 3px solid #ff6600 !important; /* Deep orange accent border */
     border-bottom-right-radius: 10px;
-    box-shadow: 0 4px 10px -5px rgba(122, 122, 122, 0.6);
-    /* filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.6)); */
+    box-shadow: 0 4px 15px -5px rgba(255, 102, 0, 0.4), 0 0 20px rgba(255, 102, 0, 0.1); /* Orange focused shadow */
     position: sticky;
     top: 0;
     z-index: 99;
+    background: rgba(255, 255, 255, 0.98) !important; /* Slight transparency for depth */
 }
 
 .content-admin {
@@ -263,7 +279,71 @@ onMounted(() => {
 }
 
 .logo {
-    /* border-bottom: 1px solid rgba(207, 207, 207, 0.6); */
-    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 1));
+    border-bottom: 2px solid rgba(255, 102, 0, 0.3); /* Orange accent border */
+    filter: drop-shadow(0 0 8px rgba(255, 102, 0, 0.2)); /* Orange glow */
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.95) !important; /* White background */
+}
+
+.logo:hover {
+    background: rgba(255, 102, 0, 0.05) !important; /* Light orange hover */
+}
+
+/* Footer styling */
+:deep(.ant-layout-footer) {
+    background: rgba(255, 102, 0, 0.05) !important; /* Light orange background */
+    color: #ff6600 !important; /* Deep orange text */
+    border-top: 2px solid rgba(255, 102, 0, 0.2);
+}
+
+/* Content area with orange accent */
+.content-admin > div {
+    box-shadow: 0 0 15px rgba(255, 102, 0, 0.1) inset !important; /* Inner orange glow */
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+    .header-admin {
+        border-bottom: 2px solid #ff6600 !important; /* Thinner border on mobile */
+        border-bottom-right-radius: 5px;
+    }
+
+    .trigger {
+        font-size: 18px !important;
+        margin-left: 0.5rem !important;
+    }
+
+    :deep(.ant-layout) {
+        padding-left: v-bind('collapsed ? "0px" : "200px"') !important;
+    }
+
+    .sider {
+        position: fixed !important;
+        left: v-bind('collapsed ? "-200px" : "0px"') !important;
+        transition: left 0.3s ease !important;
+        z-index: 1000 !important;
+    }
+
+    .content-admin {
+        margin: 8px 8px !important;
+    }
+
+    .logo img {
+        width: 40px !important; /* Slightly larger logo on mobile */
+    }
+}
+
+/* Enhanced orange theme consistency */
+:deep(.ant-menu-inline.ant-menu-root) {
+    box-shadow: inset 0 0 10px rgba(255, 102, 0, 0.05) !important;
+}
+
+:deep(.ant-menu-item-divider) {
+    border-bottom: 1px solid rgba(255, 102, 0, 0.1) !important;
+}
+
+/* Improved transitions */
+.sider, .header-admin, .trigger, :deep(.ant-menu-item), :deep(.ant-menu-submenu-title) {
+    transition: all 0.3s ease !important;
 }
 </style>

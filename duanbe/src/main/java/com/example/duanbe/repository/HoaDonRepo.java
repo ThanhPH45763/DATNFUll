@@ -102,7 +102,7 @@ public interface HoaDonRepo extends JpaRepository<HoaDon, Integer> {
 
     @Query(value = """
             select id_hoa_don, ma_hoa_don, hd.id_khach_hang, kh.ho_ten as ten_khach_hang, hd.trang_thai,
-            hd.id_voucher, vc.ten_voucher, sdt, hd.dia_chi, hd.email, tong_tien_truoc_giam, phi_van_chuyen, hd.ho_ten,
+            hd.id_voucher, vc.ten_voucher, hd.sdt as sdt_nguoi_nhan, hd.sdt as so_dien_thoai, hd.dia_chi, hd.email, tong_tien_truoc_giam, phi_van_chuyen, hd.ho_ten,
             tong_tien_sau_giam, hinh_thuc_thanh_toan, phuong_thuc_nhan_hang, loai_hoa_don, hd.ghi_chu, hd.ngay_tao
             from hoa_don hd
             LEFT join khach_hang kh on kh.id_khach_hang = hd.id_khach_hang
@@ -113,7 +113,7 @@ public interface HoaDonRepo extends JpaRepository<HoaDon, Integer> {
 
     @Query(value = """
                         SELECT id_hoa_don,ma_hoa_don,kh.id_khach_hang,kh.ho_ten as ten_khach_hang,hd.ngay_tao,hd.ngay_sua,hd.trang_thai
-                        ,vc.id_voucher,vc.ten_voucher,sdt,hd.dia_chi,hd.email,tong_tien_truoc_giam,phi_van_chuyen,hd.ho_ten
+                        ,vc.id_voucher,vc.ten_voucher,hd.sdt as sdt_nguoi_nhan,hd.sdt as so_dien_thoai,hd.dia_chi,hd.email,tong_tien_truoc_giam,phi_van_chuyen,hd.ho_ten
                         ,tong_tien_sau_giam,hinh_thuc_thanh_toan,phuong_thuc_nhan_hang
                         from hoa_don hd
                          LEFT JOIN khach_hang kh ON hd.id_khach_hang = kh.id_khach_hang

@@ -1749,18 +1749,206 @@ watch(() => luuBien.value, (newValue) => {
 </script>
 
 <style scoped>
+/* ===== WHITE & DEEP ORANGE BUTTON THEME ===== */
+
+/* Primary buttons - Deep orange theme */
+:deep(.ant-btn-primary) {
+    background: #ff6600 !important; /* Deep orange */
+    border-color: #ff6600 !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.3) !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 8px !important;
+    font-weight: 500;
+}
+
+:deep(.ant-btn-primary:hover),
+:deep(.ant-btn-primary:focus) {
+    background: #e55a00 !important; /* Darker orange */
+    border-color: #e55a00 !important;
+    box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4) !important;
+    transform: translateY(-2px);
+}
+
+:deep(.ant-btn-primary i),
+:deep(.ant-btn-primary .anticon) {
+    color: white !important;
+}
+
+/* Filter buttons - White background with orange border */
+.btn-filter,
+.filter-btn-custom {
+    color: #ff6600 !important; /* Deep orange text */
+    background: white !important;
+    border-color: #ff6600 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.2) !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    font-weight: 500 !important;
+}
+
+.btn-filter:hover,
+.filter-btn-custom:hover,
+.btn-filter:focus,
+.filter-btn-custom:focus {
+    background: rgba(255, 102, 0, 0.1) !important;
+    border-color: #ff6600 !important;
+    color: #e55a00 !important;
+    box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3) !important;
+    transform: translateY(-2px);
+}
+
+.btn-filter .icon-filler,
+.filter-btn-custom .icon-filler,
+.btn-filter .anticon,
+.filter-btn-custom .anticon {
+    color: #ff6600 !important; /* Deep orange icons */
+    transition: all 0.3s ease !important;
+}
+
+.btn-filter:hover .icon-filler,
+.btn-filter:hover .anticon,
+.filter-btn-custom:hover .icon-filler,
+.filter-btn-custom:hover .anticon {
+    color: #e55a00 !important; /* Darker orange on hover */
+    transform: scale(1.1);
+}
+
+/* Danger buttons - Deep orange danger style */
+:deep(.ant-btn-dangerous) {
+    background: #ff6600 !important;
+    border-color: #ff6600 !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.3) !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 8px !important;
+    font-weight: 500;
+}
+
+:deep(.ant-btn-dangerous:hover),
+:deep(.ant-btn-dangerous:focus) {
+    background: #e55a00 !important;
+    border-color: #e55a00 !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4) !important;
+    transform: translateY(-2px);
+}
+
+:deep(.ant-btn-dangerous i),
+:deep(.ant-btn-dangerous .anticon) {
+    color: white !important;
+}
+
+/* Default buttons with orange accents */
+:deep(.ant-btn-default:not(.btn-filter):not(.filter-btn-custom)),
+:deep(.ant-btn) {
+    background: white !important;
+    border-color: #ff6600 !important;
+    color: #ff6600 !important;
+    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.1) !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 8px !important;
+    font-weight: 500;
+}
+
+:deep(.ant-btn-default:not(.btn-filter):not(.filter-btn-custom):hover),
+:deep(.ant-btn-default:not(.btn-filter):not(.filter-btn-custom):focus),
+:deep(.ant-btn:hover),
+:deep(.ant-btn:focus) {
+    background: rgba(255, 102, 0, 0.1) !important;
+    border-color: #e55a00 !important;
+    color: #e55a00 !important;
+    box-shadow: 0 4px 15px rgba(255, 102, 0, 0.2) !important;
+    transform: translateY(-2px);
+}
+
+:deep(.ant-btn-default i),
+:deep(.ant-btn-default .anticon) {
+    color: #ff6600 !important;
+}
+
+:deep(.ant-btn-default:hover i),
+:deep(.ant-btn-default:hover .anticon),
+:deep(.ant-btn:hover i),
+:deep(.ant-btn:hover .anticon) {
+    color: #e55a00 !important;
+    transform: scale(1.1);
+}
+
+/* Add product button - Special primary button */
+:deep(.ant-btn-primary:not(.ant-btn-dangerous)),
+.ant-btn:not(.btn-filter):not(.filter-btn-custom):not(.ant-btn-dangerous) {
+    background: #ff6600 !important;
+    border-color: #ff6600 !important;
+    color: white !important;
+}
+
+.ant-btn:not(.btn-filter):not(.filter-btn-custom):not(.ant-btn-dangerous):hover {
+    background: #e55a00 !important;
+    border-color: #e55a00 !important;
+}
+
+/* File action buttons in import */
+.file-actions :deep(.ant-btn) {
+    color: #ff6600 !important;
+    border-color: #ff6600 !important;
+}
+
+.file-actions :deep(.ant-btn:hover) {
+    color: #e55a00 !important;
+    border-color: #e55a00 !important;
+    background: rgba(255, 102, 0, 0.1) !important;
+}
+
+/* Modal footer buttons */
+:deep(.ant-modal-footer .ant-btn) {
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+}
+
+/* Custom select (if needed) - override existing styles */
+:deep(.custom-select) {
+    .ant-select-selector {
+        border-color: #ff6600 !important;
+        background-color: white !important;
+        border-radius: 8px !important;
+        color: #ff6600 !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .ant-select-arrow,
+    .ant-select-clear,
+    .ant-select-selection-search-icon {
+        color: #ff6600 !important;
+        transition: all 0.3s ease !important;
+    }
+
+    &:hover {
+        .ant-select-selector {
+            border-color: #e55a00 !important;
+            background-color: rgba(255, 102, 0, 0.05) !important;
+            color: #e55a00 !important;
+        }
+
+        .ant-select-arrow,
+        .ant-select-clear,
+        .ant-select-selection-search-icon {
+            color: #e55a00 !important;
+        }
+    }
+
+    &.ant-select-focused .ant-select-selector,
+    &.ant-select-open .ant-select-selector {
+        border-color: #ff6600 !important;
+        background-color: white !important;
+        color: #ff6600 !important;
+        box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.2) !important;
+    }
+}
+
+/* Update existing icon-filler to maintain consistency */
 .icon-filler {
-    color: #fff;
-}
-
-.btn-filter {
-    color: #fff;
-    background-color: #f33b47;
-}
-
-.btn-filter:active {
-    transition: all 0.6s ease-in-out;
-    background-color: #f33b47;
+    transition: all 0.3s ease !important;
 }
 
 .custom-class {

@@ -28,6 +28,8 @@ public interface HoaDonResponse {
 
     String getSdt_nguoi_nhan();
 
+    String getSo_dien_thoai();
+
     String getDia_chi();
 
     String getMa_voucher();

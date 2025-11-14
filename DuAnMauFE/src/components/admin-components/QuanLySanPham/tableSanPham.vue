@@ -49,9 +49,10 @@
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'trang_thai'">
                         <a-switch @change="(checked) => handleSwitchClick(record.id_san_pham, checked)"
-                            :style="{ backgroundColor: record.trang_thai === true ? '#f33b47' : '#ccc' }"
+                            :style="{ backgroundColor: record.trang_thai === true ? '#ff6600' : '#ccc' }"
                             :checked="record.trang_thai === true"
-                            :disabled="record.trang_thai === false" />
+                            :disabled="record.trang_thai === false"
+                            class="custom-orange-switch" />
                         <!-- <span class="ms-2">{{ record.trang_thai === true ? 'Hoạt động' : 'Không hoạt động' }}</span> -->
                     </template>
                     <template v-if="column.key === 'hinh_anh'">
@@ -61,14 +62,20 @@
                         {{ formatCurrency(record.gia_ban) }}
                     </template>
                     <template v-if="column.key === 'action'">
-                        <div class="d-flex gap-2">
-                            <a-button v-if="store.id_roles !== 3" type="" @click="changeRouter(record.id_san_pham)"
-                                style="color: white;" class="d-flex align-items-center btn btn-warning">
-                                <EditOutlined />Sửa
-                            </a-button>
+                        <div class="action-buttons d-flex gap-2">
                             <a-button type="primary" @click="() => showVariants(record)"
-                                class="d-flex align-items-center">
+                                class="d-flex align-items-center view-btn primary-btn-table"
+                                title="Xem chi tiết biến thể"
+                                size="small" style="background-color: #ff6600 !important; border-color: #ff6600 !important;">
                                 <EyeOutlined />
+                                <span class="btn-text">Xem</span>
+                            </a-button>
+                            <a-button v-if="store.id_roles !== 3" type="danger" @click="changeRouter(record.id_san_pham)"
+                                class="d-flex align-items-center btn btn-danger edit-btn danger-btn-table"
+                                title="Chỉnh sửa sản phẩm"
+                                size="small" style="background-color: white !important; border-color: #ff6600 !important; color: #ff6600 !important;">
+                                <EditOutlined />
+                                <span class="btn-text">Sửa</span>
                             </a-button>
                         </div>
                     </template>
@@ -76,14 +83,14 @@
             </a-table>
 
             <!-- Cache info -->
-            <a-alert class="mt-3" type="info" show-icon>
+            <!-- <a-alert class="mt-3" type="info" show-icon>
                 <template #message>
                     <span>Dữ liệu được lưu trong bộ nhớ tạm (cache) để tối ưu tốc độ tải. Thời gian lưu: 5 phút.</span>
                 </template>
                 <template #description>
                     <span>Thời gian tải trang: {{ loadTime }}ms</span>
                 </template>
-            </a-alert>
+            </a-alert> -->
         </template>
 
         <!-- Drawer for product variants -->
@@ -99,7 +106,7 @@
                             <div>
                                 <p><strong>Mã sản phẩm:</strong> {{ currentProduct.ma_san_pham }}</p>
                                 <p>
-                                    <strong>Trạng thái:</strong> 
+                                    <strong>Trạng thái:</strong>
                                     <span :class="currentProduct.trang_thai === true ? 'text-success' : 'text-danger'">
                                         {{ currentProduct.trang_thai === true ? 'Hoạt động' : 'Không hoạt động' }}
                                     </span>
@@ -151,9 +158,10 @@
                             <template #bodyCell="{ column, record: ctspRecord }">
                                 <template v-if="column.key === 'trang_thai'">
                                     <a-switch
-                                        :style="{ backgroundColor: ctspRecord.trang_thai === true ? '#f33b47' : '#ccc' }"
+                                        :style="{ backgroundColor: ctspRecord.trang_thai === true ? '#ff6600' : '#ccc' }"
                                         size="small" :checked="ctspRecord.trang_thai === true"
-                                        @change="() => changeStatusCTSP(ctspRecord)" />
+                                        @change="() => changeStatusCTSP(ctspRecord)"
+                                        class="custom-orange-switch" />
                                     <!-- <span class="ms-2 small">{{ ctspRecord.trang_thai === true ? 'Hoạt động' : 'Không hoạt động' }}</span> -->
                                 </template>
                                 <template v-if="column.key === 'gia_ban'">
@@ -372,7 +380,7 @@ const verifyDataQuality = () => {
         console.warn('verifyDataQuality: Không có dữ liệu để kiểm tra');
         return;
     }
-    
+
     // Kiểm tra trạng thái
     const totalItems = displayData.value.length;
     const booleanStatusItems = displayData.value.filter(item => typeof item.trang_thai === 'boolean').length;
@@ -380,13 +388,13 @@ const verifyDataQuality = () => {
     const falseStatusItems = displayData.value.filter(item => item.trang_thai === false).length;
     const stringStatusItems = displayData.value.filter(item => typeof item.trang_thai === 'string').length;
     const undefinedStatusItems = displayData.value.filter(item => item.trang_thai === undefined).length;
-    
+
     console.log('================ KIỂM TRA CHẤT LƯỢNG DỮ LIỆU ================');
     console.log(`Tổng số sản phẩm: ${totalItems}`);
     console.log(`Số sản phẩm có trạng thái kiểu Boolean: ${booleanStatusItems} (${(booleanStatusItems/totalItems*100).toFixed(1)}%)`);
     console.log(`Số sản phẩm có trạng thái true: ${trueStatusItems} (${(trueStatusItems/totalItems*100).toFixed(1)}%)`);
     console.log(`Số sản phẩm có trạng thái false: ${falseStatusItems} (${(falseStatusItems/totalItems*100).toFixed(1)}%)`);
-    
+
     if (stringStatusItems > 0) {
         console.warn(`Có ${stringStatusItems} sản phẩm có trạng thái kiểu String! Cần chuyển đổi.`);
         // Liệt kê các giá trị string độc đáo
@@ -395,11 +403,11 @@ const verifyDataQuality = () => {
             .map(item => item.trang_thai));
         console.warn('Giá trị chuỗi được tìm thấy:', Array.from(uniqueStringValues));
     }
-    
+
     if (undefinedStatusItems > 0) {
         console.warn(`Có ${undefinedStatusItems} sản phẩm có trạng thái undefined! Cần kiểm tra.`);
     }
-    
+
     // Kiểm tra tổng cộng
     if (trueStatusItems + falseStatusItems !== totalItems) {
         console.error(`Tổng số không khớp! Tổng cộng (${trueStatusItems + falseStatusItems}) khác với tổng số sản phẩm (${totalItems})`);
@@ -478,8 +486,8 @@ const columns = [
             // Xử lý đường dẫn ảnh
             let imageUrl = text;
             if (!text.startsWith('http')) {
-                imageUrl = text.startsWith('/') ? 
-                    `http://localhost:8080${text}` : 
+                imageUrl = text.startsWith('/') ?
+                    `http://localhost:8080${text}` :
                     `http://localhost:8080/${text}`;
             }
             return h('img', {
@@ -677,12 +685,12 @@ const getCTSPForProduct = async (product) => {
         // Gọi API để lấy CTSP cho sản phẩm cụ thể
         console.log('Gọi API lấy CTSP cho sản phẩm:', product.id_san_pham);
         await store.getCTSPBySanPham(product.id_san_pham);
-        
+
         // Lấy và kiểm tra dữ liệu trả về từ API
         const rawData = store.getCTSPBySanPhams;
         if (rawData && rawData.length > 0) {
             console.log('Dữ liệu CTSP nhận được từ API:', rawData.length, 'bản ghi');
-            
+
             // Kiểm tra kiểu dữ liệu của trường trang_thai trong bản ghi đầu tiên để debug
             if (rawData.length > 0) {
                 const firstItem = rawData[0];
@@ -690,17 +698,17 @@ const getCTSPForProduct = async (product) => {
                 console.log(`- Giá trị: ${firstItem.trang_thai}`);
                 console.log(`- Kiểu dữ liệu: ${typeof firstItem.trang_thai}`);
             }
-            
+
             // Đếm số lượng trạng thái mỗi loại
             const booleanStatusItems = rawData.filter(item => typeof item.trang_thai === 'boolean').length;
             const stringStatusItems = rawData.filter(item => typeof item.trang_thai === 'string').length;
             const undefinedStatusItems = rawData.filter(item => item.trang_thai === undefined).length;
-            
+
             if (stringStatusItems > 0) {
                 console.warn(`${stringStatusItems}/${rawData.length} chi tiết sản phẩm có trạng thái dạng chuỗi - sẽ được chuyển đổi.`);
             }
         }
-        
+
         // Chuyển đổi và chuẩn hóa dữ liệu CTSP
         const ctspList = store.getCTSPBySanPhams.map(ctsp => {
             // Xử lý trạng thái
@@ -715,7 +723,7 @@ const getCTSPForProduct = async (product) => {
                 // Các trường hợp còn lại đều xem là false
                 trangThai = false;
             }
-            
+
             return {
                 key: ctsp.id_chi_tiet_san_pham,
                 id_chi_tiet_san_pham: ctsp.id_chi_tiet_san_pham,
@@ -864,7 +872,7 @@ const changeStatusCTSP = async (ctspRecord) => {
                 key: messageKey,
                 duration: 2
             });
-            
+
             // Kiểm tra xem có thông tin cập nhật sản phẩm cha không
             if (result.data && result.data.sanPham && result.data.sanPham.id_san_pham !== undefined) {
                 const parentId = result.data.sanPham.id_san_pham;
@@ -957,38 +965,38 @@ const displayData = ref([]);
 const filteredDisplayData = computed(() => {
     if (statusFilter.value !== "") {
         const filterValue = statusFilter.value;
-        console.log(`Đang lọc với statusFilter:`, filterValue, 
+        console.log(`Đang lọc với statusFilter:`, filterValue,
                    `kiểu: ${typeof filterValue}`);
-        
+
         // Đếm sản phẩm theo từng trạng thái trước khi lọc
         const trueCount = displayData.value.filter(
             item => item.trang_thai === true).length;
         const falseCount = displayData.value.filter(
             item => item.trang_thai === false).length;
         const otherCount = displayData.value.length - trueCount - falseCount;
-        
+
         console.log(`Trước khi lọc: ${displayData.value.length} sản phẩm`);
         console.log(`- ${trueCount} sản phẩm hoạt động (true)`);
         console.log(`- ${falseCount} sản phẩm không hoạt động (false)`);
         if (otherCount > 0) {
             console.log(`- ${otherCount} sản phẩm có trạng thái khác Boolean`);
         }
-        
+
         // Lọc với xử lý chặt chẽ hơn
         const result = displayData.value.filter(item => {
             // Chuyển đổi nếu cần
-            const itemStatus = typeof item.trang_thai === 'string' 
-                ? (item.trang_thai === 'Hoạt động' || item.trang_thai === 'true') 
+            const itemStatus = typeof item.trang_thai === 'string'
+                ? (item.trang_thai === 'Hoạt động' || item.trang_thai === 'true')
                 : item.trang_thai;
-                
+
             // So sánh với filterValue
             return itemStatus === filterValue;
         });
-        
+
         console.log(`Kết quả lọc: ${result.length} sản phẩm`);
         return result;
     }
-    
+
     return displayData.value;
 });
 // Tham chiếu tới menuAction component
@@ -1001,7 +1009,7 @@ const refreshData = async () => {
         // Xóa cache để đảm bảo tải dữ liệu mới nhất
         clearAllProductsCache();
         forceRefresh.value = true;
-        
+
         // Reset các tham số tìm kiếm và lọc
         store.resetSearchFilterParams();
 
@@ -1014,7 +1022,7 @@ const refreshData = async () => {
 
         data.value = formattedData;
         displayData.value = formattedData;
-        
+
         // Kiểm tra chất lượng dữ liệu sau khi làm mới
         verifyDataQuality();
 
@@ -1066,7 +1074,7 @@ const filteredCTSPData = computed(() => {
     const activeCount = ctspList.filter(item => item.trang_thai === true).length;
     const inactiveCount = ctspList.filter(item => item.trang_thai === false).length;
     const otherCount = ctspList.length - activeCount - inactiveCount;
-    
+
     if (ctspList.length > 0 && otherCount > 0) {
         console.warn(`Có ${otherCount} chi tiết sản phẩm có trạng thái không phải Boolean! Cần kiểm tra.`);
         // Kiểm tra và chuyển đổi lại trạng thái
@@ -1082,7 +1090,7 @@ const filteredCTSPData = computed(() => {
             }
         });
     }
-    
+
     // Nếu không có bộ lọc trạng thái (giá trị rỗng), trả về tất cả
     if (ctspStatusFilter.value === "") {
         return ctspList;
@@ -1091,11 +1099,11 @@ const filteredCTSPData = computed(() => {
     // Lọc theo trạng thái (true hoặc false) - đảm bảo đúng kiểu dữ liệu
     const filterValue = ctspStatusFilter.value;
     console.log(`Đang lọc ${ctspList.length} chi tiết sản phẩm theo trạng thái: ${filterValue ? 'Hoạt động' : 'Không hoạt động'}`);
-    
+
     // In thông tin về kết quả lọc
     const result = ctspList.filter(item => item.trang_thai === filterValue);
     console.log(`Kết quả lọc: ${result.length}/${ctspList.length} chi tiết`);
-    
+
     return result;
 });
 
@@ -1108,25 +1116,25 @@ const filterCTSPByStatus = () => {
 const handleImageError = (e) => {
     const imgElement = e.target;
     const originalSrc = imgElement.src;
-    
+
     console.error('Không thể tải hình ảnh:', originalSrc);
-    
+
     // Thêm cache-buster và loading state
     const timestamp = Date.now();
     const cacheBustedSrc = `${originalSrc}${originalSrc.includes('?') ? '&' : '?'}_=${timestamp}`;
-    
+
     // Hiển thị trạng thái loading
     imgElement.src = 'https://placehold.co/150x150?text=Đang+tải...';
-    
+
     setTimeout(() => {
         const img = new Image();
         img.src = cacheBustedSrc;
-        
+
         img.onload = () => {
             imgElement.src = cacheBustedSrc;
             console.log('Tải lại thành công với cache-buster:', cacheBustedSrc);
         };
-        
+
         img.onerror = () => {
             imgElement.src = 'https://placehold.co/150x150/gray/white?text=No+Image';
             console.log('Lỗi tải lại với cache-buster');
@@ -1325,7 +1333,7 @@ const formatProductData = (products) => {
         console.warn('Dữ liệu sản phẩm không hợp lệ:', products);
         return [];
     }
-    
+
     console.log('Format dữ liệu cho', products.length, 'sản phẩm');
     // Log mẫu một sản phẩm để debug
     if (products.length > 0) {
@@ -1335,29 +1343,29 @@ const formatProductData = (products) => {
         console.log('Không có dữ liệu sản phẩm để format');
         return [];
     }
-    
+
     console.log('Dữ liệu gốc từ API (3 sản phẩm đầu):', products.slice(0, 3));
-    
+
     return products.map((item, index) => {
         // Xác định trạng thái Boolean một cách nhất quán
         let trangThai;
         if (typeof item.trang_thai === 'boolean') {
             // Nếu đã là boolean, giữ nguyên
             trangThai = item.trang_thai;
-        } else if (item.trang_thai === true || item.trang_thai === 'true' || 
-                  item.trang_thai === 1 || item.trang_thai === '1' || 
+        } else if (item.trang_thai === true || item.trang_thai === 'true' ||
+                  item.trang_thai === 1 || item.trang_thai === '1' ||
                   item.trang_thai === 'Hoạt động') {
             trangThai = true;
         } else {
             // Tất cả các trường hợp còn lại đều xem là false
             trangThai = false;
         }
-        
+
         if (index < 3) {
-            console.log(`SP #${index + 1}: ${item.ten_san_pham}, trạng thái gốc:`, 
+            console.log(`SP #${index + 1}: ${item.ten_san_pham}, trạng thái gốc:`,
                        item.trang_thai, 'đã chuyển thành:', trangThai);
         }
-        
+
         return {
             stt: index + 1,
             key: item.id_san_pham,
@@ -1386,7 +1394,7 @@ onMounted(async () => {
 //     console.error('Lỗi khi tải dữ liệu:', error);
 //     message.error('Có lỗi xảy ra khi tải dữ liệu');
 // } finally {
-//     isLoading.value = false;    
+//     isLoading.value = false;
 // }
     try {
         const startTime = performance.now();
@@ -1400,12 +1408,12 @@ onMounted(async () => {
         // Xóa cache để đảm bảo tải dữ liệu mới nhất từ API khi tải lại trang
         clearAllProductsCache();
         forceRefresh.value = true;
-        
+
         // Kiểm tra xem đã có dữ liệu lọc chưa
         if (store.filteredProductsData && store.filteredProductsData.length > 0) {
             console.log("Có dữ liệu lọc trong store, số lượng:", store.filteredProductsData.length);
             console.log("Trạng thái justAddedProduct:", store.justAddedProduct);
-            
+
             if(!store.justAddedProduct){
                 displayData.value = formatProductData(store.filteredProductsData);
                 console.log('Khởi tạo displayData với filteredProductsData:', displayData.value.length, 'sản phẩm');
@@ -1429,7 +1437,7 @@ onMounted(async () => {
                 await store.getAllSP();
                 console.log('Tải xong, số lượng:', store.getAllSanPham.length);
             }
-            
+
             // Format dữ liệu và cập nhật display
             data.value = formatProductData(store.getAllSanPham);
             displayData.value = formatProductData(store.getAllSanPham);
@@ -1438,11 +1446,11 @@ onMounted(async () => {
         // Kiểm tra sản phẩm theo trạng thái sau khi tải xong
         const activeCount = displayData.value.filter(item => item.trang_thai === true).length;
         const inactiveCount = displayData.value.filter(item => item.trang_thai === false).length;
-        console.log(`Phân tích dữ liệu sau khi tải:`); 
-        console.log(`- Tổng số sản phẩm: ${displayData.value.length}`); 
-        console.log(`- Số sản phẩm hoạt động: ${activeCount}`); 
-        console.log(`- Số sản phẩm không hoạt động: ${inactiveCount}`); 
-        
+        console.log(`Phân tích dữ liệu sau khi tải:`);
+        console.log(`- Tổng số sản phẩm: ${displayData.value.length}`);
+        console.log(`- Số sản phẩm hoạt động: ${activeCount}`);
+        console.log(`- Số sản phẩm không hoạt động: ${inactiveCount}`);
+
         // Kiểm tra chất lượng dữ liệu chi tiết
         verifyDataQuality();
 
@@ -1504,40 +1512,39 @@ onUnmounted(() => {
     margin-right: 5px;
 }
 
-/* Style cho nút lọc trạng thái với màu #f33b47 */
+/* Style cho nút lọc trạng thái với màu cam đậm #ff6600 */
 :deep(.custom-radio-group) {
     .ant-radio-button-wrapper {
         color: white;
-        background-color: #f33b47;
-        border-color: #f33b47;
+        background-color: #ff6600;
+        border-color: #ff6600;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 
         &:first-child {
-            border-left-color: #f33b47;
+            border-left-color: #ff6600;
         }
 
         &:hover {
             color: white;
-            background-color: #ff6b76;
-            border-color: #ff6b76;
+            background-color: #e55a00;
+            border-color: #e55a00;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
         &.ant-radio-button-wrapper-checked {
-            background-color: #d62a38;
-            border-color: #d62a38;
-            box-shadow: 0 4px 8px rgba(214, 42, 56, 0.3);
+            background-color: #e55a00;
+            border-color: #e55a00;
+            box-shadow: 0 4px 8px rgba(229, 90, 0, 0.3);
 
             &:before {
-                background-color: #d62a38;
+                background-color: #e55a00;
             }
         }
 
         &:focus-within {
-            box-shadow: 0 0 0 3px rgba(243, 59, 71, 0.3);
+            box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.3);
         }
     }
 }
@@ -1550,35 +1557,35 @@ onUnmounted(() => {
 :deep(.variant-status-filter .custom-radio-group) {
     .ant-radio-button-wrapper {
         color: white;
-        background-color: #f33b47;
-        border-color: #f33b47;
+        background-color: #ff6600;
+        border-color: #ff6600;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 
         &:first-child {
-            border-left-color: #f33b47;
+            border-left-color: #ff6600;
         }
 
         &:hover {
             color: white;
-            background-color: #ff6b76;
-            border-color: #ff6b76;
+            background-color: #e55a00;
+            border-color: #e55a00;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
         &.ant-radio-button-wrapper-checked {
-            background-color: #d62a38;
-            border-color: #d62a38;
-            box-shadow: 0 4px 8px rgba(214, 42, 56, 0.3);
+            background-color: #e55a00;
+            border-color: #e55a00;
+            box-shadow: 0 4px 8px rgba(229, 90, 0, 0.3);
 
             &:before {
-                background-color: #d62a38;
+                background-color: #e55a00;
             }
         }
 
         &:focus-within {
-            box-shadow: 0 0 0 3px rgba(243, 59, 71, 0.3);
+            box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.3);
         }
     }
 }
@@ -1673,20 +1680,61 @@ onUnmounted(() => {
     transform: translateY(-2px);
 }
 
+/* ===== WHITE & DEEP ORANGE BUTTON STYLING ===== */
+
+/* Primary buttons - Deep Orange theme */
+:deep(.ant-btn-primary) {
+    background: #ff6600 !important; /* Deep orange */
+    border-color: #ff6600 !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.3) !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 8px !important;
+    font-weight: 500;
+}
+
+:deep(.ant-btn-primary:hover),
+:deep(.ant-btn-primary:focus) {
+    background: #e55a00 !important; /* Darker orange */
+    border-color: #e55a00 !important;
+    box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4) !important;
+    transform: translateY(-2px);
+}
+
+/* Edit buttons (Warning style) - Deep Orange theme */
+:deep(.btn-warning) {
+    background: white !important;
+    border-color: #ff6600 !important;
+    color: #ff6600 !important;
+    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.2) !important;
+    border-radius: 8px !important;
+    font-weight: 500;
+}
+
+:deep(.btn-warning:hover) {
+    background: rgba(255, 102, 0, 0.1) !important;
+    border-color: #ff6600 !important;
+    color: #e55a00 !important;
+    box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3) !important;
+    transform: translateY(-2px);
+}
+
 /* Style nút biến thể */
 :deep(.d-flex .ant-btn) {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 15px;
-    border-radius: 6px;
+    padding: 6px 15px;
+    border-radius: 8px;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-color: #ff6600 !important;
 }
 
 :deep(.d-flex .ant-btn:hover) {
     transform: translateY(-2px);
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    border-color: #e55a00 !important;
 }
 
 :deep(.d-flex .ant-btn .anticon) {
@@ -1694,19 +1742,51 @@ onUnmounted(() => {
 }
 
 :deep(.d-flex .ant-btn:hover .anticon) {
-    transform: scale(1.2);
+    transform: scale(1.1);
 }
 
-:deep(.btn-warning) {
-    background: #faad14;
-    border-color: #faad14;
-    box-shadow: 0 2px 5px rgba(250, 173, 20, 0.3);
+/* Bulk action buttons - Enhanced styling */
+.bulk-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 18px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15) !important;
+    min-height: 40px !important;
 }
 
-:deep(.btn-warning:hover) {
-    background: #ffc53d;
-    border-color: #ffc53d;
-    box-shadow: 0 4px 10px rgba(250, 173, 20, 0.4);
+.bulk-action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.bulk-action-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Danger buttons - Deep orange danger style */
+:deep(.ant-btn-dangerous) {
+    background: #ff6600 !important;
+    border-color: #ff6600 !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.3) !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 8px !important;
+    font-weight: 500;
+}
+
+:deep(.ant-btn-dangerous:hover),
+:deep(.ant-btn-dangerous:focus) {
+    background: #e55a00 !important;
+    border-color: #e55a00 !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4) !important;
+    transform: translateY(-2px);
 }
 
 /* Style cho nút làm mới */
@@ -1845,6 +1925,168 @@ onUnmounted(() => {
     100% {
         transform: scale(1);
         opacity: 1;
+    }
+}
+
+/* ===== RESPONSIVE DESIGN FOR WHITE & ORANGE THEME ===== */
+
+/* Mobile and Tablet Styles */
+@media (max-width: 992px) {
+    .action-buttons {
+        flex-direction: column !important;
+        gap: 4px !important;
+        width: 100% !important;
+    }
+
+    .action-buttons .ant-btn {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+    }
+
+    .action-buttons .btn-text {
+        display: inline !important; /* Show text on mobile */
+    }
+
+    /* Reduce table column sizes on mobile */
+    .ant-table {
+        font-size: 12px !important;
+    }
+
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+        padding: 8px 4px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .view-btn .btn-text,
+    .edit-btn .btn-text {
+        display: none !important; /* Hide text on small screens to save space */
+    }
+
+    .action-buttons .ant-btn {
+        padding: 6px 8px !important;
+        min-width: 35px !important;
+    }
+
+    /* Mobile table scroll */
+    .ant-table-content {
+        overflow-x: auto !important;
+    }
+
+    /* Stack bulk action buttons vertically on mobile */
+    .bulk-actions {
+        flex-direction: column !important;
+    }
+
+    .bulk-actions .bulk-action-btn {
+        width: 100% !important;
+        margin-bottom: 8px !important;
+    }
+}
+
+/* Desktop specific enhancements */
+@media (min-width: 993px) {
+    .action-buttons .ant-btn {
+        min-width: 70px !important; /* Ensure minimum width on desktop */
+    }
+
+    .btn-text {
+        display: inline !important; /* Show text on desktop */
+    }
+}
+
+/* Ensure table text remains black as requested */
+:deep(.ant-table-cell) {
+    color: #000000 !important; /* Force black text in table cells */
+}
+
+:deep(.ant-table-thead .ant-table-cell) {
+    color: #000000 !important; /* Headers also black */
+}
+
+:deep(.ant-table-row .ant-table-cell) {
+    color: #000000 !important; /* Data rows black */
+}
+
+/* Keep data text black but allow button text to be colored */
+.action-buttons .ant-btn {
+    color: inherit !important; /* Preserve button text colors */
+}
+
+/* Enhanced table appearance */
+:deep(.ant-table) {
+    background: white !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 10px rgba(255, 102, 0, 0.1) !important;
+}
+
+:deep(.ant-table-thead > tr > th) {
+    background: #f8f9fa !important;
+    border-bottom: 2px solid #ff6600 !important;
+    font-weight: 600 !important;
+    color: #000000 !important;
+}
+
+/* Hover effects for table rows */
+:deep(.ant-table-row:hover > td) {
+    background-color: rgba(255, 102, 0, 0.03) !important;
+}
+
+/* Pagination styling - Orange theme */
+:deep(.ant-pagination) {
+    .ant-pagination-item {
+        border-color: #ff6600 !important;
+        border-radius: 6px !important;
+        transition: all 0.3s ease !important;
+
+        a {
+            color: #ff6600 !important;
+        }
+
+        &:hover {
+            border-color: #e55a00 !important;
+        }
+
+        &:hover a {
+            color: #e55a00 !important;
+        }
+    }
+
+    .ant-pagination-item-active {
+        background: #ff6600 !important;
+        border-color: #ff6600 !important;
+
+        a {
+            color: white !important;
+        }
+    }
+
+    .ant-btn {
+        border-color: #ff6600 !important;
+        border-radius: 6px !important;
+        transition: all 0.3s ease !important;
+
+        &:hover {
+            border-color: #e55a00 !important;
+            color: #e55a00 !important;
+        }
+    }
+
+    .ant-pagination-options .ant-select-selector {
+        border-color: #ff6600 !important;
+        border-radius: 6px !important;
+
+        &:hover {
+            border-color: #e55a00 !important;
+        }
+    }
+
+    .ant-pagination-options .ant-select-arrow {
+        color: #ff6600 !important;
     }
 }
 </style>

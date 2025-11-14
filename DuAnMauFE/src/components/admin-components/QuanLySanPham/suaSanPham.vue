@@ -1658,4 +1658,172 @@ const resetForm = () => {
     border-color: #1890ff;
 }
 
+/* ========== ORANGE THEME OVERRIDES ========== */
+
+/* Orange primary colors */
+:deep(.ant-btn-primary),
+:deep(.ant-btn-primary:hover),
+:deep(.ant-btn-primary:focus) {
+    background: #ff6b35 !important;
+    border-color: #ff6b35 !important;
+    color: #fff !important;
+}
+
+:deep(.ant-btn-primary:hover) {
+    background: #e55a2b !important;
+    border-color: #e55a2b !important;
+}
+
+:deep(.ant-btn-primary:active) {
+    background: #cc4f27 !important;
+    border-color: #cc4f27 !important;
+}
+
+/* Orange input borders on focus */
+:deep(.ant-input:focus),
+:deep(.ant-input-focused) {
+    border-color: #ff6b35 !important;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2) !important;
+}
+
+:deep(.ant-select-focused .ant-select-selector),
+:deep(.ant-select:focus .ant-select-selector) {
+    border-color: #ff6b35 !important;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2) !important;
+}
+
+:deep(.ant-input-number-focused .ant-input-number-input) {
+    border-color: #ff6b35 !important;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2) !important;
+}
+
+/* Orange hover effects */
+:deep(.ant-auto-complete .ant-input:hover),
+:deep(.ant-select:hover .ant-select-selector),
+:deep(.ant-input-number:hover) {
+    border-color: #ff6b35 !important;
+}
+
+/* Quill editor orange theme */
+:deep(.ql-container:hover),
+:deep(.ql-toolbar:hover),
+:deep(.ql-container:focus),
+:deep(.ql-toolbar:focus) {
+    border-color: #ff6b35 !important;
+}
+
+:deep(.ql-toolbar button:hover .ql-stroke) {
+    stroke: #ff6b35 !important;
+}
+
+:deep(.ql-toolbar button:hover .ql-fill) {
+    fill: #ff6b35 !important;
+}
+
+:deep(.ql-toolbar button.ql-active .ql-stroke) {
+    stroke: #ff6b35 !important;
+}
+
+:deep(.ql-toolbar button.ql-active .ql-fill) {
+    fill: #ff6b35 !important;
+}
+
+/* Orange tabs */
+:deep(.ant-tabs-tab:hover) {
+    color: #ff6b35 !important;
+}
+
+:deep(.ant-tabs-tab.ant-tabs-tab-active) {
+    color: #ff6b35 !important;
+    border-bottom-color: #ff6b35 !important;
+}
+
+:deep(.ant-tabs-ink-bar) {
+    background-color: #ff6b35 !important;
+}
+
+/* Orange alerts and badges */
+:deep(.ant-alert-warning) {
+    border-color: #ff6b35 !important;
+    background-color: #fff7e6 !important;
+}
+
+:deep(.ant-alert-warning .ant-alert-icon) {
+    color: #ff6b35 !important;
+}
+
+/* Orange modal buttons */
+:deep(.ant-modal-footer .ant-btn-primary) {
+    background: #ff6b35 !important;
+    border-color: #ff6b35 !important;
+}
+
+:deep(.ant-modal-footer .ant-btn-primary:hover) {
+    background: #e55a2b !important;
+    border-color: #e55a2b !important;
+}
+
+/* Orange checkboxes and switches */
+:deep(.ant-checkbox-checked .ant-checkbox-inner) {
+    background: #ff6b35 !important;
+    border-color: #ff6b35 !important;
+}
+
+:deep(.ant-switch-checked) {
+    background: #ff6b35 !important;
+    border-color: #ff6b35 !important;
+}
+
+/* Orange radio buttons */
+:deep(.ant-radio-wrapper:hover .ant-radio-inner) {
+    border-color: #ff6b35 !important;
+}
+
+:deep(.ant-radio-checked .ant-radio-inner) {
+    border-color: #ff6b35 !important;
+    background: #fff !important;
+}
+
+:deep(.ant-radio-checked .ant-radio-inner::after) {
+    background-color: #ff6b35 !important;
+}
+
+/* Orange selection colors */
+:deep(.ant-select-selection-item) {
+    background-color: #fff7e6 !important;
+    border-color: #ffd591 !important;
+    color: #d46b08 !important;
+}
+
+/* Orange table hover */
+:deep(.ant-table-tbody > tr:hover > td) {
+    background: #fff7e6 !important;
+}
+
+/* Orange text links */
+:deep(.ant-typography a),
+:deep(.ant-link) {
+    color: #ff6b35 !important;
+}
+
+:deep(.ant-typography a:hover),
+:deep(.ant-link:hover) {
+    color: #e55a2b !important;
+}
+
+/* Orange text selection */
+::selection {
+    background-color: rgba(255, 107, 53, 0.3) !important;
+    color: inherit !important;
+}
+
+/* Loading spinners orange */
+:deep(.ant-spin-nested-loading .ant-spin-container .ant-spin-spinning) {
+    color: #ff6b35 !important;
+}
+
+:deep(.ant-spin-dot-item) {
+    background-color: #ff6b35 !important;
+}
+
 </style>

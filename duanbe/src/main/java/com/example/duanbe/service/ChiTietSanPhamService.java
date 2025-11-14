@@ -123,7 +123,14 @@ public class ChiTietSanPhamService {
                     // Sao chép các thuộc tính cơ bản (có thể loại trừ sanPham)
                     chiTietSanPham.setGia_ban(chiTietSanPhamRequest.getGia_ban());
                     chiTietSanPham.setSo_luong(chiTietSanPhamRequest.getSo_luong());
-                    // chiTietSanPham.setTrang_thai(chiTietSanPhamRequest.getTrang_thai());
+                    
+                    // Tự động cập nhật trạng thái dựa trên số lượng
+                    if (chiTietSanPhamRequest.getSo_luong() > 0) {
+                        chiTietSanPham.setTrang_thai(true);
+                    } else {
+                        chiTietSanPham.setTrang_thai(false);
+                    }
+                    
                     chiTietSanPham.setQr_code(chiTietSanPhamRequest.getQr_code());
 
                     // Giữ ngày tạo gốc
@@ -146,6 +153,13 @@ public class ChiTietSanPhamService {
                     chiTietSanPham = existingSanPhamByAttributes.get();
                     oldQuantity = chiTietSanPham.getSo_luong();
                     chiTietSanPham.setSo_luong(oldQuantity + chiTietSanPhamRequest.getSo_luong());
+
+                    // Tự động cập nhật trạng thái dựa trên số lượng mới
+                    if (chiTietSanPham.getSo_luong() > 0) {
+                        chiTietSanPham.setTrang_thai(true);
+                    } else {
+                        chiTietSanPham.setTrang_thai(false);
+                    }
 
                     // Đánh dấu đây là trường hợp cập nhật theo thuộc tính
                     isUpdateByAttribute = true;

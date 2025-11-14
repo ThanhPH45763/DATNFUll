@@ -644,7 +644,8 @@ public class HoaDonController {
             BigDecimal phiVanChuyen = hd.getPhi_van_chuyen() != null ? hd.getPhi_van_chuyen() : BigDecimal.ZERO;
             BigDecimal tongTienSauGiamCu = hd.getTong_tien_sau_giam() != null ? hd.getTong_tien_sau_giam() : BigDecimal.ZERO;
             BigDecimal tongTienTruocGiamCu = hd.getTong_tien_truoc_giam() != null ? hd.getTong_tien_truoc_giam() : BigDecimal.ZERO;
-            BigDecimal tienGiamCu = tongTienTruocGiamCu.add(phiVanChuyen).subtract(tongTienSauGiamCu);
+            // tienGiamCu = Tổng trước giảm - Tổng sau giảm (bao gồm cả voucher đã trừ)
+            BigDecimal tienGiamCu = tongTienTruocGiamCu.subtract(tongTienSauGiamCu);
             BigDecimal phuThu = isOnlineCash ? BigDecimal.ZERO : (hd.getPhu_thu() != null ? hd.getPhu_thu() : BigDecimal.ZERO);
 
             // Kiểm tra trạng thái gần nhất (bỏ qua "Đã cập nhật")
@@ -725,11 +726,14 @@ public class HoaDonController {
                     hoaDonChiTietRepo.save(hoaDonChiTiet);
                 }
             }
-            // Tính tổng tiền trước giảm
+            // Tính tổng tiền sản phẩm
             List<HoaDonChiTiet> chiTietList = hoaDonChiTietRepo.findByIdHoaDon(idHoaDon);
-            BigDecimal tongTienTruocGiam = chiTietList.stream()
+            BigDecimal tongTienSanPham = chiTietList.stream()
                     .map(HoaDonChiTiet::getDon_gia)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Tính tổng tiền trước giảm = Tổng SP + Phí ship
+            BigDecimal tongTienTruocGiam = tongTienSanPham.add(phiVanChuyen);
 
             // Tính lại số tiền giảm nếu có voucher
             BigDecimal tienGiam = BigDecimal.ZERO;
@@ -738,8 +742,9 @@ public class HoaDonController {
                 Optional<Voucher> voucherOpt = voucherRepo.findById(idVoucher);
                 if (voucherOpt.isPresent()) {
                     Voucher voucher = voucherOpt.get();
+                    // Voucher chỉ tính trên tổng tiền sản phẩm, không tính trên phí ship
                     if (voucher.getKieuGiamGia().equals("Phần trăm")) {
-                        tienGiam = tongTienTruocGiam.multiply(voucher.getGiaTriGiam().divide(new BigDecimal("100")));
+                        tienGiam = tongTienSanPham.multiply(voucher.getGiaTriGiam().divide(new BigDecimal("100")));
                         if (voucher.getGiaTriToiDa() != null && tienGiam.compareTo(voucher.getGiaTriToiDa()) > 0) {
                             tienGiam = voucher.getGiaTriToiDa();
                         }
@@ -757,8 +762,10 @@ public class HoaDonController {
             BigDecimal phuThuFinal = isOnlineCash ? BigDecimal.ZERO : phuThu.add(tienThanhToanThem).subtract(giamThemTuVoucher);
 
             // Cập nhật hóa đơn
+            // tong_tien_truoc_giam = Tổng SP + Ship (chưa trừ voucher)
+            // tong_tien_sau_giam = Tổng trước giảm - Voucher (tổng cuối cùng)
             hd.setTong_tien_truoc_giam(tongTienTruocGiam);
-            hd.setTong_tien_sau_giam(tongTienTruocGiam.add(phiVanChuyen).subtract(tienGiam));
+            hd.setTong_tien_sau_giam(tongTienTruocGiam.subtract(tienGiam));
             hd.setPhu_thu(phuThuFinal);
             hd.setNgay_sua(LocalDateTime.now());
             hoaDonRepo.save(hd);
@@ -924,7 +931,8 @@ public class HoaDonController {
             BigDecimal phiVanChuyen = hoaDon.getPhi_van_chuyen() != null ? hoaDon.getPhi_van_chuyen() : BigDecimal.ZERO;
             BigDecimal tongTienSauGiamCu = hoaDon.getTong_tien_sau_giam() != null ? hoaDon.getTong_tien_sau_giam() : BigDecimal.ZERO;
             BigDecimal tongTienTruocGiamCu = hoaDon.getTong_tien_truoc_giam() != null ? hoaDon.getTong_tien_truoc_giam() : BigDecimal.ZERO;
-            BigDecimal tienGiamCu = tongTienTruocGiamCu.add(phiVanChuyen).subtract(tongTienSauGiamCu);
+            // tienGiamCu = Tổng trước giảm - Tổng sau giảm (bao gồm cả voucher đã trừ)
+            BigDecimal tienGiamCu = tongTienTruocGiamCu.subtract(tongTienSauGiamCu);
             BigDecimal phuThu = isOnlineCash ? BigDecimal.ZERO : (hoaDon.getPhu_thu() != null ? hoaDon.getPhu_thu() : BigDecimal.ZERO);
 
             // Kiểm tra trạng thái gần nhất (bỏ qua "Đã cập nhật")
@@ -1015,11 +1023,14 @@ public class HoaDonController {
             hoaDonChiTiet.setDon_gia(giaSauGiam.multiply(new BigDecimal(soLuongMoi)));
             hoaDonChiTietRepo.save(hoaDonChiTiet);
 
-            // Tính tổng tiền trước giảm
+            // Tính tổng tiền sản phẩm
             List<HoaDonChiTiet> chiTietList = hoaDonChiTietRepo.findByIdHoaDon(idHoaDon);
-            BigDecimal tongTienTruocGiam = chiTietList.stream()
+            BigDecimal tongTienSanPham = chiTietList.stream()
                     .map(HoaDonChiTiet::getDon_gia)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Tính tổng tiền trước giảm = Tổng SP + Phí ship
+            BigDecimal tongTienTruocGiam = tongTienSanPham.add(phiVanChuyen);
 
             // Cập nhật phụ thu nếu tăng số lượng
             BigDecimal phuThuFinal = phuThu;
@@ -1034,8 +1045,9 @@ public class HoaDonController {
                 Optional<Voucher> voucherOpt = voucherRepo.findById(idVoucher);
                 if (voucherOpt.isPresent()) {
                     Voucher voucher = voucherOpt.get();
+                    // Voucher chỉ tính trên tổng tiền sản phẩm, không tính trên phí ship
                     if (voucher.getKieuGiamGia().equals("Phần trăm")) {
-                        tienGiam = tongTienTruocGiam.multiply(voucher.getGiaTriGiam().divide(new BigDecimal("100")));
+                        tienGiam = tongTienSanPham.multiply(voucher.getGiaTriGiam().divide(new BigDecimal("100")));
                         if (voucher.getGiaTriToiDa() != null && tienGiam.compareTo(voucher.getGiaTriToiDa()) > 0) {
                             tienGiam = voucher.getGiaTriToiDa();
                         }
@@ -1057,8 +1069,10 @@ public class HoaDonController {
             }
 
             // Cập nhật hóa đơn
+            // tong_tien_truoc_giam = Tổng SP + Ship (chưa trừ voucher)
+            // tong_tien_sau_giam = Tổng trước giảm - Voucher (tổng cuối cùng)
             hoaDon.setTong_tien_truoc_giam(tongTienTruocGiam);
-            hoaDon.setTong_tien_sau_giam(tongTienTruocGiam.add(phiVanChuyen).subtract(tienGiam));
+            hoaDon.setTong_tien_sau_giam(tongTienTruocGiam.subtract(tienGiam));
             hoaDon.setPhu_thu(phuThuFinal);
             hoaDon.setNgay_sua(LocalDateTime.now());
             hoaDonRepo.save(hoaDon);

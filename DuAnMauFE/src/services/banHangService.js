@@ -62,10 +62,10 @@ const addSPHD = async (idHoaDon, idCTSP, soLuong) => {
         return { error: true };
     }
 }
-const themSPHDMoi = async (idHoaDon, idCTSP, soLuong, giaBan) => {
+const themSPHDMoi = async (idHoaDon, idCTSP, soLuong) => {
     try {
         const { data } = await axiosInstance.post(
-            banHang + `themSPHDMoi?idHoaDon=${idHoaDon}&idCTSP=${idCTSP}&soLuong=${soLuong}&giaBan=${giaBan}`
+            banHang + `themSPHDMoi?idHoaDon=${idHoaDon}&idCTSP=${idCTSP}&soLuong=${soLuong}`
         );
         return data;
     } catch (error) {

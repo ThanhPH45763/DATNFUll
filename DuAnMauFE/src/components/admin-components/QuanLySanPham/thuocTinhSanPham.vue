@@ -50,7 +50,7 @@
                                 </template>
                                 <template v-else-if="column.key === 'status'">
                                     <a-switch v-model:checked="record.status"
-                                        :style="{ backgroundColor: record.status ? '#f33b47' : '#ccc' }"
+                                        :style="{ backgroundColor: record.status ? '#ff6b35' : '#ccc' }"
                                         @change="(checked) => handleStatusChange(index, checked)" />
                                 </template>
                             </template>
@@ -104,7 +104,7 @@
                                 </template>
                                 <template v-else-if="column.key === 'status'">
                                     <a-switch v-model:checked="record.status"
-                                        :style="{ backgroundColor: record.status ? '#f33b47' : '#ccc' }"
+                                        :style="{ backgroundColor: record.status ? '#ff6b35' : '#ccc' }"
                                         @change="(checked) => handleStatusChange(index, checked)" />
                                 </template>
                             </template>
@@ -158,7 +158,7 @@
                                 </template>
                                 <template v-else-if="column.key === 'status'">
                                     <a-switch v-model:checked="record.status"
-                                        :style="{ backgroundColor: record.status ? '#f33b47' : '#ccc' }"
+                                        :style="{ backgroundColor: record.status ? '#ff6b35' : '#ccc' }"
                                         @change="(checked) => handleStatusChange(index, checked)" />
                                 </template>
                             </template>
@@ -212,7 +212,7 @@
                                 </template>
                                 <template v-else-if="column.key === 'status'">
                                     <a-switch v-model:checked="record.status"
-                                        :style="{ backgroundColor: record.status ? '#f33b47' : '#ccc' }"
+                                        :style="{ backgroundColor: record.status ? '#ff6b35' : '#ccc' }"
                                         @change="(checked) => handleStatusChange(index, checked)" />
                                 </template>
                             </template>
@@ -270,7 +270,7 @@
                                 </template>
                                 <template v-else-if="column.key === 'status'">
                                     <a-switch v-model:checked="record.status"
-                                        :style="{ backgroundColor: record.status ? '#f33b47' : '#ccc' }"
+                                        :style="{ backgroundColor: record.status ? '#ff6b35' : '#ccc' }"
                                         @change="(checked) => handleStatusChange(index, checked)" />
                                 </template>
                             </template>

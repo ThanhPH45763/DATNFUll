@@ -244,21 +244,31 @@
                     <div class="mb-3">
                         <label class="form-label">Tổng tiền hàng (VNĐ):</label>
                         <input type="text" class="form-control"
-                            :value="formatCurrency(activeTabData.hd.tong_tien_truoc_giam)" disabled>
+                            :value="formatCurrency((activeTabData.hd.tong_tien_truoc_giam || 0) - (activeTabData.hd.phi_van_chuyen || 0))" disabled>
+                    </div>
+                    <div class="mb-3" v-if="activeTabData.hd.phuong_thuc_nhan_hang === 'Giao hàng'">
+                        <label class="form-label">Phí vận chuyển (VNĐ):</label>
+                        <input type="text" class="form-control"
+                            :value="formatCurrency(activeTabData.hd.phi_van_chuyen || 0)" disabled>
                     </div>
                     <div class="mb-3">
                         <label for="idVoucher" class="form-label">Voucher</label>
                         <select name="idVoucher" id="idVoucher" class="form-select"
                             v-model="activeTabData.hd.id_voucher" @change="updateVoucher">
-                            <option :value="null">-- Chọn voucher --</option>
+                            <option :value="null">-- Không dùng voucher --</option>
                             <option v-if="activeTabData.hd.id_voucher" :value="activeTabData.hd.id_voucher">
                                 {{ `${activeTabData.hd.ten_voucher}` }}
                             </option>
                         </select>
                     </div>
+                    <div class="mb-3" v-if="(activeTabData.hd.tong_tien_truoc_giam - activeTabData.hd.tong_tien_sau_giam) > 0">
+                        <label class="form-label">Giảm từ Voucher (VNĐ):</label>
+                        <input type="text" class="form-control text-success fw-bold"
+                            :value="'-' + formatCurrency((activeTabData.hd.tong_tien_truoc_giam || 0) - (activeTabData.hd.tong_tien_sau_giam || 0))" disabled>
+                    </div>
                     <div class="mb-3">
-                        <label class="form-label">Tổng tiền thanh toán (VNĐ):</label>
-                        <input type="text" class="form-control"
+                        <label class="form-label fw-bold">Tổng thanh toán (VNĐ):</label>
+                        <input type="text" class="form-control fw-bold fs-5"
                             :value="formatCurrency(activeTabData.hd.tong_tien_sau_giam)" disabled>
                     </div>
                     <div class="mb-3">
@@ -649,12 +659,24 @@ const handleDropdownClick = (product) => {
     addToBill(product);
 };
 
-
+// ✅ Thêm biến chống spam click
 let isAdding = false;
+let lastClickTime = 0;
+const CLICK_DELAY = 500; // ms - thời gian chờ giữa 2 lần click
 
 const addToBill = async (product) => {
-    if (isAdding) return;
+    const now = Date.now();
+    
+    // ✅ 1. Chống spam click - kiểm tra khoảng thời gian giữa 2 lần click
+    if (isAdding || (now - lastClickTime < CLICK_DELAY)) {
+        console.log('🚫 Đang xử lý yêu cầu trước, vui lòng đợi...');
+        return;
+    }
+    
+    lastClickTime = now;
     isAdding = true;
+
+    console.log('🛒 BẮT ĐẦU thêm sản phẩm:', product.ten_san_pham, 'ID:', product.id_chi_tiet_san_pham);
 
     const currentTab = activeTabData.value;
     if (!currentTab || !currentTab.hd?.id_hoa_don) {
@@ -663,22 +685,39 @@ const addToBill = async (product) => {
         return;
     }
 
-    if (product.so_luong_ton <= 0) {
+    if (product.so_luong <= 0) {
         message.warning(`Sản phẩm "${product.ten_san_pham}" đã hết hàng!`);
         isAdding = false;
         return;
     }
 
     try {
+        console.log('📡 GỌI API themSPHDMoi...');
         const result = await store.themSPHDMoi(
             currentTab.hd.id_hoa_don,
             product.id_chi_tiet_san_pham,
-            1,
-            product.gia_sau_giam || product.gia_ban
+            1
         );
-        if (!result) return;
+        
+        if (!result) {
+            console.log('❌ API themSPHDMoi thất bại');
+            isAdding = false;
+            return;
+        }
 
+        console.log('✅ API themSPHDMoi thành công');
+        console.log('📡 GỌI API getAllSPHD để refresh...');
+        
+        // ✅ 2. Refresh data từ server
         await store.getAllSPHD(currentTab.hd.id_hoa_don);
+        
+        console.log('📦 Dữ liệu từ server:', store.getAllSPHDArr.length, 'items');
+        console.log('📦 Chi tiết:', JSON.stringify(store.getAllSPHDArr.map(i => ({
+            id: i.id_chi_tiet_san_pham,
+            name: i.ten_san_pham,
+            qty: i.so_luong
+        }))));
+        
         currentTab.items.value = store.getAllSPHDArr.map(item => ({
             id_hoa_don: item.id_hoa_don,
             id_chi_tiet_san_pham: item.id_chi_tiet_san_pham,
@@ -687,20 +726,31 @@ const addToBill = async (product) => {
             mau_sac: item.ten_mau_sac || item.mau_sac || null,
             kich_thuoc: item.gia_tri || null,
             so_luong: item.so_luong,
-            gia_ban: item.don_gia,
-            tong_tien: item.don_gia * item.so_luong,
+            gia_ban: item.gia_ban,  // ✅ Giá lẻ (đơn giá 1 sản phẩm)
+            tong_tien: item.don_gia,  // ✅ Tổng tiền (đã tính sẵn từ BE)
             so_luong_ton_goc: item.so_luong_ton || 0
         }));
+        
+        console.log('🎨 Mapped items:', currentTab.items.value.length, 'items');
+        console.log('🎨 Chi tiết items:', JSON.stringify(currentTab.items.value.map(i => ({
+            id: i.id_chi_tiet_san_pham,
+            name: i.ten_san_pham,
+            qty: i.so_luong
+        }))));
+        
         await refreshHoaDon(currentTab.hd.id_hoa_don);
 
         dropdownVisible.value = false;
         searchQuery.value = '';
         message.success(`Đã thêm "${product.ten_san_pham}" vào hóa đơn.`);
+        
         await store.getAllCTSPKM();
         allProducts.value = store.getAllCTSPKMList;
+        
+        console.log('✅ HOÀN TẤT thêm sản phẩm');
 
     } catch (error) {
-        console.error('Lỗi khi thêm sản phẩm:', error);
+        console.error('💥 Lỗi khi thêm sản phẩm:', error);
         message.error('Đã xảy ra lỗi khi thêm sản phẩm!');
     } finally {
         isAdding = false;
@@ -774,8 +824,8 @@ const updateItemTotal = async (item) => {
                 mau_sac: hd.ten_mau_sac || hd.mau_sac || null,
                 kich_thuoc: hd.gia_tri || null,
                 so_luong: hd.so_luong,
-                gia_ban: hd.don_gia,
-                tong_tien: hd.don_gia * hd.so_luong,
+                gia_ban: hd.gia_ban,  // ✅ Giá lẻ
+                tong_tien: hd.don_gia,  // ✅ Tổng tiền
                 so_luong_ton_goc: hd.so_luong_ton || 0
             }));
         }
@@ -821,8 +871,8 @@ const removeFromBill = async (productId) => {
             mau_sac: item.ten_mau_sac || item.mau_sac || null,
             kich_thuoc: item.gia_tri || null,
             so_luong: item.so_luong,
-            gia_ban: item.don_gia,
-            tong_tien: item.don_gia * item.so_luong,
+            gia_ban: item.gia_ban,  // ✅ Giá lẻ
+            tong_tien: item.don_gia,  // ✅ Tổng tiền
             so_luong_ton_goc: item.so_luong_ton || 0,
         }));
 
@@ -1053,21 +1103,29 @@ const printInvoice = async () => {
     y += 10;
     doc.setFontSize(12);
     doc.setFont("Roboto", "normal");
+    
+    // Tổng tiền sản phẩm (chưa có ship)
+    const tongTienSanPham = (activeTabData.value.hd.tong_tien_truoc_giam || 0) - (activeTabData.value.hd.phi_van_chuyen || 0);
     doc.text(`Tổng tiền hàng:`, 115, y, { align: "left" });
-    doc.text(`${formatCurrency(activeTabData.value.hd.tong_tien_truoc_giam)}`, 190, y, { align: "right" });
+    doc.text(`${formatCurrency(tongTienSanPham)}`, 190, y, { align: "right" });
+
+    // Phí vận chuyển (nếu có)
+    if (activeTabData.value.hd.phi_van_chuyen && activeTabData.value.hd.phi_van_chuyen > 0) {
+        y += 6;
+        doc.text(`Phí vận chuyển:`, 115, y, { align: "left" });
+        doc.text(`+${formatCurrency(activeTabData.value.hd.phi_van_chuyen)}`, 190, y, { align: "right" });
+    }
 
     y += 6;
-    const giamGia = (activeTabData.value.hd.tong_tien_truoc_giam || 0) +
-        (activeTabData.value.hd.phi_van_chuyen || 0) -
+    // Giảm giá từ voucher = Tổng trước giảm - Tổng sau giảm
+    const giamGia = (activeTabData.value.hd.tong_tien_truoc_giam || 0) -
         (activeTabData.value.hd.tong_tien_sau_giam || 0);
-    doc.text(`Giảm giá:`, 115, y, { align: "left" });
-    doc.text(`-${formatCurrency(giamGia)}`, 190, y, { align: "right" });
+    if (giamGia > 0) {
+        doc.text(`Giảm giá (Voucher):`, 115, y, { align: "left" });
+        doc.text(`-${formatCurrency(giamGia)}`, 190, y, { align: "right" });
+        y += 6;
+    }
 
-    y += 6;
-    doc.text(`Phí vận chuyển:`, 115, y, { align: "left" });
-    doc.text(`+${formatCurrency(activeTabData.value.hd.phi_van_chuyen || 0)}`, 190, y, { align: "right" });
-
-    y += 6;
     doc.setFont("Roboto", "bold");
     doc.text(`Thành tiền:`, 115, y, { align: "left" });
     doc.text(`${formatCurrency(activeTabData.value.hd.tong_tien_sau_giam)}`, 190, y, { align: "right" });
@@ -1118,12 +1176,18 @@ const handlePayment = async () => {
     }
 
     if (currentTab.hd.phuong_thuc_nhan_hang === 'Giao hàng') {
-        if (!currentTab.hd.id_khach_hang && (!currentTab.hd.ho_ten_nguoi_nhan || !currentTab.hd.sdt_nguoi_nhan || !currentTab.hd.dia_chi_nhan_hang)) {
-            message.error("Vui lòng nhập đầy đủ thông tin giao hàng (Tên, SĐT, Địa chỉ) hoặc chọn khách hàng.");
+        // Kiểm tra thông tin giao hàng (tên, SĐT, địa chỉ phải đầy đủ)
+        const tenKH = currentTab.hd.ten_khach_hang || currentTab.hd.ho_ten || '';
+        const sdt = currentTab.hd.so_dien_thoai || currentTab.hd.sdt || currentTab.hd.sdt_nguoi_nhan || '';
+        const diaChi = currentTab.hd.dia_chi || '';
+        
+        if (!tenKH?.trim() || !sdt?.trim() || !diaChi?.trim()) {
+            message.error("Vui lòng nhập đầy đủ thông tin giao hàng (Tên, SĐT, Địa chỉ) hoặc chọn khách hàng");
             return;
         }
-        if (currentTab.hd.phi_van_chuyen <= 0) {
-            message.warning("Vui lòng nhập phí vận chuyển cho đơn hàng giao.");
+        if (!currentTab.hd.phi_van_chuyen || currentTab.hd.phi_van_chuyen <= 0) {
+            message.error("Vui lòng nhập phí vận chuyển cho đơn hàng giao.");
+            return;
         }
     }
     if (currentTab.hd.hinh_thuc_thanh_toan === 'Tiền mặt') {
@@ -1237,11 +1301,12 @@ onMounted(async () => {
 
 });
 
-// Thiết lập setInterval để kiểm tra luuTTKHBH
+// Thiết lập setInterval để kiểm tra luuTTKHBH và shippingFeeUpdated
 let intervalId = null;
 const startChecking = () => {
     intervalId = setInterval(async () => {
         await checkAndApplyLocalData();
+        await checkAndApplyShippingFee();
     }, 3000); // Kiểm tra mỗi 3 giây để tối ưu hiệu năng
 };
 
@@ -1301,9 +1366,14 @@ function setupAutoReloadAtMidnight() {
 
 
 watch(() => activeKey.value, async (newKey) => {
+    console.log('👁️ WATCH activeKey triggered, newKey:', newKey);
     const currentTab = panes.value.find(p => p.key === newKey);
     if (currentTab && currentTab.hd.id_hoa_don) {
+        console.log('📡 WATCH: GỌI API getAllSPHD cho hóa đơn:', currentTab.hd.id_hoa_don);
         await store.getAllSPHD(currentTab.hd.id_hoa_don);
+        
+        console.log('📦 WATCH: Dữ liệu từ server:', store.getAllSPHDArr.length, 'items');
+        
         currentTab.items.value = store.getAllSPHDArr.map(item => ({
             id_hoa_don: item.id_hoa_don,
             id_chi_tiet_san_pham: item.id_chi_tiet_san_pham,
@@ -1312,10 +1382,12 @@ watch(() => activeKey.value, async (newKey) => {
             mau_sac: item.ten_mau_sac || item.mau_sac || null,
             kich_thuoc: item.gia_tri || null,
             so_luong: item.so_luong,
-            gia_ban: item.don_gia,
-            tong_tien: item.don_gia * item.so_luong,
+            gia_ban: item.gia_ban,  // ✅ Giá lẻ
+            tong_tien: item.don_gia,  // ✅ Tổng tiền
             so_luong_ton_goc: item.so_luong_ton || 0
         })) || [];
+        
+        console.log('🎨 WATCH: Mapped items:', currentTab.items.value.length, 'items');
     }
     ptnh.value = currentTab.hd.phuong_thuc_nhan_hang;
     store.setCurrentHoaDonId(currentTab.hd.id_hoa_don);
@@ -1337,12 +1409,29 @@ watch(searchQuery, (newQuery) => {
 const isLoading = ref(false);
 
 const checkAndApplyLocalData = async () => {
-    const checkluuTTKHBH = JSON.parse(localStorage.getItem('luuTTKHBH'));
-    if (checkluuTTKHBH === true) {
+    const customerData = JSON.parse(localStorage.getItem('luuTTKHBH'));
+    if (customerData && customerData.saved) {
+        console.log('📥 Đọc thông tin khách hàng từ localStorage:', customerData);
+        
         isLoading.value = true;
         await new Promise(resolve => setTimeout(resolve, 500));
         try {
             const idHoaDon = activeTabData.value.hd.id_hoa_don;
+            
+            // ✅ Cập nhật thông tin khách hàng vào hóa đơn hiện tại
+            Object.assign(activeTabData.value.hd, {
+                ten_khach_hang: customerData.ten_khach_hang,
+                so_dien_thoai: customerData.so_dien_thoai,
+                dia_chi: customerData.dia_chi,
+                email: customerData.email
+            });
+            
+            console.log('✅ Đã cập nhật thông tin vào hóa đơn:', {
+                ten_khach_hang: customerData.ten_khach_hang,
+                so_dien_thoai: customerData.so_dien_thoai,
+                dia_chi: customerData.dia_chi
+            });
+            
             await refreshHoaDon(idHoaDon);
         } catch (error) {
             console.error("Lỗi khi làm mới dữ liệu:", error);
@@ -1354,6 +1443,22 @@ const checkAndApplyLocalData = async () => {
     }
 };
 
+// Kiểm tra và cập nhật phí vận chuyển từ localStorage
+const checkAndApplyShippingFee = async () => {
+    const shippingData = JSON.parse(localStorage.getItem('shippingFeeUpdated'));
+    if (shippingData) {
+        const currentIdHoaDon = activeTabData.value?.hd?.id_hoa_don;
+        
+        if (currentIdHoaDon === shippingData.idHoaDon) {
+            console.log('📦 Cập nhật phí vận chuyển:', shippingData.phiVanChuyen);
+            
+            activeTabData.value.hd.phi_van_chuyen = shippingData.phiVanChuyen;
+            
+            await refreshHoaDon(currentIdHoaDon);
+            localStorage.removeItem('shippingFeeUpdated');
+        }
+    }
+};
 
 
 

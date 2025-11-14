@@ -80,6 +80,18 @@
                             </a-form-item>
                         </a-col>
                     </a-row>
+                    
+                    <!-- Hiển thị phí vận chuyển dự tính -->
+                    <a-row v-if="calculatedShippingFee > 0" :gutter="16" class="mt-2">
+                        <a-col :span="24">
+                            <a-alert
+                                type="info"
+                                :message="`Phí vận chuyển dự tính: ${formatVND(calculatedShippingFee)}`"
+                                show-icon
+                            />
+                        </a-col>
+                    </a-row>
+                    
                     <button type="button" class="btn btn-danger" @click="xoaDiaChi(index)"
                         v-if="formData.diaChiList.length > 1">
                         Xóa địa chỉ
@@ -104,8 +116,10 @@ import { ref, onMounted, reactive, computed, watch } from 'vue';
 import { useGbStore } from '@/stores/gbStore';
 import { toast } from 'vue3-toastify';
 import { Modal as AModal } from 'ant-design-vue';
+import { calculateShippingFee, formatVND } from '@/utils/shippingFeeCalculator';
 
 const gbStore = useGbStore();
+const calculatedShippingFee = ref(0);
 const provinces = ref([]);
 const districts = ref([]);
 const wards = ref([]);
@@ -252,8 +266,42 @@ const handleDistrictChange = async (index) => {
             const data = await response.json();
             wards.value[index] = data.wards;
             formData.diaChiList[index].xaPhuong = '';
+            
+            // Tính phí vận chuyển khi chọn quận/huyện
+            updateShippingFee(index);
         } catch (error) {
             console.error('Lỗi khi tải phường/xã:', error);
+        }
+    }
+};
+
+const updateShippingFee = async (index) => {
+    const diaChi = formData.diaChiList[index];
+    if (diaChi.tinhThanhPho && diaChi.quanHuyen) {
+        calculatedShippingFee.value = calculateShippingFee(diaChi.tinhThanhPho, diaChi.quanHuyen);
+        
+        console.log(`📦 Phí vận chuyển: ${formatVND(calculatedShippingFee.value)}`);
+        
+        // Cập nhật phí vận chuyển vào hóa đơn hiện tại
+        const idHoaDon = gbStore.getCurrentHoaDonId();
+        if (idHoaDon && calculatedShippingFee.value > 0) {
+            try {
+                await gbStore.setTrangThaiNhanHang(idHoaDon, 'Giao hàng', calculatedShippingFee.value);
+                
+                // Lưu vào localStorage để component cha cập nhật
+                localStorage.setItem('shippingFeeUpdated', JSON.stringify({
+                    idHoaDon,
+                    phiVanChuyen: calculatedShippingFee.value,
+                    timestamp: Date.now()
+                }));
+                
+                toast.success(`Phí vận chuyển: ${formatVND(calculatedShippingFee.value)}`, {
+                    autoClose: 2000,
+                    position: 'top-right'
+                });
+            } catch (error) {
+                console.error('Lỗi khi cập nhật phí vận chuyển:', error);
+            }
         }
     }
 };
@@ -320,7 +368,9 @@ const themKhachHang = async () => {
     const diaChiList = formData.diaChiList.map(diaChi => {
       return `${diaChi.soNha}, ${diaChi.xaPhuong}, ${diaChi.quanHuyen}, ${diaChi.tinhThanhPho}`;
     });
-    await gbStore.addKHHD(idHoaDon, null, diaChiList, formData.tenKhachHang, formData.soDienThoai, formData.email);
+    const newKhachHang = await gbStore.getLatestKhachHang();
+    const idKH = newKhachHang ? newKhachHang.idKhachHang : null;
+    await gbStore.addKHHD(idHoaDon, idKH, diaChiList, formData.tenKhachHang, formData.soDienThoai, formData.email);
     localStorage.setItem('luuTTKHBH', JSON.stringify(true));
     localStorage.setItem('khachHangBH', JSON.stringify(dataToSend));
     if (result) {
@@ -373,9 +423,23 @@ const luuThongTin = async () => {
 
     console.log('Lưu thông tin khách hàng:', idHoaDon, null, diaChiList, formData.tenKhachHang, formData.soDienThoai, formData.email);
 
-    await gbStore.addKHHD(idHoaDon, null, diaChiList, formData.tenKhachHang, formData.soDienThoai, formData.email);
+    const khachHangList = await gbStore.getAllKhachHangNoPage();
+    const existingKhachHang = khachHangList?.find(kh => 
+        kh.tenKhachHang === formData.tenKhachHang && 
+        kh.soDienThoai === formData.soDienThoai
+    );
+    const idKH = existingKhachHang ? existingKhachHang.idKhachHang : null;
+    
+    await gbStore.addKHHD(idHoaDon, idKH, diaChiList, formData.tenKhachHang, formData.soDienThoai, formData.email);
 
-    localStorage.setItem('luuTTKHBH', JSON.stringify(true));
+    // ✅ Lưu thông tin vào localStorage để component cha đọc được
+    localStorage.setItem('luuTTKHBH', JSON.stringify({
+        saved: true,
+        ten_khach_hang: formData.tenKhachHang,
+        so_dien_thoai: formData.soDienThoai,
+        dia_chi: diaChiList[0], // Lấy địa chỉ đầu tiên
+        email: formData.email
+    }));
     
     toast.success('Lưu thông tin khách hàng thành công!', {
         autoClose: 2000,

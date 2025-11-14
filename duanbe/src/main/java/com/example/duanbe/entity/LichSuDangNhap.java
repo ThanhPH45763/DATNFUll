@@ -15,10 +15,16 @@ public class LichSuDangNhap {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_lich_su_dang_nhap")
     private Integer id_lich_su_dang_nhap;
+    
     @Column(name = "ngay_dang_nhap")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime ngay_dang_nhap;
+    
     @Column(name = "ip_adress")
     private String ip_adress;
+    
+    @ManyToOne
+    @JoinColumn(name = "id_khach_hang")
+    private KhachHang khachHang;
 }

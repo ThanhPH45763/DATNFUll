@@ -107,6 +107,7 @@ export const useGbStore = defineStore('gbStore', {
     listSanPhamBanHang: [],
     getAllCTSPKMList: [],
     getAllKhachHangNoPageList: [],
+    lastCreatedKhachHang: null, // Lưu khách hàng vừa được tạo
 
     // State cho voucher
     getAllVoucherArr: [],
@@ -1685,6 +1686,15 @@ export const useGbStore = defineStore('gbStore', {
           const errorMessage = typeof response.error === 'string' ? response.error : 'Có lỗi không xác định từ server';
           throw new Error(errorMessage);
         }
+        // Lưu khách hàng vừa tạo để sử dụng sau này
+        if (response.idKhachHang) {
+          this.lastCreatedKhachHang = {
+            idKhachHang: response.idKhachHang,
+            tenKhachHang: khachHangData.tenKhachHang,
+            soDienThoai: khachHangData.soDienThoai,
+            email: khachHangData.email
+          };
+        }
         await this.getAllKhachHang(this.currentKhachHang, 10000);
         return response.khachHang;
       } catch (error) {
@@ -1693,6 +1703,10 @@ export const useGbStore = defineStore('gbStore', {
         console.log('Error message:', error.message);
         throw error; // Truyền lỗi lên để frontend xử lý
       }
+    },
+    
+    getLatestKhachHang() {
+      return this.lastCreatedKhachHang;
     },
 
     // Lấy danh sách khách hàng
@@ -1983,9 +1997,9 @@ export const useGbStore = defineStore('gbStore', {
         throw error
       }
     },
-    async themSPHDMoi(idHoaDon, idCTSP, soLuong, giaBan) {
+    async themSPHDMoi(idHoaDon, idCTSP, soLuong) {
       try {
-        const result = await banHangService.themSPHDMoi(idHoaDon, idCTSP, soLuong, giaBan)
+        const result = await banHangService.themSPHDMoi(idHoaDon, idCTSP, soLuong)
         if (result.error) {
           toast.error(result.message || 'Không thêm được sản phẩm vào hoá đơn')
           return null

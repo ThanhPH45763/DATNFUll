@@ -161,16 +161,16 @@ public class BanHangController {
             // Lấy chi tiết hóa đơn
             List<HoaDonChiTiet> chiTietList = hoaDonChiTietRepo.findByIdHoaDon(idHD);
 
-            // Tính tổng tiền trước giảm
-            BigDecimal tongTienTruocGiam = chiTietList.stream()
-                    .map(ct -> ct.getDon_gia().multiply(BigDecimal.valueOf(ct.getSo_luong())))
+            // Tính tổng tiền hàng (chưa bao gồm phí vận chuyển)
+            // Lưu ý: don_gia trong DB đã là tổng tiền (giá_lẻ × số_lượng), không cần nhân thêm
+            BigDecimal tongTienHang = chiTietList.stream()
+                    .map(HoaDonChiTiet::getDon_gia)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // Tổng tiền sau giảm = trước giảm - giảm + phí vận chuyển
-            BigDecimal tongTienSauGiam = tongTienTruocGiam.subtract(pvc);
+            // Tổng tiền trước giảm = tổng tiền hàng + phí vận chuyển
+            BigDecimal tongTienTruocGiam = tongTienHang.add(pvc);
 
             hoaDon.setTong_tien_truoc_giam(tongTienTruocGiam);
-            hoaDon.setTong_tien_sau_giam(tongTienSauGiam);
 
             hoaDonRepo.save(hoaDon);
 
@@ -437,18 +437,7 @@ public class BanHangController {
             // ✅ 7. Lưu chi tiết hóa đơn
             hoaDonChiTietRepo.save(chiTiet);
 
-            // ✅ 8. Tính lại tổng tiền
-            List<HoaDonChiTiet> danhSachChiTiet = hoaDonChiTietRepo.findByIdHoaDon(idHD);
-            BigDecimal tongTien = danhSachChiTiet.stream()
-                    .map(HoaDonChiTiet::getDon_gia)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    .add(hoaDon.getPhi_van_chuyen());
-
-            hoaDon.setTong_tien_truoc_giam(tongTien);
-            hoaDon.setTong_tien_sau_giam(tongTien);
-            hoaDonRepo.save(hoaDon);
-
-            // ✅ 9. Cập nhật voucher (nếu có)
+            // ✅ 8. Cập nhật lại tổng tiền và voucher (hàm này sẽ tính toàn bộ)
             capNhatVoucher(idHD);
 
             return ResponseEntity.ok(existingItem.isPresent() 
@@ -507,7 +496,8 @@ public class BanHangController {
             });
 
             chiTiet.setSo_luong(soLuongMoi);
-            chiTiet.setDon_gia(donGiaLe);
+            // don_gia phải lưu TỔNG TIỀN (giá_lẻ × số_lượng)
+            chiTiet.setDon_gia(donGiaLe.multiply(BigDecimal.valueOf(soLuongMoi)));
 
             // Lưu lại DB
             chiTietSanPhamRepo.save(chiTietSP);
@@ -592,16 +582,7 @@ public class BanHangController {
     }
 
     private void capNhatTongTienVaVoucher(HoaDon hoaDon) {
-        List<HoaDonChiTiet> chiTietList = hoaDonChiTietRepo.findByIdHoaDon(hoaDon.getId_hoa_don());
-        BigDecimal tongTien = chiTietList.stream()
-                .map(ct -> ct.getDon_gia().multiply(BigDecimal.valueOf(ct.getSo_luong())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .add(hoaDon.getPhi_van_chuyen());
-
-        hoaDon.setTong_tien_truoc_giam(tongTien);
-        hoaDon.setTong_tien_sau_giam(tongTien); // Nếu chưa áp dụng voucher
-        hoaDonRepo.save(hoaDon);
-
+        // Chỉ gọi hàm capNhatVoucher để tính toàn bộ
         capNhatVoucher(hoaDon.getId_hoa_don());
     }
 
@@ -627,9 +608,10 @@ public class BanHangController {
         }
 
         // Tính tổng tiền sản phẩm
+        // Lưu ý: don_gia trong DB đã là tổng tiền (giá_lẻ × số_lượng), không cần nhân thêm
         BigDecimal tongTienSanPham = dsSanPham.stream()
-                .filter(ct -> ct.getDon_gia() != null && ct.getSo_luong() != null)
-                .map(ct -> ct.getDon_gia().multiply(BigDecimal.valueOf(ct.getSo_luong())))
+                .filter(ct -> ct.getDon_gia() != null)
+                .map(ct -> ct.getDon_gia())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal phiVanChuyen = Optional.ofNullable(hoaDon.getPhi_van_chuyen()).orElse(BigDecimal.ZERO);

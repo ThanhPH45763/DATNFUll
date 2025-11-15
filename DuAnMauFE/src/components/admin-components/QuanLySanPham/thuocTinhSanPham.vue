@@ -1307,45 +1307,45 @@ watch(currentTab, () => {
 
 /* Cập nhật màu hover và focus cho input */
 :deep(.ant-input:hover) {
-    border-color: #f33b47 !important;
+    border-color: #ff6b35 !important;
 }
 
 :deep(.ant-input:focus),
 :deep(.ant-input-focused),
 :deep(.ant-input-affix-wrapper:focus),
 :deep(.ant-input-affix-wrapper-focused) {
-    border-color: #f33b47 !important;
-    box-shadow: 0 0 0 2px rgba(243, 59, 71, 0.2) !important;
+    border-color: #ff6b35 !important;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2) !important;
 }
 
 :deep(.ant-input-affix-wrapper:hover) {
-    border-color: #f33b47 !important;
+    border-color: #ff6b35 !important;
 }
 
 /* Cập nhật màu tab khi được nhấn giữ */
 :deep(.ant-tabs-tab:active) {
-    color: #f33b47 !important;
+    color: #ff6b35 !important;
 }
 
 :deep(.ant-tabs-tab.ant-tabs-tab-active:active) {
-    color: #d32d3b !important;
+    color: #e05545 !important;
 }
 
 :deep(.ant-tabs-tab-btn:active) {
-    color: #f33b47 !important;
+    color: #ff6b35 !important;
 }
 
 :deep(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn:active) {
-    color: #d32d3b !important;
+    color: #e05545 !important;
 }
 
 /* Cập nhật màu pagination khi active */
 :deep(.ant-pagination-item:active) {
-    border-color: #d32d3b !important;
+    border-color: #e05545 !important;
 }
 
 :deep(.ant-pagination-item:active a) {
-    color: #d32d3b !important;
+    color: #e05545 !important;
 }
 
 /* Màu nút switch */
@@ -1357,11 +1357,11 @@ watch(currentTab, () => {
 }
 
 :deep(.ant-switch-checked) {
-    background-color: #f33b47 !important;
+    background-color: #ff6b35 !important;
 }
 
 :deep(.ant-switch:hover:not(.ant-switch-disabled)) {
-    background-color: #ff6b76;
+    background-color: #ffa166;
 }
 
 :deep(.ant-switch-handle) {
@@ -1379,18 +1379,18 @@ watch(currentTab, () => {
 
 /* Đồng bộ màu các nút */
 :deep(.ant-btn-primary) {
-    background-color: #f33b47 !important;
-    border-color: #f33b47 !important;
+    background-color: #ff6b35 !important;
+    border-color: #ff6b35 !important;
 }
 
 :deep(.ant-btn-primary:hover) {
-    background-color: #ff6b76 !important;
-    border-color: #ff6b76 !important;
+    background-color: #ffa166 !important;
+    border-color: #ffa166 !important;
 }
 
 :deep(.ant-btn-primary:active) {
-    background-color: #d32d3b !important;
-    border-color: #d32d3b !important;
+    background-color: #e05545 !important;
+    border-color: #e05545 !important;
 }
 
 /* Đồng bộ màu tabs */
@@ -1403,52 +1403,52 @@ watch(currentTab, () => {
 }
 
 :deep(.ant-tabs-tab:hover) {
-    color: #ff6b76 !important;
+    color: #ff6b35 !important;
 }
 
 :deep(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
-    color: #f33b47 !important;
+    color: #ff6b35 !important;
     font-weight: 500;
 }
 
 :deep(.ant-tabs-ink-bar) {
-    background-color: #f33b47 !important;
+    background-color: #ff6b35 !important;
 }
 
 :deep(.ant-tabs-nav::before) {
-    border-bottom-color: #f33b47 !important;
+    border-bottom-color: #ff6b35 !important;
 }
 
 :deep(.ant-tabs-nav-list .ant-tabs-tab-active) {
-    border-bottom-color: #f33b47 !important;
+    border-bottom-color: #ff6b35 !important;
 }
 
 /* Đồng bộ màu thanh phân trang (pagination) */
 :deep(.ant-pagination-item:hover) {
-    border-color: #f33b47 !important;
+    border-color: #ff6b35 !important;
 }
 
 :deep(.ant-pagination-item:hover a) {
-    color: #f33b47 !important;
+    color: #ff6b35 !important;
 }
 
 :deep(.ant-pagination-item-active) {
-    border-color: #f33b47 !important;
+    border-color: #ff6b35 !important;
 }
 
 :deep(.ant-pagination-item-active a) {
-    color: #f33b47 !important;
+    color: #ff6b35 !important;
 }
 
 :deep(.ant-pagination-prev:hover .ant-pagination-item-link),
 :deep(.ant-pagination-next:hover .ant-pagination-item-link) {
-    color: #f33b47 !important;
-    border-color: #f33b47 !important;
+    color: #ff6b35 !important;
+    border-color: #ff6b35 !important;
 }
 
 :deep(.ant-pagination-jump-prev .ant-pagination-item-container .ant-pagination-item-link-icon),
 :deep(.ant-pagination-jump-next .ant-pagination-item-container .ant-pagination-item-link-icon) {
-    color: #f33b47 !important;
+    color: #ff6b35 !important;
 }
 
 .validation-error {
@@ -1459,21 +1459,21 @@ watch(currentTab, () => {
 
 /* Đồng bộ màu select (bộ lọc) */
 :deep(.ant-select:not(.ant-select-disabled):hover .ant-select-selector) {
-    border-color: #f33b47 !important;
+    border-color: #ff6b35 !important;
 }
 
 :deep(.ant-select-focused:not(.ant-select-disabled).ant-select:not(.ant-select-customize-input) .ant-select-selector) {
-    border-color: #f33b47 !important;
-    box-shadow: 0 0 0 2px rgba(243, 59, 71, 0.2) !important;
+    border-color: #ff6b35 !important;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2) !important;
 }
 
 :deep(.ant-select-item-option-selected:not(.ant-select-item-option-disabled)) {
-    background-color: rgba(243, 59, 71, 0.1) !important;
-    color: #f33b47 !important;
+    background-color: rgba(255, 107, 53, 0.1) !important;
+    color: #ff6b35 !important;
 }
 
 :deep(.ant-select-item-option-active:not(.ant-select-item-option-disabled)) {
-    background-color: rgba(243, 59, 71, 0.1) !important;
+    background-color: rgba(255, 107, 53, 0.1) !important;
 }
 
 :deep(.ant-select-arrow) {
@@ -1481,10 +1481,10 @@ watch(currentTab, () => {
 }
 
 :deep(.ant-select:hover .ant-select-arrow) {
-    color: #f33b47 !important;
+    color: #ff6b35 !important;
 }
 
 :deep(.ant-select-focused .ant-select-arrow) {
-    color: #f33b47 !important;
+    color: #ff6b35 !important;
 }
 </style>

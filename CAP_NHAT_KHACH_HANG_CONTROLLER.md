@@ -120,10 +120,10 @@
 - [ ] Test thêm/sửa/xóa khách hàng từ admin
 - [ ] Test cập nhật thông tin đơn hàng
 - [ ] Test gửi yêu cầu hỗ trợ
-- [ ] Kiểm tra lịch sử đăng nhập được lưu đúng
+- [ ] Kiểm tra lịch sử đăng nhập được lưu   đúng
 
 ## Files đã thay đổi
 
 1. `/duanbe/src/main/java/com/example/duanbe/controller/KhachHangController.java`
 2. `/duanbe/src/main/java/com/example/duanbe/entity/LichSuDangNhap.java`
-
+sk-LYwJ4kcdtLGKYGl1Cehj3GzNag96S2npmH8k0fXmhnyoW3bA

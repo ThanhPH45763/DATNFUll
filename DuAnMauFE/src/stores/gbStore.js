@@ -1,6 +1,7 @@
 // src/stores/gbStore.js
 import { defineStore } from 'pinia'
 import { toast } from 'vue3-toastify'
+import axiosInstance from '@/config/axiosConfig'
 import { sanPhamService } from '@/services/sanPhamService'
 import { nhanVienService } from '@/services/nhanVienService'
 import { voucherService } from '@/services/voucherService'
@@ -165,7 +166,7 @@ export const useGbStore = defineStore('gbStore', {
       try {
         this.isLoading = true;
         this.error = null;
-        
+
         const data = await sanPhamService.getSanPhamSieuSale();
         if (!data.error) {
           this.listSanPhamBanHang = data.map(item => ({
@@ -232,7 +233,7 @@ export const useGbStore = defineStore('gbStore', {
           rating: item.danh_gia || 0,
           reviews: item.so_luong_danh_gia || 0,
         }));
-      },  
+      },
       // List sản phẩm theo tên danh mục(trang sản phẩm)
       async getSanPhamByTenDM(keywords) {
         let tenDanhMuc = '';
@@ -644,7 +645,7 @@ export const useGbStore = defineStore('gbStore', {
     changeAction(status) {
       this.justAddedProduct = status;
     },
-    // Reset tham số tìm kiếm và lọc  
+    // Reset tham số tìm kiếm và lọc
     resetSearchFilterParams() {
       console.log('Reset params tìm kiếm/lọc');
       this.searchFilterParams = {
@@ -780,7 +781,7 @@ export const useGbStore = defineStore('gbStore', {
       }
     },
 
-    //Lấy danh sách size    
+    //Lấy danh sách size
     async getSizeList() {
       try {
         console.log('Đang tải danh sách kích thước...')
@@ -1704,7 +1705,7 @@ export const useGbStore = defineStore('gbStore', {
         throw error; // Truyền lỗi lên để frontend xử lý
       }
     },
-    
+
     getLatestKhachHang() {
       return this.lastCreatedKhachHang;
     },
@@ -3625,6 +3626,38 @@ export const useGbStore = defineStore('gbStore', {
     // Thêm action để quản lý trạng thái loading
     setProductLoading(status) {
       this.isProductLoading = status;
+    },
+
+    // ✅ ZaloPay - Tạo đơn hàng
+    async createZaloPayOrder(idHoaDon) {
+      try {
+        // Ensure idHoaDon is a number
+        const invoiceId = typeof idHoaDon === 'object' ? idHoaDon.id_hoa_don : idHoaDon;
+        
+        const response = await axiosInstance.post('api/zalopay/create-order', null, {
+          params: { idHoaDon: invoiceId }
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Lỗi tạo đơn ZaloPay:', error);
+        throw error;
+      }
+    },
+
+    // ✅ ZaloPay - Kiểm tra trạng thái thanh toán
+    async checkZaloPayStatus(idHoaDon) {
+      try {
+        // Ensure idHoaDon is a number
+        const invoiceId = typeof idHoaDon === 'object' ? idHoaDon.id_hoa_don : idHoaDon;
+        
+        const response = await axiosInstance.get('api/zalopay/check-status', {
+          params: { idHoaDon: invoiceId }
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Lỗi kiểm tra trạng thái:', error);
+        throw error;
+      }
     },
   },
   persist: {

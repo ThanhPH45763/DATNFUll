@@ -1,0 +1,62 @@
+╔══════════════════════════════════════════════════════════════════╗
+║          FIX LỖI: ZALOPAY PARAMS SERIALIZATION                   ║
+╚══════════════════════════════════════════════════════════════════╝
+
+🐛 LỖI:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+URL bị encode sai:
+/api/zalopay/check-status?idHoaDon[$id]=gbStore&idHoaDon[...]=...
+
+Đúng phải là:
+/api/zalopay/check-status?idHoaDon=5
+
+NGUYÊN NHÂN:
+- Axios đang serialize toàn bộ Pinia store object
+- Thay vì chỉ serialize số idHoaDon
+
+✅ ĐÃ FIX:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File: gbStore.js
+
+Thêm validation trong 2 functions:
+1. createZaloPayOrder
+2. checkZaloPayStatus
+
+Code:
+```javascript
+async checkZaloPayStatus(idHoaDon) {
+  // Ensure idHoaDon is a number
+  const invoiceId = typeof idHoaDon === 'object' 
+    ? idHoaDon.id_hoa_don 
+    : idHoaDon;
+  
+  const response = await axiosInstance.get('api/zalopay/check-status', {
+    params: { idHoaDon: invoiceId }
+  });
+}
+```
+
+🚀 RESTART FRONTEND:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+cd /home/huunghia/DATNFUll/DuAnMauFE
+# Stop (Ctrl+C) rồi:
+npm run dev
+
+🧪 TEST:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Mở F12 → Network tab
+2. Trigger ZaloPay payment
+3. Xem request URL phải là: ?idHoaDon=5
+4. Không còn object serialization
+
+📋 CHECKLIST:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[x] Fix createZaloPayOrder
+[x] Fix checkZaloPayStatus  
+[ ] Restart frontend (BẠN LÀM)
+[ ] Test network request clean
+[ ] QR code hiển thị
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chi tiết: DEBUG_ZALOPAY_PARAMS.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

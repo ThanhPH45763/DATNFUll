@@ -1,0 +1,24 @@
+Chào bạn, có chứ. Việc bạn dùng Linux thực ra lại có rất nhiều lựa chọn tốt và miễn phí để thay thế cho ngrok.
+
+  Cách đơn giản và nhanh nhất cho bạn là dùng `localtunnel`. Công cụ này hoạt động tương tự ngrok và rất dễ cài đặt nếu bạn đã có sẵn Node.js/npm (mà bạn
+  đang có cho dự án frontend).
+
+  Hướng dẫn sử dụng localtunnel
+
+   1. Cài đặt (nếu cần): Bạn không cần cài đặt mà có thể dùng npx để chạy trực tiếp. Mở một cửa sổ terminal mới (không phải cái đang chạy backend hay frontend).
+
+   2. Chạy lệnh: Gõ lệnh sau để tạo đường hầm tới cổng 8080 của bạn:
+   1     npx localtunnel --port 8080
+
+   3. Lấy URL: Sau khi chạy lệnh, localtunnel sẽ cung cấp cho bạn một URL công khai, ví dụ: https://your-random-subdomain.loca.lt.
+
+   4. Cập nhật Callback URL:
+       * Lấy URL đó và ghép với endpoint callback của bạn: https://your-random-subdomain.loca.lt/api/zalopay/callback.
+       * Dùng URL đầy đủ này để cập nhật vào phần "Callback URL" trong trang quản trị ZaloPay Merchant của bạn.
+
+  Sau khi hoàn tất, backend của bạn đã có thể nhận được tín hiệu từ server ZaloPay và luồng thanh toán sẽ hoạt động đúng như mong đợi.
+
+  Ngoài ra, còn có các lựa chọn khác như Cloudflare Tunnel (mạnh mẽ và miễn phí nhưng cài đặt phức tạp hơn một chút) hoặc Serveo (không cần cài đặt), nhưng
+  localtunnel là cách nhanh nhất để bạn giải quyết vấn đề ngay bây giờ.
+
+  --------------------------Với wiwndow thì dùng ngrok

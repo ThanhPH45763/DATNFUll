@@ -142,17 +142,17 @@
                         </div>
 
                         <div class="payment-method-item">
-                            <a-radio value="payos" class="payment-radio">
+                            <a-radio value="online-qr" class="payment-radio">
                                 <div class="payment-content">
                                     <div class="payment-icon">
                                         <credit-card-outlined />
                                     </div>
                                     <div class="payment-info">
-                                        <p class="payment-name">PayOs</p>
-                                        <p class="payment-desc">Thanh toán qua PayOs</p>
+                                        <p class="payment-name">Thanh toán QR Code</p>
+                                        <p class="payment-desc">PayOS hoặc ZaloPay - Quét mã QR ngay</p>
                                     </div>
                                     <div class="payment-logo">
-                                        <img src="../images/icon/logoVietQR.png" style="width: 60px; height: 60px;" alt="Payos" class="online-logo" />
+                                        <img src="../images/icon/logoVietQR.png" style="width: 50px; height: 50px;" alt="QR Payment" class="online-logo" />
                                     </div>
                                 </div>
                             </a-radio>
@@ -342,6 +342,15 @@
             </div>
         </a-modal>
 
+        <!-- Payment Method Modal -->
+        <payment-method-modal
+            v-model:visible="paymentModalVisible"
+            :invoice-id="createdInvoiceId"
+            :amount="grandTotal"
+            @payment-success="handlePaymentSuccess"
+            @payment-cancelled="handlePaymentCancelled"
+        />
+
     </div>
 </template>
 
@@ -351,6 +360,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { message, Form, Modal } from 'ant-design-vue';
 import axios from 'axios';
 import { thanhToanService } from '@/services/thanhToan';
+import PaymentMethodModal from './PaymentMethodModal.vue';
 import {
     ShoppingCartOutlined,
     CheckCircleOutlined,
@@ -391,6 +401,8 @@ const selectedAddressId = ref(1);
 
 // Payment methods
 const selectedPaymentMethod = ref('');
+const paymentModalVisible = ref(false);
+const createdInvoiceId = ref(null);
 // const selectedOnlineMethod = ref('vnpay');
 
 // Order note
@@ -927,6 +939,68 @@ const placeOrder = async () => {
                 console.error('Lỗi khi tạo đơn hàng COD:', error);
                 message.error('Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại sau.');
             }
+        } else if (selectedPaymentMethod.value === 'online-qr') {
+            // Thanh toán QR (PayOS hoặc ZaloPay) - hiển thị modal chọn
+            try {
+                // Tạo hóa đơn trước
+                hoaDon.isChuyen = true;
+                hoaDon.hinh_thuc_thanh_toan = 'Chuyển khoản';
+                hoaDon.phuong_thuc_thanh_toan = {
+                    loai: 'online',
+                    chi_tiet: 'online-qr',
+                    ten: 'QR Payment'
+                };
+
+                const response = await banHangOnlineService.createOrder(hoaDon);
+                let responseChiTiet;
+                if (store.getIsThanhToanMuaNgay()) {
+                    responseChiTiet = await banHangOnlineService.createOrderChiTietMuaNgay(orderData.hoaDonChiTiet);
+                } else {
+                    responseChiTiet = await banHangOnlineService.createOrderChiTiet(orderData.hoaDonChiTiet);
+                }
+
+                console.log('Response từ server:', response);
+                console.log('Response chi tiết từ server:', responseChiTiet);
+
+                if (response && response.id_hoa_don) {
+                    // Lưu ID hóa đơn để dùng cho modal thanh toán
+                    createdInvoiceId.value = response.id_hoa_don;
+                    
+                    // Hiển thị modal chọn phương thức
+                    paymentModalVisible.value = true;
+
+                    // Xóa giỏ hàng
+                    if (responseChiTiet) {
+                        const paidProducts = orderData.hoaDonChiTiet.map(item => ({
+                            id: item.chiTietSanPham.id_chi_tiet_san_pham,
+                            quantity: item.so_luong
+                        }));
+
+                        const currentCart = JSON.parse(localStorage.getItem('gb-sport-cart') || '[]');
+                        const updatedCart = currentCart.filter(cartItem => {
+                            const paidItem = paidProducts.find(paid => paid.id === cartItem.id);
+                            if (paidItem) {
+                                const remainingQuantity = cartItem.quantity - paidItem.quantity;
+                                return remainingQuantity > 0 ? { ...cartItem, quantity: remainingQuantity } : null;
+                            }
+                            return cartItem;
+                        }).filter(item => item !== null);
+
+                        if (updatedCart.length > 0) {
+                            localStorage.setItem('gb-sport-cart', JSON.stringify(updatedCart));
+                        } else {
+                            localStorage.removeItem('gb-sport-cart');
+                        }
+                        
+                        store.setIsThanhToanMuaNgay(false);
+                    }
+                } else {
+                    message.error('Không thể tạo hóa đơn');
+                }
+            } catch (error) {
+                console.error('Lỗi khi tạo hóa đơn QR:', error);
+                message.error('Có lỗi xảy ra khi tạo hóa đơn. Vui lòng thử lại sau.');
+            }
         } else if (selectedPaymentMethod.value === 'payos') {
             try {
                 hoaDon.isChuyen = true;
@@ -1051,6 +1125,29 @@ const placeOrder = async () => {
         placing.value = false;
         return null;
     }
+};
+
+// Xử lý khi thanh toán thành công từ modal
+const handlePaymentSuccess = (data) => {
+    console.log('Payment success:', data);
+    
+    currentStatus.value = 4;
+    message.success('Thanh toán thành công!');
+    
+    Modal.success({
+        title: 'Thanh toán thành công',
+        content: `Đơn hàng của bạn đã được thanh toán thành công qua ${data.method === 'payos' ? 'PayOS' : 'ZaloPay'}. Cảm ơn bạn đã mua hàng!`,
+        okText: 'Về trang chủ',
+        onOk: () => {
+            router.push('/home');
+        }
+    });
+};
+
+// Xử lý khi hủy thanh toán từ modal
+const handlePaymentCancelled = () => {
+    console.log('Payment cancelled');
+    message.info('Bạn đã hủy thanh toán');
 };
 
 // Format currency

@@ -1,0 +1,149 @@
+package com.example.duanbe.service;
+
+import com.example.duanbe.config.ZaloPayConfig;
+import com.example.duanbe.utils.HMACUtil;
+import com.google.gson.Gson;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+@Service
+public class ZaloPayService {
+    
+    private final Gson gson = new Gson();
+    
+    /**
+     * Tạo đơn hàng ZaloPay
+     * @param maHoaDon Mã hóa đơn
+     * @param tongTien Tổng tiền (VNĐ)
+     * @param moTa Mô tả đơn hàng
+     * @return Map chứa order_url để hiển thị QR code
+     */
+    public Map<String, Object> createOrder(String maHoaDon, BigDecimal tongTien, String moTa) {
+        try {
+            // 1. Tạo app_trans_id (unique cho mỗi giao dịch)
+            String appTransId = getCurrentTimeString("yyMMdd") + "_" + System.currentTimeMillis();
+            
+            // 2. Tạo embed_data
+            Map<String, String> embedData = new HashMap<>();
+            embedData.put("redirecturl", ZaloPayConfig.REDIRECT_URL);
+            embedData.put("merchantinfo", "GB Sport - " + maHoaDon);
+            
+            // 3. Tạo item (danh sách sản phẩm)
+            List<Map<String, Object>> items = new ArrayList<>();
+            Map<String, Object> item = new HashMap<>();
+            item.put("itemid", maHoaDon);
+            item.put("itemname", "Hóa đơn " + maHoaDon);
+            item.put("itemprice", tongTien.longValue());
+            item.put("itemquantity", 1);
+            items.add(item);
+            
+            // 4. Tạo order data
+            Map<String, Object> order = new HashMap<>();
+            order.put("app_id", Integer.parseInt(ZaloPayConfig.APP_ID));
+            order.put("app_trans_id", appTransId);
+            order.put("app_user", "user_" + System.currentTimeMillis());
+            order.put("app_time", System.currentTimeMillis());
+            order.put("amount", tongTien.longValue());
+            order.put("description", moTa);
+            order.put("bank_code", "");
+            order.put("item", gson.toJson(items));
+            order.put("embed_data", gson.toJson(embedData));
+            order.put("callback_url", ZaloPayConfig.CALLBACK_URL);
+            
+            // 5. Tạo MAC (chữ ký)
+            String data = order.get("app_id") + "|" 
+                        + order.get("app_trans_id") + "|" 
+                        + order.get("app_user") + "|" 
+                        + order.get("amount") + "|" 
+                        + order.get("app_time") + "|" 
+                        + order.get("embed_data") + "|" 
+                        + order.get("item");
+            
+            String mac = HMACUtil.HMacHexStringEncode("HmacSHA256", ZaloPayConfig.KEY1, data);
+            order.put("mac", mac);
+            
+            // Log để debug
+            System.out.println("ZaloPay Order Data: " + gson.toJson(order));
+            System.out.println("ZaloPay MAC String: " + data);
+            System.out.println("ZaloPay MAC: " + mac);
+            
+            // 6. Gọi API ZaloPay
+            CloseableHttpClient client = HttpClients.createDefault();
+            HttpPost post = new HttpPost(ZaloPayConfig.ENDPOINT_CREATE);
+            
+            StringEntity entity = new StringEntity(gson.toJson(order), "UTF-8");
+            entity.setContentType("application/json");
+            post.setEntity(entity);
+            
+            CloseableHttpResponse response = client.execute(post);
+            String responseString = EntityUtils.toString(response.getEntity());
+            
+            System.out.println("ZaloPay Response: " + responseString);
+            
+            Map<String, Object> result = gson.fromJson(responseString, Map.class);
+            result.put("app_trans_id", appTransId); // Trả về để lưu DB
+            
+            client.close();
+            
+            return result;
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("return_code", -1.0);
+            error.put("return_message", e.getMessage());
+            return error;
+        }
+    }
+    
+    /**
+     * Kiểm tra trạng thái giao dịch
+     */
+    public Map<String, Object> queryOrder(String appTransId) {
+        try {
+            Map<String, String> params = new HashMap<>();
+            params.put("app_id", ZaloPayConfig.APP_ID);
+            params.put("app_trans_id", appTransId);
+            
+            String data = params.get("app_id") + "|" + params.get("app_trans_id") + "|" + ZaloPayConfig.KEY1;
+            String mac = HMACUtil.HMacHexStringEncode("HmacSHA256", ZaloPayConfig.KEY1, data);
+            params.put("mac", mac);
+            
+            CloseableHttpClient client = HttpClients.createDefault();
+            HttpPost post = new HttpPost(ZaloPayConfig.ENDPOINT_QUERY);
+            
+            StringEntity entity = new StringEntity(gson.toJson(params), "UTF-8");
+            entity.setContentType("application/json");
+            post.setEntity(entity);
+            
+            CloseableHttpResponse response = client.execute(post);
+            String responseString = EntityUtils.toString(response.getEntity());
+            
+            Map<String, Object> result = gson.fromJson(responseString, Map.class);
+            
+            client.close();
+            
+            return result;
+            
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("return_code", -1);
+            error.put("return_message", e.getMessage());
+            return error;
+        }
+    }
+    
+    private String getCurrentTimeString(String format) {
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        return sdf.format(new Date());
+    }
+}

@@ -283,8 +283,17 @@
                             <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
                                 :id="'chuyenKhoan_' + activeKey" value="Chuyển khoản"
                                 v-model="activeTabData.hd.hinh_thuc_thanh_toan" @change="updateHinhThucThanhToan" />
-                            <label class="form-check-label" :for="'chuyenKhoan_' + activeKey">Chuyển khoản</label>
+                            <label class="form-check-label" :for="'chuyenKhoan_' + activeKey">Chuyển khoản (ZaloPay)</label>
                         </div>
+                        
+                        <!-- UI hiển thị QR ZaloPay khi chọn Chuyển khoản -->
+                        <div v-if="activeTabData.hd.hinh_thuc_thanh_toan === 'Chuyển khoản'" class="mt-3">
+                            <a-button type="primary" @click="showZaloPayQR" :loading="isLoadingZaloPay" block>
+                                <template #icon><qrcode-outlined /></template>
+                                Hiển thị mã QR thanh toán
+                            </a-button>
+                        </div>
+                        
                         <div v-if="activeTabData.hd.hinh_thuc_thanh_toan === 'Tiền mặt'" class="mt-2">
                             <label class="form-label">Tiền khách đưa (VNĐ)</label>
                             <a-input-number v-model:value="tienKhachDua" :min="0"
@@ -308,6 +317,44 @@
                             <a-button key="ok" type="primary" @click="confirmPrint(true)">Có</a-button>
                         </template>
                     </a-modal>
+                    
+                    <!-- Modal hiển thị QR Code ZaloPay -->
+                    <a-modal v-model:open="showZaloPayModal" title="Quét mã QR để thanh toán ZaloPay" 
+                        :footer="null" width="450px" @cancel="closeZaloPayModal">
+                        <div class="text-center p-3">
+                            <div v-if="zaloPayQRUrl">
+                                <img :src="zaloPayQRUrl" alt="ZaloPay QR Code" 
+                                    style="width: 100%; max-width: 300px; border: 2px solid #0068FF; border-radius: 8px;" />
+                                <p class="mt-3 mb-2" style="font-size: 16px; font-weight: 500;">
+                                    Quét mã QR bằng ứng dụng ZaloPay
+                                </p>
+                                <p class="text-muted mb-3">
+                                    Tổng tiền: <span class="fw-bold">{{ formatCurrency(activeTabData.hd.tong_tien_sau_giam) }}</span>
+                                </p>
+                                
+                                <!-- Trạng thái thanh toán -->
+                                <a-alert v-if="paymentStatus === 'checking'" 
+                                    type="info" 
+                                    message="Đang chờ thanh toán..." 
+                                    show-icon 
+                                    class="mb-2" />
+                                <a-alert v-if="paymentStatus === 'success'" 
+                                    type="success" 
+                                    message="Thanh toán thành công!" 
+                                    show-icon 
+                                    class="mb-2" />
+                                <a-alert v-if="paymentStatus === 'failed'" 
+                                    type="error" 
+                                    message="Thanh toán thất bại hoặc đã hủy!" 
+                                    show-icon 
+                                    class="mb-2" />
+                            </div>
+                            <div v-else class="py-5">
+                                <a-spin size="large" />
+                                <p class="mt-3">Đang tạo mã QR...</p>
+                            </div>
+                        </div>
+                    </a-modal>
                 </form>
                 <div v-else class="text-center text-muted mt-5">
                     Vui lòng chọn hoặc tạo một hóa đơn.
@@ -325,7 +372,8 @@ import {
     FileSearchOutlined,
     RollbackOutlined,
     BarChartOutlined,
-    DeleteOutlined
+    DeleteOutlined,
+    QrcodeOutlined
 } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import { useGbStore } from '@/stores/gbStore';
@@ -350,6 +398,14 @@ let isProcessing = false;
 const triggerUpdate = ref(Date.now());
 
 
+
+// ✅ ZALOPAY STATE
+const showZaloPayModal = ref(false);
+const zaloPayQRUrl = ref('');
+const zaloPayQRCode = ref(''); // QR code string từ ZaloPay
+const isLoadingZaloPay = ref(false);
+const paymentStatus = ref(''); // checking, success, failed
+let checkPaymentInterval = null;
 
 // Hiển thị modal quét QR
 const showQrScanner = () => {
@@ -1512,6 +1568,110 @@ const handlePhuongThucChange = async () => {
         }
         await store.setTrangThaiNhanHang(idHD, 'Giao hàng', phiShip);
     }
+};
+
+// ✅ ZALOPAY - Hiển thị QR Code
+const showZaloPayQR = async () => {
+    try {
+        isLoadingZaloPay.value = true;
+        
+        // Kiểm tra dữ liệu hóa đơn
+        if (!activeTabData.value || !activeTabData.value.hd || !activeTabData.value.hd.id_hoa_don) {
+            message.error('Vui lòng chọn hóa đơn cần thanh toán');
+            return;
+        }
+        
+        const idHoaDon = activeTabData.value.hd.id_hoa_don;
+        console.log('Tạo QR ZaloPay cho hóa đơn ID:', idHoaDon);
+        
+        const result = await store.createZaloPayOrder(idHoaDon);
+        console.log('ZaloPay Response:', result);
+        
+        if (result.return_code === 1) {
+            // ZaloPay trả về qr_code string, cần convert sang image
+            if (result.qr_code) {
+                try {
+                    // Generate QR code image từ string
+                    const qrDataUrl = await QRCode.toDataURL(result.qr_code, {
+                        width: 300,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#FFFFFF'
+                        }
+                    });
+                    zaloPayQRUrl.value = qrDataUrl;
+                    zaloPayQRCode.value = result.qr_code;
+                } catch (qrError) {
+                    console.error('Lỗi tạo QR image:', qrError);
+                    message.error('Không thể tạo mã QR');
+                    return;
+                }
+            } else {
+                message.error('Không nhận được mã QR từ ZaloPay');
+                return;
+            }
+            
+            showZaloPayModal.value = true;
+            paymentStatus.value = 'checking';
+            
+            // Bắt đầu kiểm tra trạng thái thanh toán mỗi 3 giây
+            startCheckingPaymentStatus();
+        } else {
+            message.error(result.return_message || 'Không thể tạo mã QR thanh toán');
+        }
+    } catch (error) {
+        console.error('Lỗi khi tạo QR ZaloPay:', error);
+        message.error('Đã xảy ra lỗi khi tạo mã thanh toán: ' + (error.message || ''));
+    } finally {
+        isLoadingZaloPay.value = false;
+    }
+};
+
+// ✅ ZALOPAY - Kiểm tra trạng thái thanh toán
+const startCheckingPaymentStatus = () => {
+    checkPaymentInterval = setInterval(async () => {
+        try {
+            const result = await store.checkZaloPayStatus(activeTabData.value.hd.id_hoa_don);
+            
+            if (result.return_code === 1) {
+                // Thanh toán thành công
+                paymentStatus.value = 'success';
+                clearInterval(checkPaymentInterval);
+                
+                setTimeout(() => {
+                    showZaloPayModal.value = false;
+                    message.success('Thanh toán ZaloPay thành công!');
+                    
+                    // Refresh hóa đơn
+                    refreshHoaDon(activeTabData.value.hd.id_hoa_don);
+                    closeZaloPayModal();
+                }, 2000);
+                
+            } else if (result.return_code === 2) {
+                // Đang xử lý
+                paymentStatus.value = 'checking';
+            } else {
+                // Thất bại hoặc đã hủy
+                paymentStatus.value = 'failed';
+                clearInterval(checkPaymentInterval);
+            }
+        } catch (error) {
+            console.error('Lỗi khi kiểm tra trạng thái:', error);
+        }
+    }, 3000); // Kiểm tra mỗi 3 giây
+};
+
+// ✅ ZALOPAY - Đóng modal
+const closeZaloPayModal = () => {
+    if (checkPaymentInterval) {
+        clearInterval(checkPaymentInterval);
+        checkPaymentInterval = null;
+    }
+    showZaloPayModal.value = false;
+    zaloPayQRUrl.value = '';
+    zaloPayQRCode.value = '';
+    paymentStatus.value = '';
 };
 
 

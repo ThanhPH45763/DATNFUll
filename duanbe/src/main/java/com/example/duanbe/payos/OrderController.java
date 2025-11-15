@@ -40,14 +40,19 @@ public class OrderController {
             final String returnUrl = RequestBody.getReturnUrl();
             final String cancelUrl = RequestBody.getCancelUrl();
             final int price = RequestBody.getPrice();
-            // Gen order code
-            String currentTimeString = String.valueOf(String.valueOf(new Date().getTime()));
-            long orderCode = Long.parseLong(currentTimeString.substring(currentTimeString.length() - 6));
+            // Gen order code - use timestamp for uniqueness
+            long orderCode = System.currentTimeMillis() / 1000; // Unix timestamp in seconds
 
             ItemData item = ItemData.builder().name(productName).price(price).quantity(1).build();
 
-            PaymentData paymentData = PaymentData.builder().orderCode(orderCode).description(description).amount(price)
-                    .item(item).returnUrl(returnUrl).cancelUrl(cancelUrl).build();
+            PaymentData paymentData = PaymentData.builder()
+                    .orderCode(orderCode)
+                    .description(description)
+                    .amount(price)
+                    .item(item)
+                    .returnUrl(returnUrl)
+                    .cancelUrl(cancelUrl)
+                    .build();
 
             CheckoutResponseData data = payOS.createPaymentLink(paymentData);
 
@@ -59,7 +64,7 @@ public class OrderController {
         } catch (Exception e) {
             e.printStackTrace();
             response.put("error", -1);
-            response.put("message", "fail");
+            response.put("message", e.getMessage() != null ? e.getMessage() : "fail");
             response.set("data", null);
             return response;
 

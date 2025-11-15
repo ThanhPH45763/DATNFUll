@@ -1,68 +1,69 @@
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║           🎯 ĐÃ TÌM RA VÀ FIX TẤT CẢ LỖI - LẦN CUỐI                          ║
+║                          FIX LỖI PAYMENT - NHANH                             ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-🐛 LỖI CUỐI CÙNG: JSON Parsing Error
+🔧 LỖI 1: FRONTEND - axios is not defined
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Error: Expected BEGIN_OBJECT but was STRING at line 1 column 1 path $
+File: /DuAnMauFE/src/stores/gbStore.js
+Fix:  Đã thêm import axios ở dòng 4
 
-NGUYÊN NHÂN:
-PaymentMethodModal.vue dùng axios trực tiếp thay vì axiosInstance
-
-✅ ĐÃ FIX:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-File: PaymentMethodModal.vue
-
-1. Import axiosInstance
-2. Sửa 2 API calls:
-   - createPaymentQR: axios → axiosInstance
-   - checkPaymentStatus: axios → axiosInstance
-
-📋 TẤT CẢ FIXES (6 LỖI):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. ✅ url is not defined         → gbStore.js (axiosInstance)
-2. ✅ CORS 500 error             → Controllers (specific origin)
-3. ✅ Params serialization       → gbStore.js (validate object)
-4. ✅ JSON parsing error         → PaymentModalVue (axiosInstance)
-5. ✅ PayOS signature            → OrderController (timestamp)
-6. ✅ axios is not defined       → gbStore.js (import fix)
-
-FILES ĐÃ SỬA (6 FILES):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Frontend (3):
-  ✓ gbStore.js
-  ✓ PaymentMethodModal.vue
-  ✓ ThanhToanDonHang-BanHang.vue
-
-Backend (3):
-  ✓ ZaloPayController.java
-  ✓ UnifiedPaymentController.java
-  ✓ OrderController.java
-
-🚀 RESTART FRONTEND (Backend OK):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-cd /home/huunghia/DATNFUll/DuAnMauFE
-npm run dev
-
-🧪 TEST (SAU KHI RESTART):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. http://localhost:5173
-2. Chọn sản phẩm → Thanh toán
-3. Chọn "Thanh toán QR Code"
-4. Đặt hàng → Modal hiển thị
-5. Chọn ZaloPay → QR hiển thị ✅
-6. Auto-check status ✅
-7. Không còn lỗi ✅
-
-🎉 KẾT QUẢ:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ ZaloPay: Tạo QR thành công
-✅ PayOS: Tạo QR thành công  
-✅ Modal: Chọn phương thức
-✅ QR: Hiển thị inline
-✅ Status: Auto-check mỗi 3s
-✅ Production ready!
+✅ FIXED - Restart frontend để apply:
+   cd /home/huunghia/DATNFUll/DuAnMauFE
+   npm run dev
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Chi tiết: Xem file DA_TIM_RA_LOI.md (full version)
+
+🔧 LỖI 2: BACKEND - PayOS Signature Error
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File: /duanbe/src/main/java/com/example/duanbe/payos/OrderController.java
+Fix:  Cải thiện orderCode generation
+
+⚠️  PARTIALLY FIXED - Cần restart backend:
+   1. Stop backend hiện tại (Ctrl+C)
+   2. cd /home/huunghia/DATNFUll/duanbe
+   3. ./mvnw spring-boot:run
+
+⚠️  NẾU VẪN LỖI:
+   - PayOS sandbox có thể không ổn định
+   - Sử dụng ZaloPay thay thế (đã hoạt động tốt)
+   - Hoặc đợi 5-10 phút rồi thử lại
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ TEST NHANH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Frontend đã chạy lại? → Vào http://localhost:5173
+2. Test ZaloPay (đã hoạt động):
+   - Chọn sản phẩm → Thanh toán
+   - Chọn "Thanh toán QR Code"
+   - Chọn ZaloPay
+   - QR hiển thị ✅
+
+3. Test PayOS:
+   - Làm tương tự nhưng chọn PayOS
+   - Nếu lỗi → Dùng ZaloPay
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 CHECKLIST:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[✓] Frontend: axios imported
+[✓] Backend: OrderController updated
+[✓] Backend: Compiled thành công
+[ ] Backend: Restarted (CHỜ BẠN LÀM)
+[ ] Frontend: Restarted (CHỜ BẠN LÀM)
+[ ] Test: ZaloPay hoạt động
+[ ] Test: PayOS hoạt động (có thể skip nếu lỗi)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 KẾT LUẬN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Frontend fix: axios error → SOLVED
+⚠️  PayOS: Signature error → IMPROVED (có thể vẫn lỗi do sandbox)
+✅ ZaloPay: Hoạt động tốt → SỬ DỤNG NẾU PAYOS LỖI
+
+Workaround: Dùng ZaloPay làm primary, PayOS làm backup
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

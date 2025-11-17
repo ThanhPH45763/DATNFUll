@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.duanbe.dto.SanPhamDisplayDTO;
 import com.example.duanbe.entity.SanPham;
 import com.example.duanbe.request.SanPhamRequest;
 import com.example.duanbe.response.ChiTietSanPhamView;
@@ -133,5 +134,37 @@ public class SanPhamController {
     @GetMapping("/getAllCTSPKM")
     public List<ChiTietSanPhamView> getAllCTSPKM() {
         return sanPhamService.getAllCTSPKM();
+    }
+    
+    // ============= ENDPOINTS MỚI: TRẢ VỀ DỮ LIỆU ĐÃ FORMAT CHO FRONTEND =============
+    
+    /**
+     * Lấy danh sách sản phẩm theo tên danh mục với giá đã format
+     * Ưu tiên hiển thị giá khuyến mãi nếu có
+     * @param tenDanhMuc Tên danh mục (có thể nhiều, cách nhau bởi dấu phẩy)
+     * @return List sản phẩm với thông tin giá đã format
+     */
+    @GetMapping("/getSanPhamByTenDM/formatted")
+    public List<SanPhamDisplayDTO> getSanPhamByTenDMFormatted(@RequestParam("tenDanhMuc") String tenDanhMuc) {
+        return sanPhamService.getSanPhamTheoTenDMFormatted(tenDanhMuc);
+    }
+    
+    /**
+     * Lấy danh sách sản phẩm theo tên sản phẩm với giá đã format
+     * @param tenSanPham Tên sản phẩm (có thể nhiều, cách nhau bởi dấu phẩy)
+     * @return List sản phẩm với thông tin giá đã format
+     */
+    @GetMapping("/getSanPhamByTenSP/formatted")
+    public List<SanPhamDisplayDTO> getSanPhamByTenSPFormatted(@RequestParam("tenSanPham") String tenSanPham) {
+        return sanPhamService.getSanPhamTheoTenSPFormatted(tenSanPham);
+    }
+    
+    /**
+     * Lấy danh sách sản phẩm siêu khuyến mãi với giá đã format
+     * @return List sản phẩm đang có khuyến mãi
+     */
+    @GetMapping("/getSanPhamSieuSale/formatted")
+    public List<SanPhamDisplayDTO> getSanPhamSieuSaleFormatted() {
+        return sanPhamService.getSanPhamSieuSaleFormatted();
     }
 }

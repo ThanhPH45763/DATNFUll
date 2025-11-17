@@ -110,6 +110,9 @@ public class ZaloPayService {
      */
     public Map<String, Object> queryOrder(String appTransId) {
         try {
+            System.out.println("\n=== ZALOPAY QUERY ORDER ===");
+            System.out.println("App Trans ID: " + appTransId);
+            
             Map<String, String> params = new HashMap<>();
             params.put("app_id", ZaloPayConfig.APP_ID);
             params.put("app_trans_id", appTransId);
@@ -117,6 +120,9 @@ public class ZaloPayService {
             String data = params.get("app_id") + "|" + params.get("app_trans_id") + "|" + ZaloPayConfig.KEY1;
             String mac = HMACUtil.HMacHexStringEncode("HmacSHA256", ZaloPayConfig.KEY1, data);
             params.put("mac", mac);
+            
+            System.out.println("Query URL: " + ZaloPayConfig.ENDPOINT_QUERY);
+            System.out.println("Query Params: " + gson.toJson(params));
             
             CloseableHttpClient client = HttpClients.createDefault();
             HttpPost post = new HttpPost(ZaloPayConfig.ENDPOINT_QUERY);
@@ -128,13 +134,21 @@ public class ZaloPayService {
             CloseableHttpResponse response = client.execute(post);
             String responseString = EntityUtils.toString(response.getEntity());
             
+            System.out.println("ZaloPay Query Response: " + responseString);
+            
             Map<String, Object> result = gson.fromJson(responseString, Map.class);
+            
+            System.out.println("Parsed Return Code: " + result.get("return_code"));
+            System.out.println("Parsed Return Message: " + result.get("return_message"));
+            System.out.println("=== END ZALOPAY QUERY ===\n");
             
             client.close();
             
             return result;
             
         } catch (Exception e) {
+            System.err.println("!!! LỖI ZALOPAY QUERY: " + e.getMessage());
+            e.printStackTrace();
             Map<String, Object> error = new HashMap<>();
             error.put("return_code", -1);
             error.put("return_message", e.getMessage());

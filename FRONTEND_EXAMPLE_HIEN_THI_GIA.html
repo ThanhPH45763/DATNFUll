@@ -1,0 +1,518 @@
+<!-- ========================================
+     EXAMPLE: HIỂN THỊ SẢN PHẨM VỚI GIÁ KHUYẾN MÃI
+     React/Vue Component
+     ======================================== -->
+
+<!-- ==================== REACT VERSION ==================== -->
+<script type="text/jsx">
+import React, { useState, useEffect } from 'react';
+import './ProductCard.css'; // CSS ở dưới
+
+const ProductList = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch sản phẩm theo danh mục
+    fetch('/admin/quan_ly_san_pham/getSanPhamByTenDM/formatted?tenDanhMuc=Áo,Quần')
+      .then(res => res.json())
+      .then(data => {
+        setProducts(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div className="loading">Đang tải...</div>;
+
+  return (
+    <div className="product-grid">
+      {products.map(product => (
+        <ProductCard key={product.id_san_pham} product={product} />
+      ))}
+    </div>
+  );
+};
+
+const ProductCard = ({ product }) => {
+  return (
+    <div className="product-card">
+      {/* Badge giảm giá */}
+      {product.co_khuyen_mai && (
+        <div className="badge-sale">
+          -{product.phan_tram_giam}%
+        </div>
+      )}
+
+      {/* Hình ảnh */}
+      <div className="product-image">
+        <img 
+          src={product.hinh_anh || '/images/no-image.png'} 
+          alt={product.ten_san_pham}
+          loading="lazy"
+        />
+      </div>
+
+      {/* Thông tin sản phẩm */}
+      <div className="product-info">
+        <h3 className="product-name">{product.ten_san_pham}</h3>
+        
+        {/* Giá */}
+        <div className="price-container">
+          <span className="price-current">
+            {product.gia_hien_thi.toLocaleString('vi-VN')}₫
+          </span>
+          
+          {/* Giá gốc (nếu có khuyến mãi) */}
+          {product.gia_goc && (
+            <span className="price-original">
+              {product.gia_goc.toLocaleString('vi-VN')}₫
+            </span>
+          )}
+        </div>
+
+        {/* Khoảng giá (nếu có nhiều biến thể) */}
+        {product.khoang_gia && (
+          <div className="price-range">
+            Giá: {product.khoang_gia}
+          </div>
+        )}
+
+        {/* Đánh giá */}
+        {product.danh_gia > 0 && (
+          <div className="rating">
+            <span className="stars">
+              {'⭐'.repeat(Math.round(product.danh_gia))}
+            </span>
+            <span className="rating-text">
+              {product.danh_gia} ({product.so_luong_danh_gia} đánh giá)
+            </span>
+          </div>
+        )}
+
+        {/* Thông tin thêm */}
+        <div className="product-meta">
+          <span className="brand">{product.ten_thuong_hieu}</span>
+          <span className="category">{product.ten_danh_muc}</span>
+        </div>
+
+        {/* Số lượng còn */}
+        <div className="stock">
+          {product.tong_so_luong > 0 
+            ? `Còn ${product.tong_so_luong} sản phẩm` 
+            : 'Hết hàng'
+          }
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProductList;
+</script>
+
+<!-- ==================== VUE VERSION ==================== -->
+<script type="text/vue">
+<template>
+  <div class="product-grid">
+    <div 
+      v-for="product in products" 
+      :key="product.id_san_pham"
+      class="product-card"
+    >
+      <!-- Badge giảm giá -->
+      <div v-if="product.co_khuyen_mai" class="badge-sale">
+        -{{ product.phan_tram_giam }}%
+      </div>
+
+      <!-- Hình ảnh -->
+      <div class="product-image">
+        <img 
+          :src="product.hinh_anh || '/images/no-image.png'" 
+          :alt="product.ten_san_pham"
+          loading="lazy"
+        />
+      </div>
+
+      <!-- Thông tin -->
+      <div class="product-info">
+        <h3 class="product-name">{{ product.ten_san_pham }}</h3>
+        
+        <!-- Giá -->
+        <div class="price-container">
+          <span class="price-current">
+            {{ formatPrice(product.gia_hien_thi) }}₫
+          </span>
+          
+          <span v-if="product.gia_goc" class="price-original">
+            {{ formatPrice(product.gia_goc) }}₫
+          </span>
+        </div>
+
+        <!-- Khoảng giá -->
+        <div v-if="product.khoang_gia" class="price-range">
+          Giá: {{ product.khoang_gia }}
+        </div>
+
+        <!-- Rating -->
+        <div v-if="product.danh_gia > 0" class="rating">
+          <span class="stars">{{ '⭐'.repeat(Math.round(product.danh_gia)) }}</span>
+          <span class="rating-text">
+            {{ product.danh_gia }} ({{ product.so_luong_danh_gia }} đánh giá)
+          </span>
+        </div>
+
+        <!-- Meta -->
+        <div class="product-meta">
+          <span class="brand">{{ product.ten_thuong_hieu }}</span>
+          <span class="category">{{ product.ten_danh_muc }}</span>
+        </div>
+
+        <!-- Stock -->
+        <div class="stock">
+          {{ product.tong_so_luong > 0 
+              ? `Còn ${product.tong_so_luong} sản phẩm` 
+              : 'Hết hàng' 
+          }}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'ProductList',
+  data() {
+    return {
+      products: [],
+      loading: true
+    }
+  },
+  mounted() {
+    this.fetchProducts();
+  },
+  methods: {
+    async fetchProducts() {
+      try {
+        const response = await fetch(
+          '/admin/quan_ly_san_pham/getSanPhamByTenDM/formatted?tenDanhMuc=Áo,Quần'
+        );
+        this.products = await response.json();
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    formatPrice(price) {
+      return price.toLocaleString('vi-VN');
+    }
+  }
+}
+</script>
+
+<style src="./ProductCard.css"></style>
+</script>
+
+<!-- ==================== CSS STYLES ==================== -->
+<style type="text/css">
+/* ProductCard.css */
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 20px;
+}
+
+.product-card {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Badge giảm giá */
+.badge-sale {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  color: white;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 0 4px 4px 0;
+  z-index: 10;
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Hình ảnh */
+.product-image {
+  position: relative;
+  width: 100%;
+  padding-top: 100%; /* 1:1 Aspect Ratio */
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.product-image img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.product-card:hover .product-image img {
+  transform: scale(1.05);
+}
+
+/* Thông tin sản phẩm */
+.product-info {
+  padding: 12px;
+}
+
+.product-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+  height: 40px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Giá */
+.price-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.price-current {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ee4d2d;
+}
+
+.price-original {
+  font-size: 13px;
+  color: #999;
+  text-decoration: line-through;
+}
+
+.price-range {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+/* Rating */
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.stars {
+  color: #ffa727;
+  font-size: 14px;
+}
+
+.rating-text {
+  color: #666;
+}
+
+/* Meta info */
+.product-meta {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #999;
+}
+
+.product-meta .brand,
+.product-meta .category {
+  padding: 2px 6px;
+  background: #f5f5f5;
+  border-radius: 3px;
+}
+
+/* Stock */
+.stock {
+  font-size: 12px;
+  color: #27ae60;
+  font-weight: 500;
+}
+
+/* Loading state */
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .product-name {
+    font-size: 13px;
+  }
+  
+  .price-current {
+    font-size: 16px;
+  }
+}
+
+/* Animation khi load */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.product-card {
+  animation: fadeIn 0.3s ease-out;
+}
+</style>
+
+<!-- ==================== VANILLA JS VERSION ==================== -->
+<script type="text/javascript">
+// productList.js - Vanilla JavaScript
+
+class ProductList {
+  constructor(containerSelector) {
+    this.container = document.querySelector(containerSelector);
+    this.products = [];
+  }
+
+  async fetchProducts(tenDanhMuc) {
+    try {
+      const response = await fetch(
+        `/admin/quan_ly_san_pham/getSanPhamByTenDM/formatted?tenDanhMuc=${encodeURIComponent(tenDanhMuc)}`
+      );
+      this.products = await response.json();
+      this.render();
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      this.container.innerHTML = '<p class="error">Lỗi tải sản phẩm</p>';
+    }
+  }
+
+  formatPrice(price) {
+    return price.toLocaleString('vi-VN');
+  }
+
+  createProductCard(product) {
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    
+    card.innerHTML = `
+      ${product.co_khuyen_mai ? `
+        <div class="badge-sale">-${product.phan_tram_giam}%</div>
+      ` : ''}
+      
+      <div class="product-image">
+        <img src="${product.hinh_anh || '/images/no-image.png'}" 
+             alt="${product.ten_san_pham}"
+             loading="lazy">
+      </div>
+      
+      <div class="product-info">
+        <h3 class="product-name">${product.ten_san_pham}</h3>
+        
+        <div class="price-container">
+          <span class="price-current">${this.formatPrice(product.gia_hien_thi)}₫</span>
+          ${product.gia_goc ? `
+            <span class="price-original">${this.formatPrice(product.gia_goc)}₫</span>
+          ` : ''}
+        </div>
+        
+        ${product.khoang_gia ? `
+          <div class="price-range">Giá: ${product.khoang_gia}</div>
+        ` : ''}
+        
+        ${product.danh_gia > 0 ? `
+          <div class="rating">
+            <span class="stars">${'⭐'.repeat(Math.round(product.danh_gia))}</span>
+            <span class="rating-text">${product.danh_gia} (${product.so_luong_danh_gia} đánh giá)</span>
+          </div>
+        ` : ''}
+        
+        <div class="stock">
+          ${product.tong_so_luong > 0 
+            ? `Còn ${product.tong_so_luong} sản phẩm` 
+            : 'Hết hàng'
+          }
+        </div>
+      </div>
+    `;
+    
+    return card;
+  }
+
+  render() {
+    this.container.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'product-grid';
+    
+    this.products.forEach(product => {
+      grid.appendChild(this.createProductCard(product));
+    });
+    
+    this.container.appendChild(grid);
+  }
+}
+
+// Sử dụng:
+document.addEventListener('DOMContentLoaded', () => {
+  const productList = new ProductList('#product-container');
+  productList.fetchProducts('Áo,Quần');
+});
+</script>
+
+<!-- ==================== HTML USAGE ==================== -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Danh sách sản phẩm</title>
+  <link rel="stylesheet" href="ProductCard.css">
+</head>
+<body>
+  <div id="product-container"></div>
+  <script src="productList.js"></script>
+</body>
+</html>

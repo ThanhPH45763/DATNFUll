@@ -24,6 +24,9 @@ import java.util.Optional;
 
 public interface HoaDonRepo extends JpaRepository<HoaDon, Integer> {
 
+    @Query("SELECT h FROM HoaDon h WHERE h.ghi_chu LIKE %:appTransId%")
+    Optional<HoaDon> findByGhiChuContaining(@Param("appTransId") String appTransId);
+
     @Query(value = """
             SELECT DISTINCT hd.ma_hoa_don, hd.ngay_tao, hd.ho_ten, hd.sdt,
                             hd.trang_thai AS trang_thai_thanh_toan, hd.loai_hoa_don,

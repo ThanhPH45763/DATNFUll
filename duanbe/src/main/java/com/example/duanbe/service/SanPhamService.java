@@ -1,5 +1,6 @@
 package com.example.duanbe.service;
 
+import com.example.duanbe.dto.SanPhamDisplayDTO;
 import com.example.duanbe.entity.*;
 import com.example.duanbe.repository.*;
 import com.example.duanbe.request.SanPhamRequest;
@@ -325,5 +326,27 @@ public class SanPhamService {
 
     public List<ChiTietSanPhamView> getAllCTSPKM() {
         return chiTietSanPhamRepo.getAllCTSPKM();
+    }
+    
+    // Method mới: trả về dữ liệu đã format cho frontend
+    public List<SanPhamDisplayDTO> getSanPhamTheoTenDMFormatted(@RequestParam("tenDanhMuc") String tenDanhMuc) {
+        List<SanPhamView> views = sanPhamRepo.listSanPhamByTenDM(tenDanhMuc);
+        return views.stream()
+                .map(SanPhamDisplayDTO::fromView)
+                .collect(Collectors.toList());
+    }
+    
+    public List<SanPhamDisplayDTO> getSanPhamTheoTenSPFormatted(@RequestParam("tenSanPham") String tenSanPham) {
+        List<SanPhamView> views = sanPhamRepo.listSanPhamByTenSP(tenSanPham);
+        return views.stream()
+                .map(SanPhamDisplayDTO::fromView)
+                .collect(Collectors.toList());
+    }
+    
+    public List<SanPhamDisplayDTO> getSanPhamSieuSaleFormatted() {
+        List<SanPhamView> views = sanPhamRepo.listSanPhamSieuKhuyeMai();
+        return views.stream()
+                .map(SanPhamDisplayDTO::fromView)
+                .collect(Collectors.toList());
     }
 }

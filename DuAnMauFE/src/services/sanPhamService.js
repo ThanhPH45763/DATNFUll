@@ -461,48 +461,48 @@ const locSanPhamVaChiTietSanPham = async (keyword, giaBanMin, giaBanMax, listMau
   try {
     // Xây dựng URL với các tham số
     let url = `${qlsp}locCTSP?`;
-    
+
     // Thêm các tham số nếu chúng tồn tại và không phải null
     if (keyword) url += `keyword=${encodeURIComponent(keyword)}&`;
     if (giaBanMin !== undefined && giaBanMin !== null) url += `giaBanMin=${giaBanMin}&`;
     if (giaBanMax !== undefined && giaBanMax !== null) url += `giaBanMax=${giaBanMax}&`;
-    
+
     // Thêm các danh sách nếu chúng tồn tại
     if (listMauSac && listMauSac.length > 0) {
       listMauSac.forEach(mauSac => {
         url += `listMauSac=${encodeURIComponent(mauSac)}&`;
       });
     }
-    
+
     if (listDanhMuc && listDanhMuc.length > 0) {
       listDanhMuc.forEach(danhMuc => {
         url += `listDanhMuc=${encodeURIComponent(danhMuc)}&`;
       });
     }
-    
+
     if (listThuongHieu && listThuongHieu.length > 0) {
       listThuongHieu.forEach(thuongHieu => {
         url += `listThuongHieu=${encodeURIComponent(thuongHieu)}&`;
       });
     }
-    
+
     if (listChatLieu && listChatLieu.length > 0) {
       listChatLieu.forEach(chatLieu => {
         url += `listChatLieu=${encodeURIComponent(chatLieu)}&`;
       });
     }
-    
+
     if (listKichThuoc && listKichThuoc.length > 0) {
       listKichThuoc.forEach(kichThuoc => {
         url += `listKichThuoc=${encodeURIComponent(kichThuoc)}&`;
       });
     }
-    
+
     // Loại bỏ dấu & cuối cùng nếu có
     url = url.endsWith('&') ? url.slice(0, -1) : url;
-    
+
     console.log('URL tìm kiếm và lọc:', url);
-    
+
     const response = await axiosInstance.get(url);
     console.log('Response locSanPhamVaChiTietSanPham:', response.data);
     return response.data;

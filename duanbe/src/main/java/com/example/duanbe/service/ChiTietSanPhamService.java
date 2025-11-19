@@ -77,6 +77,20 @@ public class ChiTietSanPhamService {
      */
     public ResponseEntity<?> saveChiTietSanPham(@Valid @RequestBody ChiTietSanPhamRequest chiTietSanPhamRequest,
             BindingResult result) {
+        // DEBUG: Log request nhận được
+        System.out.println("========================================");
+        System.out.println("saveChiTietSanPham - Request nhận được:");
+        System.out.println("ID CTSP: " + chiTietSanPhamRequest.getId_chi_tiet_san_pham());
+        System.out.println("ID SP: " + chiTietSanPhamRequest.getId_san_pham());
+        System.out.println("Số lượng ảnh: " + 
+            (chiTietSanPhamRequest.getHinh_anh() != null ? chiTietSanPhamRequest.getHinh_anh().size() : "null"));
+        if (chiTietSanPhamRequest.getHinh_anh() != null) {
+            for (int i = 0; i < chiTietSanPhamRequest.getHinh_anh().size(); i++) {
+                System.out.println("  Ảnh #" + (i+1) + ": " + chiTietSanPhamRequest.getHinh_anh().get(i));
+            }
+        }
+        System.out.println("========================================");
+        
         // Kiểm tra lỗi validation
         if (result.hasErrors()) {
             List<String> errors = result.getAllErrors().stream()
@@ -189,10 +203,20 @@ public class ChiTietSanPhamService {
             // Lưu chi tiết sản phẩm
             ChiTietSanPham savedProduct = chiTietSanPhamRepo.save(chiTietSanPham);
 
+            // DEBUG: Log thông tin ảnh nhận được
+            System.out.println("=== DEBUG HÌNH ẢNH ===");
+            System.out.println("Số lượng ảnh nhận được: " + 
+                (chiTietSanPhamRequest.getHinh_anh() != null ? chiTietSanPhamRequest.getHinh_anh().size() : 0));
+            System.out.println("Danh sách URL ảnh: " + chiTietSanPhamRequest.getHinh_anh());
+            System.out.println("isNewDetail: " + isNewDetail);
+            System.out.println("isUpdateByAttribute: " + isUpdateByAttribute);
+            System.out.println("======================");
+
             // Xử lý hình ảnh - Đã điều chỉnh logic để giải quyết vấn đề
             if (isNewDetail) {
                 // Nếu là chi tiết sản phẩm mới
                 if (chiTietSanPhamRequest.getHinh_anh() != null && !chiTietSanPhamRequest.getHinh_anh().isEmpty()) {
+                    System.out.println("Gọi saveProductImages với " + chiTietSanPhamRequest.getHinh_anh().size() + " ảnh");
                     saveProductImages(savedProduct, chiTietSanPhamRequest.getHinh_anh());
                 }
             } else if (isUpdateByAttribute) {
@@ -234,18 +258,24 @@ public class ChiTietSanPhamService {
      */
     private void saveProductImages(ChiTietSanPham product, List<String> imagePaths) {
         if (imagePaths == null || imagePaths.isEmpty()) {
+            System.out.println("saveProductImages: Không có ảnh để lưu");
             return;
         }
 
+        System.out.println("saveProductImages: Bắt đầu lưu " + imagePaths.size() + " ảnh");
         boolean firstImage = true;
+        int count = 0;
         for (String path : imagePaths) {
             HinhAnhSanPham image = new HinhAnhSanPham();
             image.setChiTietSanPham(product);
             image.setHinh_anh(path);
             image.setAnh_chinh(firstImage); // Ảnh đầu tiên là ảnh chính
-            hinhAnhSanPhamRepo.save(image);
+            HinhAnhSanPham saved = hinhAnhSanPhamRepo.save(image);
+            count++;
+            System.out.println("Đã lưu ảnh #" + count + " - ID: " + saved.getId_hinh_anh() + " - URL: " + path + " - Ảnh chính: " + firstImage);
             firstImage = false;
         }
+        System.out.println("saveProductImages: Đã lưu thành công " + count + " ảnh");
     }
 
     /**

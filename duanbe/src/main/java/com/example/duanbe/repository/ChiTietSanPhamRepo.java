@@ -156,9 +156,10 @@ public interface ChiTietSanPhamRepo
             WITH DanhGiaSanPham AS (
                 SELECT
                     id_chi_tiet_san_pham,
-                    AVG(COALESCE(danh_gia, 0) * 1.0) AS danh_gia_trung_binh,
-                    COUNT(binh_luan) AS so_luong_danh_gia
+                    AVG(danh_gia * 1.0) AS danh_gia_trung_binh,
+                    COUNT(danh_gia) AS so_luong_danh_gia
                 FROM binh_luan
+                WHERE danh_gia IS NOT NULL
                 GROUP BY id_chi_tiet_san_pham
             ),
             KhuyenMaiHieuLuc AS (
@@ -175,7 +176,10 @@ public interface ChiTietSanPhamRepo
                 WHERE GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
             ),
             KhuyenMaiHieuLucNhat AS (
-                SELECT *
+                SELECT 
+                    id_chi_tiet_san_pham,
+                    kieu_giam_gia,
+                    gia_tri_giam
                 FROM KhuyenMaiHieuLuc
                 WHERE rn = 1
             ),
@@ -187,7 +191,7 @@ public interface ChiTietSanPhamRepo
                         FROM hinh_anh ha
                         WHERE ha.id_chi_tiet_san_pham = outer_ha.id_chi_tiet_san_pham
                           AND ha.hinh_anh IS NOT NULL AND ha.hinh_anh <> ''
-                        ORDER BY ha.id_hinh_anh
+                        ORDER BY CASE WHEN ha.anh_chinh = 1 THEN 0 ELSE 1 END, ha.id_hinh_anh
                         FOR XML PATH('')
                     ), 1, 1, '') AS hinh_anh
                 FROM hinh_anh outer_ha
@@ -203,7 +207,7 @@ public interface ChiTietSanPhamRepo
                 dm.ten_danh_muc,
                 th.ten_thuong_hieu,
                 cl.ten_chat_lieu,
-                COALESCE(asp.anh_dai_dien, '') AS hinh_anh,
+                COALESCE(asp.hinh_anh, sp.anh_dai_dien, '') AS hinh_anh,
                 kt.gia_tri,
                 kt.don_vi,
                 ms.ma_mau_sac,

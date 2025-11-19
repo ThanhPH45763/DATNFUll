@@ -1588,11 +1588,11 @@ const showZaloPayQR = async () => {
         console.log('ZaloPay Response:', result);
         
         if (result.return_code === 1) {
-            // ZaloPay trả về qr_code string, cần convert sang image
-            if (result.qr_code) {
+            // ZaloPay trả về order_url string, cần convert sang image
+            if (result.order_url) {
                 try {
                     // Generate QR code image từ string
-                    const qrDataUrl = await QRCode.toDataURL(result.qr_code, {
+                    const qrDataUrl = await QRCode.toDataURL(result.order_url, {
                         width: 300,
                         margin: 2,
                         color: {
@@ -1601,7 +1601,7 @@ const showZaloPayQR = async () => {
                         }
                     });
                     zaloPayQRUrl.value = qrDataUrl;
-                    zaloPayQRCode.value = result.qr_code;
+                    zaloPayQRCode.value = result.order_url;
                 } catch (qrError) {
                     console.error('Lỗi tạo QR image:', qrError);
                     message.error('Không thể tạo mã QR');

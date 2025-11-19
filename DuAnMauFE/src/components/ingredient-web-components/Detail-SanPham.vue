@@ -114,12 +114,12 @@
                         <button v-for="(size, index) in availableSizes" :key="'size-' + index" class="size-option"
                             :class="{ 
                                 active: selectedSize === size.ma, 
-                                disabled: !size.co_san || size.trang_thai === 'Không hoạt động'
+                                disabled: !size.co_san
                             }"
                             @click="selectSize(size)" 
-                            :disabled="!size.co_san || size.trang_thai === 'Không hoạt động'">
+                            :disabled="!size.co_san">
                             {{ size.ten }}
-                            <span v-if="size.trang_thai === 'Không hoạt động'" class="size-unavailable">✕</span>
+                            <span v-if="!size.co_san" class="size-unavailable">✕</span>
                         </button>
                     </div>
                 </div>
@@ -694,8 +694,8 @@ const initializeColorAndSizeOptions = () => {
             uniqueSizes.set(variant.id_kich_thuoc, {
                 ma: variant.id_kich_thuoc,
                 ten: variant.gia_tri || `Size ${variant.id_kich_thuoc}`,
-                co_san: variant.trang_thai === 'Hoạt động',
-                trang_thai: variant.trang_thai // Thêm trạng thái vào đối tượng size ngay từ đầu
+                co_san: variant.trang_thai === 1 || variant.trang_thai === true,
+                trang_thai: variant.trang_thai
             });
         }
     });
@@ -741,79 +741,101 @@ const getColorCode = (colorId) => {
 const organizeImagesByColor = () => {
     // Khởi tạo map mới
     imagesByColor.value = new Map();
-    allImages.value = [];
+    const uniqueImages = new Map(); // Map<url, imageObject> để loại bỏ trùng lặp
+    const imagesByColorAndPriority = new Map(); // Map<colorId, Array<imageObject>>
 
     // Duyệt qua tất cả variants để lấy hình ảnh
     productDetails.value.forEach(variant => {
-        if (variant.hinh_anh) {
-            let variantImages = [];
+        if (!variant.hinh_anh) return;
 
-            // Xử lý hình ảnh dựa trên loại dữ liệu
-            if (Array.isArray(variant.hinh_anh)) {
-                variantImages = variant.hinh_anh.map((url, index) => ({
-                    id: `${variant.id_mau_sac}_${index}`,
-                    url: url,
-                    alt: `${variant.ten_san_pham} - ${variant.gia_tri || 'Kích thước'} - ${variant.ten_mau_sac || 'Màu'} - Hình ${index + 1}`,
-                    color_id: variant.id_mau_sac,
-                    color_name: variant.ten_mau_sac || `Màu ${variant.id_mau_sac}`,
-                    color_code: getColorCode(variant.id_mau_sac)
-                }));
-            } else if (typeof variant.hinh_anh === 'string') {
-                if (variant.hinh_anh.includes(',')) {
-                    // Nếu là chuỗi URL phân tách bằng dấu phẩy, tách thành mảng
-                    const imageUrls = variant.hinh_anh.split(',').map(url => url.trim()).filter(url => url);
-                    variantImages = imageUrls.map((url, index) => ({
-                        id: `${variant.id_mau_sac}_${index}`,
-                        url: url,
-                        alt: `${variant.ten_san_pham} - ${variant.gia_tri || 'Kích thước'} - ${variant.ten_mau || 'Màu'} - Hình ${index + 1}`,
-                        color_id: variant.id_mau_sac,
-                        color_name: variant.ten_mau_sac || `Màu ${variant.id_mau_sac}`,
-                        color_code: getColorCode(variant.id_mau_sac)
-                    }));
-                } else {
-                    // Nếu chỉ là một URL đơn
-                    variantImages = [{
-                        id: `${variant.id_mau_sac}_0`,
-                        url: variant.hinh_anh,
-                        alt: `${variant.ten_san_pham} - ${variant.gia_tri || 'Kích thước'} - ${variant.ten_mau_sac || 'Màu'}`,
-                        color_id: variant.id_mau_sac,
-                        color_name: variant.ten_mau_sac || `Màu ${variant.id_mau_sac}`,
-                        color_code: getColorCode(variant.id_mau_sac)
-                    }];
-                }
+        // Xử lý hình ảnh dựa trên loại dữ liệu
+        let imageUrls = [];
+        
+        if (Array.isArray(variant.hinh_anh)) {
+            imageUrls = variant.hinh_anh;
+        } else if (typeof variant.hinh_anh === 'string') {
+            if (variant.hinh_anh.includes(',')) {
+                // Nếu là chuỗi URL phân tách bằng dấu phẩy, tách thành mảng
+                imageUrls = variant.hinh_anh.split(',').map(url => url.trim()).filter(url => url);
+            } else {
+                // Nếu chỉ là một URL đơn
+                imageUrls = [variant.hinh_anh];
             }
+        }
+
+        // Xử lý từng ảnh
+        imageUrls.forEach((url, index) => {
+            // Kiểm tra ảnh đã tồn tại chưa (dựa vào URL)
+            if (uniqueImages.has(url)) {
+                const existing = uniqueImages.get(url);
+                // Nếu ảnh này là ảnh đầu tiên (ảnh chính) và existing chưa phải ảnh chính, cập nhật
+                if (index === 0 && !existing.isPrimary) {
+                    existing.isPrimary = true;
+                }
+                return; // Bỏ qua ảnh trùng
+            }
+
+            // Tạo object ảnh mới
+            const imageObj = {
+                id: `${variant.id_chi_tiet_san_pham}_${index}`,
+                url: url,
+                alt: `${variant.ten_san_pham} - ${variant.ten_mau_sac || 'Màu'} - Hình ${index + 1}`,
+                color_id: variant.id_mau_sac,
+                color_name: variant.ten_mau_sac || `Màu ${variant.id_mau_sac}`,
+                color_code: getColorCode(variant.id_mau_sac),
+                isPrimary: index === 0, // Ảnh đầu tiên trong danh sách là ảnh chính
+                chi_tiet_san_pham_id: variant.id_chi_tiet_san_pham
+            };
+
+            // Lưu vào Map unique
+            uniqueImages.set(url, imageObj);
 
             // Thêm vào map theo màu sắc
-            if (variant.id_mau_sac && variantImages.length > 0) {
-                if (!imagesByColor.value.has(variant.id_mau_sac)) {
-                    imagesByColor.value.set(variant.id_mau_sac, []);
+            if (variant.id_mau_sac) {
+                if (!imagesByColorAndPriority.has(variant.id_mau_sac)) {
+                    imagesByColorAndPriority.set(variant.id_mau_sac, []);
                 }
-
-                // Chỉ thêm ảnh mới chưa có trong danh sách
-                variantImages.forEach(img => {
-                    const existingImages = imagesByColor.value.get(variant.id_mau_sac);
-                    const hasImage = existingImages.some(existing => existing.url === img.url);
-                    if (!hasImage) {
-                        existingImages.push(img);
-                    }
-                });
-
-                // Thêm vào danh sách tất cả ảnh
-                variantImages.forEach(img => {
-                    const hasImage = allImages.value.some(existing => existing.url === img.url);
-                    if (!hasImage) {
-                        allImages.value.push(img);
-                    }
-                });
+                imagesByColorAndPriority.get(variant.id_mau_sac).push(imageObj);
             }
+        });
+    });
+
+    // Sắp xếp ảnh theo màu (ảnh chính trước, sau đó theo id)
+    imagesByColorAndPriority.forEach((images, colorId) => {
+        const sorted = images.sort((a, b) => {
+            // Ảnh chính lên đầu
+            if (a.isPrimary && !b.isPrimary) return -1;
+            if (!a.isPrimary && b.isPrimary) return 1;
+            // Nếu cùng isPrimary, giữ nguyên thứ tự
+            return 0;
+        });
+        imagesByColor.value.set(colorId, sorted);
+    });
+
+    // Tạo danh sách tất cả ảnh theo thứ tự: màu đầu tiên trước, ảnh chính lên đầu
+    allImages.value = [];
+    
+    // Lấy màu đầu tiên trong danh sách màu sắc
+    const firstColorId = product.value.mau_sac?.[0]?.ma;
+    
+    // Thêm ảnh của màu đầu tiên trước (nếu có)
+    if (firstColorId && imagesByColor.value.has(firstColorId)) {
+        allImages.value.push(...imagesByColor.value.get(firstColorId));
+    }
+    
+    // Thêm ảnh của các màu khác
+    imagesByColor.value.forEach((images, colorId) => {
+        if (colorId !== firstColorId) {
+            allImages.value.push(...images);
         }
     });
 
     // Cập nhật hình ảnh cho sản phẩm - sử dụng tất cả hình ảnh
     product.value.hinh_anh = allImages.value;
 
-    console.log('Hình ảnh theo màu sắc:', imagesByColor.value);
-    console.log('Tất cả hình ảnh:', allImages.value);
+    console.log('✅ Hình ảnh theo màu sắc:', imagesByColor.value);
+    console.log('✅ Tổng số ảnh unique:', allImages.value.length);
+    console.log('✅ Chi tiết ảnh đầu tiên:', allImages.value[0]);
 };
 
 // Cập nhật hàm cập nhật thông tin sản phẩm từ variant để KHÔNG thay đổi danh sách hình ảnh
@@ -883,16 +905,32 @@ const updateProductFromVariant = (variant) => {
 
 // Hàm mới để tìm và hiển thị ảnh đầu tiên của màu được chọn
 const findAndShowFirstImageOfColor = (colorId) => {
-    // Tìm ảnh đầu tiên của màu được chọn
-    const firstImageIndex = product.value.hinh_anh.findIndex(img => img.color_id === colorId);
+    // Kiểm tra xem có ảnh cho màu này không
+    if (!imagesByColor.value.has(colorId)) {
+        console.log('❌ Không tìm thấy ảnh cho màu:', colorId);
+        return;
+    }
 
-    // Nếu tìm thấy và khác với ảnh hiện tại, chuyển đến ảnh đó với animation
+    const imagesForColor = imagesByColor.value.get(colorId);
+    if (imagesForColor.length === 0) {
+        console.log('❌ Danh sách ảnh rỗng cho màu:', colorId);
+        return;
+    }
+
+    // Lấy ảnh đầu tiên (đã được sắp xếp, ảnh chính ở đầu)
+    const firstImage = imagesForColor[0];
+    
+    // Tìm index của ảnh này trong danh sách tất cả ảnh
+    const firstImageIndex = allImages.value.findIndex(img => img.url === firstImage.url);
+    
     if (firstImageIndex !== -1 && firstImageIndex !== currentImageIndex.value) {
         // Thêm một trì hoãn nhỏ để tạo hiệu ứng mượt hơn
         setTimeout(() => {
             currentImageIndex.value = firstImageIndex;
         }, 100);
-        console.log('Đã chuyển đến ảnh đầu tiên của màu có ID:', colorId, 'tại vị trí:', firstImageIndex);
+        console.log('✅ Chuyển đến ảnh của màu', colorId, '(', firstImage.color_name, ')');
+        console.log('✅ Vị trí ảnh:', firstImageIndex);
+        console.log('✅ Là ảnh chính:', firstImage.isPrimary);
     }
 };
 
@@ -917,26 +955,26 @@ const selectColor = (color) => {
     }
 };
 
-// Sửa hàm selectSize để kiểm tra cả trạng thái
+// Sửa hàm selectSize để kiểm tra đơn giản hơn
 const selectSize = (size) => {
-    // Kiểm tra cả trạng thái của size và co_san
-    if (size.co_san && size.trang_thai !== 'Không hoạt động') {
-        selectedSize.value = size.ma;
-        selectedSizeName.value = size.ten;
-
-        // Tìm variant phù hợp với kích thước đã chọn và màu hiện tại (nếu có)
-        updateSelectedVariant();
-    } else {
-        console.log('Size này không khả dụng:', size.ten, 'trạng thái:', size.trang_thai);
-        // Có thể thêm thông báo cho người dùng tại đây
+    // Kiểm tra size có available không
+    if (!size.co_san) {
+        console.log('Size này không khả dụng:', size.ten);
         notification.warning({
             message: 'Kích thước không khả dụng',
-            description: `Size ${size.ten} hiện không có sẵn cho sản phẩm này.`,
+            description: `Size ${size.ten} hiện tạm hết hàng.`,
             placement: 'topRight',
             duration: 3,
             style: { zIndex: 1500 }
         });
+        return;
     }
+
+    selectedSize.value = size.ma;
+    selectedSizeName.value = size.ten;
+
+    // Tìm variant phù hợp với kích thước đã chọn và màu hiện tại
+    updateSelectedVariant();
 };
 
 // Cập nhật hàm updateSelectedVariant để xử lý tốt hơn
@@ -989,7 +1027,7 @@ const canAddToCart = computed(() => {
 
     // Kiểm tra đầy đủ cả trạng thái và số lượng
     return matchedVariant && 
-           matchedVariant.trang_thai === 'Hoạt động' && 
+           (matchedVariant.trang_thai === 1 || matchedVariant.trang_thai === true) && 
            matchedVariant.so_luong > 0;
 });
 
@@ -1490,7 +1528,7 @@ const addToCartFromDetail = async () => {
                         maxQuantity: maxQuantity,
                         color: selectedColorName.value,
                         size: selectedSizeName.value,
-                        trang_thai: matchedVariant.trang_thai || 'Hoạt động'
+                        trang_thai: matchedVariant.trang_thai
                     };
                     
                     // Cập nhật hoặc thêm mới sản phẩm vào giỏ hàng
@@ -1594,7 +1632,7 @@ const buyNow = () => {
     }
 
     // Kiểm tra trạng thái của sản phẩm
-    if (matchedVariant.trang_thai !== 'Hoạt động') {
+    if (!matchedVariant.trang_thai && matchedVariant.trang_thai !== 1) {
         notification.warning({
             message: 'Sản phẩm không khả dụng',
             description: 'Sản phẩm này hiện không có sẵn để bán',
@@ -1835,7 +1873,7 @@ const handleTabFocusRefresh = () => {
                 
                 if (refreshedVariant) {
                     // Nếu còn tồn tại, kiểm tra có thay đổi không
-                    if (refreshedVariant.trang_thai !== 'Hoạt động' || refreshedVariant.so_luong <= 0) {
+                    if ((!refreshedVariant.trang_thai && refreshedVariant.trang_thai !== 1) || refreshedVariant.so_luong <= 0) {
                         notification.warning({
                             message: 'Sản phẩm đã thay đổi',
                             description: 'Trạng thái hoặc số lượng sản phẩm đã thay đổi. Vui lòng kiểm tra lại.',
@@ -2446,25 +2484,39 @@ const availableSizes = computed(() => {
 
     // Nếu đã chọn màu, lọc các size có trong màu đó
     const sizesForSelectedColor = [];
-    const sizeMap = new Map(); // Map để đảm bảo không có size trùng lặp
+    const sizeMap = new Map(); // Map: id_kich_thuoc -> { hasAvailable, variants }
 
+    // Bước 1: Tổng hợp tất cả variants theo size cho màu đã chọn
     productDetails.value.forEach(variant => {
         if (variant.id_mau_sac === selectedColor.value) {
-            // Nếu size này chưa được thêm vào danh sách
             if (!sizeMap.has(variant.id_kich_thuoc)) {
-                // Tìm thông tin đầy đủ của size từ danh sách gốc
-                const sizeInfo = product.value.kich_thuoc.find(size => size.ma === variant.id_kich_thuoc);
-                if (sizeInfo) {
-                    sizeMap.set(variant.id_kich_thuoc, true);
-                    // Kiểm tra trạng thái của variant để cập nhật co_san và trang_thai
-                    const isAvailable = variant.trang_thai === 'Hoạt động' && variant.so_luong > 0;
-                    sizesForSelectedColor.push({
-                        ...sizeInfo,
-                        co_san: isAvailable,
-                        trang_thai: variant.trang_thai // Luôn sử dụng trạng thái từ variant
-                    });
-                }
+                sizeMap.set(variant.id_kich_thuoc, {
+                    hasAvailable: false,
+                    variants: []
+                });
             }
+            
+            const sizeData = sizeMap.get(variant.id_kich_thuoc);
+            sizeData.variants.push(variant);
+            
+            // Kiểm tra xem variant này có available không
+            if ((variant.trang_thai === 1 || variant.trang_thai === true) && variant.so_luong > 0) {
+                sizeData.hasAvailable = true;
+            }
+        }
+    });
+
+    // Bước 2: Tạo danh sách size với trạng thái đúng
+    sizeMap.forEach((sizeData, sizeId) => {
+        const sizeInfo = product.value.kich_thuoc.find(size => size.ma === sizeId);
+        
+        if (sizeInfo) {
+            sizesForSelectedColor.push({
+                ma: sizeInfo.ma,
+                ten: sizeInfo.ten,
+                co_san: sizeData.hasAvailable,
+                trang_thai: sizeData.hasAvailable ? 1 : 0
+            });
         }
     });
 

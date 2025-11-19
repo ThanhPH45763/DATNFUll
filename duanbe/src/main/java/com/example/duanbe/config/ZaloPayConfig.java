@@ -13,10 +13,6 @@ public class ZaloPayConfig {
     public static final String ENDPOINT_CREATE = "https://sb-openapi.zalopay.vn/v2/create";
     public static final String ENDPOINT_QUERY = "https://sb-openapi.zalopay.vn/v2/query";
     
-    // ⚡ CALLBACK_URL - ZaloPay sẽ gọi endpoint này khi thanh toán thành công
-    // PHẢI CÓ /api/zalopay/callback ở cuối!
-    public static final String CALLBACK_URL = "https://fourcha-adolph-noncondescending.ngrok-free.dev/api/zalopay/callback";
-    
     // Redirect URL sau khi thanh toán (không bắt buộc cho sandbox)
     public static final String REDIRECT_URL = "http://localhost:5173/admin/banhang";
 }

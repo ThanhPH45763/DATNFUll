@@ -1,0 +1,16 @@
+Request body nên có dạng:
+{
+  "id_san_pham": 1,
+  "id_mau_sac": 1,
+  "id_kich_thuoc": 1,
+  "gia_ban": 100000,
+  "so_luong": 10,
+  "trang_thai": "true",
+  "hinh_anh": [
+    "url1",
+    "url2",
+    "url3"
+  ]
+}
+
+Check xem ArrayList<String> có nhận đủ 3 phần tử không

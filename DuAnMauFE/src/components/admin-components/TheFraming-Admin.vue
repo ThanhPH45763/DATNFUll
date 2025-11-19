@@ -2,7 +2,7 @@
     <a-layout class="" style="min-height: 100vh">
         <a-layout-sider class="sider " v-model:collapsed="collapsed" :trigger="null" collapsible theme="light">
             <div class="logo p-3 " style="text-align: center;">
-                <img class="w-50 " style="cursor: pointer;" src="../../../public/image/logo"
+                <img class="w-50 " style="cursor: pointer;" src="../../images/logo/LogoM.png"
                     @click="changeRoute('/home')" alt="Logo" />
             </div>
 

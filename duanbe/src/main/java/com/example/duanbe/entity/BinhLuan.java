@@ -13,29 +13,31 @@ import java.util.Date;
 @AllArgsConstructor
 @Entity
 @Table(name = "binh_luan")
-@IdClass(BinhLuanId.class)
 public class BinhLuan {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_binh_luan")
+    private Integer idBinhLuan;
+
     @Column(name = "id_khach_hang")
-    private Integer id_khach_hang;
+    private Integer idKhachHang;
 
-    @Id
     @Column(name = "id_chi_tiet_san_pham")
-    private Integer id_chi_tiet_san_pham;
+    private Integer idChiTietSanPham;
 
-    @Column(name = "binh_luan")
-    private String binh_luan;
+    @Column(name = "noi_dung_binh_luan", columnDefinition = "nvarchar(MAX)")
+    private String noiDungBinhLuan;
 
     @Column(name = "danh_gia")
-    private Float danh_gia;
+    private Integer danhGia;
 
-    @Column(name = "ngay_binh_luan")
-    private Date ngay_binh_luan;
+    @Column(name = "ngay_tao")
+    private Date ngayTao;
 
     @Column(name = "ngay_sua")
-    private Date ngay_sua;
+    private Date ngaySua;
 
-    @Column(name = "da_chinh_sua")
-    private Boolean da_chinh_sua;
+    @Column(name = "chinh_sua")
+    private Boolean chinhSua;
 }

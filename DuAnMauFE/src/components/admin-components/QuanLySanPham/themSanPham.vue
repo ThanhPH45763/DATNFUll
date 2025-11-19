@@ -2823,16 +2823,29 @@ const onFinish = async () => {
             // Build danh sách ảnh từ selectedImages của variant
             let variantImages = [];
             
-            if (variant.selectedImages && variant.selectedImages.length > 0 && variantType) {
-                // Lấy ảnh từ fileList của variantType dựa trên selectedImages
-                variantImages = variant.selectedImages.map(imageUid => {
-                    const file = variantType.fileList.find(f => f.uid === imageUid);
-                    return file ? (file.url || file.response) : null;
-                }).filter(url => url !== null);
+            if (variantType && variantType.fileList) {
+                // Nếu user đã chọn ảnh cụ thể cho variant này
+                if (variant.selectedImages && variant.selectedImages.length > 0) {
+                    // Lấy ảnh từ fileList của variantType dựa trên selectedImages
+                    variantImages = variant.selectedImages.map(imageUid => {
+                        const file = variantType.fileList.find(f => f.uid === imageUid);
+                        return file ? (file.url || file.response) : null;
+                    }).filter(url => url !== null);
+                } 
+                // ✅ LOGIC MỚI: Nếu chưa chọn ảnh cụ thể, tự động lấy TẤT CẢ ảnh của màu
+                else {
+                    variantImages = variantType.fileList
+                        .filter(f => f.status === 'done')
+                        .map(f => f.url || f.response)
+                        .filter(url => url !== null);
+                    
+                    console.log(`✅ Tự động gán tất cả ảnh cho variant ${variant.mau_sac_name} - ${variant.kich_thuoc_name}`);
+                }
                 
                 // Sắp xếp: ảnh chính lên đầu
-                if (variant.primaryImageUid) {
-                    const primaryFile = variantType.fileList.find(f => f.uid === variant.primaryImageUid);
+                const primaryUid = variant.primaryImageUid || variantType.primaryImageUid;
+                if (primaryUid) {
+                    const primaryFile = variantType.fileList.find(f => f.uid === primaryUid);
                     if (primaryFile) {
                         const primaryUrl = primaryFile.url || primaryFile.response;
                         // Xóa ảnh chính khỏi vị trí cũ
@@ -2843,17 +2856,17 @@ const onFinish = async () => {
                 }
             }
 
-            // Biến thể không có ảnh → để trống (KHÔNG dùng fallback)
+            // Lưu danh sách ảnh (có thể rỗng nếu không có ảnh)
             const images = variantImages.length > 0 ? variantImages : [];
 
             console.log('Variant data before create:', {
                 variant: `${variant.mau_sac_name} - ${variant.kich_thuoc_name}`,
                 id_san_pham: productId,
+                hasSelectedImages: !!(variant.selectedImages && variant.selectedImages.length > 0),
                 selectedImages_count: variant.selectedImages?.length || 0,
                 images_count: images.length,
-                primaryImageUid: variant.primaryImageUid,
-                hinh_anh: images,
-                hasNoImage: variantImages.length === 0
+                primaryImageUid: variant.primaryImageUid || variantType?.primaryImageUid,
+                hinh_anh: images
             });
 
             // Tạo chi tiết sản phẩm với ảnh

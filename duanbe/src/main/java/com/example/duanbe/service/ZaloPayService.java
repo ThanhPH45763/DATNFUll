@@ -9,6 +9,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,6 +18,9 @@ import java.util.*;
 
 @Service
 public class ZaloPayService {
+
+    @Value("${app.public-url}")
+    private String publicUrl;
     
     private final Gson gson = new Gson();
     
@@ -57,7 +61,10 @@ public class ZaloPayService {
             order.put("bank_code", "");
             order.put("item", gson.toJson(items));
             order.put("embed_data", gson.toJson(embedData));
-            order.put("callback_url", ZaloPayConfig.CALLBACK_URL);
+            
+            // Xây dựng URL callback động
+            String callbackUrl = publicUrl + "/api/zalopay/callback";
+            order.put("callback_url", callbackUrl);
             
             // 5. Tạo MAC (chữ ký)
             String data = order.get("app_id") + "|" 

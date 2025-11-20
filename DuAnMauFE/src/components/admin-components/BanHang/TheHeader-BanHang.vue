@@ -15,7 +15,7 @@
                         <div v-if="filteredProducts.length === 0 && searchQuery.length > 0" class="empty-result">
                             Không tìm thấy sản phẩm phù hợp.
                         </div>
-                        <div v-else-if="filteredProducts.length > 0">
+                        <div v-if="filteredProducts.length > 0">
                             <div v-for="(product) in filteredProducts" :key="product.id" class="product-option"
                                 @click="handleDropdownClick(product)">
 
@@ -29,17 +29,15 @@
                                             <span>Màu sắc: {{ product.ten_mau }}</span>
                                         </div>
                                     </div>
-                                    <div class="info-left">
-                                        <span class="product-quantity">SL: {{ product.so_luong || 1 }}</span>
-                                    </div>
                                     <div class="info-right">
-                                        <span class="product-price">{{ formatCurrency(product.gia_ban) }}</span>
+                                        <div class="product-price">{{ formatCurrency(product.gia_ban) }} VNĐ</div>
+                                        <div class="product-stock">
+                                            Tồn kho: <span :class="product.so_luong > 5 ? 'in-stock' : 'low-stock'">{{
+                                                product.so_luong }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div v-else class="empty-result">
-                            Nhập tên sản phẩm để tìm kiếm.
                         </div>
                     </div>
                 </template>
@@ -122,13 +120,13 @@
                                 <td>
                                     <a-space direction="vertical">
                                         <a-input-number v-model:value="item.so_luong" :min="1"
-                                            :max="item.so_luong_ton_goc + item.so_luong" @change="updateItemTotal(item)"
+                                            :max="item.so_luong_ton_goc" @change="updateItemTotal(item)"
                                             style="width: 80px;" />
 
                                     </a-space>
                                 </td>
                                 <td>{{ formatCurrency(item.gia_ban) }}</td>
-                                <td>{{ formatCurrency(item.tong_tien) }}</td>
+                                <td>{{ formatCurrency(item.gia_ban * item.so_luong) }}</td>
                                 <td>
                                     <a-button type="danger" shape="circle" size="small"
                                         @click="removeFromBill(item.id_chi_tiet_san_pham)">
@@ -244,32 +242,32 @@
                     <div class="mb-3">
                         <label class="form-label">Tổng tiền hàng (VNĐ):</label>
                         <input type="text" class="form-control"
-                            :value="formatCurrency((activeTabData.hd.tong_tien_truoc_giam || 0) - (activeTabData.hd.phi_van_chuyen || 0))" disabled>
+                            :value="formatCurrency(fe_tongTienHang)" disabled>
                     </div>
                     <div class="mb-3" v-if="activeTabData.hd.phuong_thuc_nhan_hang === 'Giao hàng'">
                         <label class="form-label">Phí vận chuyển (VNĐ):</label>
                         <input type="text" class="form-control"
-                            :value="formatCurrency(activeTabData.hd.phi_van_chuyen || 0)" disabled>
+                            :value="formatCurrency(fe_phiVanChuyen)" disabled>
                     </div>
                     <div class="mb-3">
                         <label for="idVoucher" class="form-label">Voucher</label>
                         <select name="idVoucher" id="idVoucher" class="form-select"
                             v-model="activeTabData.hd.id_voucher" @change="updateVoucher">
                             <option :value="null">-- Không dùng voucher --</option>
-                            <option v-if="activeTabData.hd.id_voucher" :value="activeTabData.hd.id_voucher">
-                                {{ `${activeTabData.hd.ten_voucher}` }}
+                             <option v-for="voucher in availableVouchers" :key="voucher.id_voucher" :value="voucher.id_voucher">
+                                {{ voucher.ten_voucher }} (Giảm {{ formatCurrency(voucher.so_tien_giam) }})
                             </option>
                         </select>
                     </div>
-                    <div class="mb-3" v-if="(activeTabData.hd.tong_tien_truoc_giam - activeTabData.hd.tong_tien_sau_giam) > 0">
+                    <div class="mb-3" v-if="fe_giamGia > 0">
                         <label class="form-label">Giảm từ Voucher (VNĐ):</label>
                         <input type="text" class="form-control text-success fw-bold"
-                            :value="'-' + formatCurrency((activeTabData.hd.tong_tien_truoc_giam || 0) - (activeTabData.hd.tong_tien_sau_giam || 0))" disabled>
+                            :value="'-' + formatCurrency(fe_giamGia)" disabled>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Tổng thanh toán (VNĐ):</label>
                         <input type="text" class="form-control fw-bold fs-5"
-                            :value="formatCurrency(activeTabData.hd.tong_tien_sau_giam)" disabled>
+                            :value="formatCurrency(fe_tongThanhToan)" disabled>
                     </div>
                     <div class="mb-3">
                         <label class="form-label d-block mb-2">Hình thức thanh toán</label>
@@ -621,18 +619,23 @@ const handleSearch = () => {
 // --- Computed Properties ---
 // Lọc sản phẩm cho dropdown tìm kiếm
 const filteredProducts = computed(() => {
+    console.log('🔍 filteredProducts computed - allProducts:', allProducts.value?.length, 'searchQuery:', searchQuery.value);
     if (!allProducts.value || allProducts.value.length === 0) {
+        console.log('⚠️ allProducts is empty!');
         return [];
     }
     if (!searchQuery.value) {
+        console.log('✅ Returning all products:', allProducts.value.length);
         return allProducts.value;
     }
 
     const normalizedQuery = normalizeString(searchQuery.value);
-    return allProducts.value.filter(product => {
+    const filtered = allProducts.value.filter(product => {
         const normalizedProductName = normalizeString(product.ten_san_pham);
         return normalizedProductName.includes(normalizedQuery);
     });
+    console.log('✅ Filtered products:', filtered.length);
+    return filtered;
 });
 
 
@@ -664,18 +667,7 @@ const normalizeString = (str) => {
         .trim();
 };
 
-const handleSearchInput = (query) => {
-    const normalizedQuery = normalizeString(query);
-    if (!normalizedQuery) {
-        filteredProducts.value = [];
-        return;
-    }
-
-    filteredProducts.value = allProducts.value.filter(product => {
-        const normalizedProductName = normalizeString(product.ten_san_pham || '');
-        return normalizedProductName.includes(normalizedQuery);
-    });
-};
+// handleSearchInput đã được xóa vì filteredProducts là computed property tự động
 
 
 
@@ -720,19 +712,13 @@ let isAdding = false;
 let lastClickTime = 0;
 const CLICK_DELAY = 500; // ms - thời gian chờ giữa 2 lần click
 
-const addToBill = async (product) => {
+const addToBill = (product) => {
     const now = Date.now();
-    
-    // ✅ 1. Chống spam click - kiểm tra khoảng thời gian giữa 2 lần click
     if (isAdding || (now - lastClickTime < CLICK_DELAY)) {
-        console.log('🚫 Đang xử lý yêu cầu trước, vui lòng đợi...');
         return;
     }
-    
     lastClickTime = now;
     isAdding = true;
-
-    console.log('🛒 BẮT ĐẦU thêm sản phẩm:', product.ten_san_pham, 'ID:', product.id_chi_tiet_san_pham);
 
     const currentTab = activeTabData.value;
     if (!currentTab || !currentTab.hd?.id_hoa_don) {
@@ -747,70 +733,56 @@ const addToBill = async (product) => {
         return;
     }
 
-    try {
-        console.log('📡 GỌI API themSPHDMoi...');
-        const result = await store.themSPHDMoi(
-            currentTab.hd.id_hoa_don,
-            product.id_chi_tiet_san_pham,
-            1
-        );
-        
-        if (!result) {
-            console.log('❌ API themSPHDMoi thất bại');
-            isAdding = false;
-            return;
-        }
-
-        console.log('✅ API themSPHDMoi thành công');
-        console.log('📡 GỌI API getAllSPHD để refresh...');
-        
-        // ✅ 2. Refresh data từ server
-        await store.getAllSPHD(currentTab.hd.id_hoa_don);
-        
-        console.log('📦 Dữ liệu từ server:', store.getAllSPHDArr.length, 'items');
-        console.log('📦 Chi tiết:', JSON.stringify(store.getAllSPHDArr.map(i => ({
-            id: i.id_chi_tiet_san_pham,
-            name: i.ten_san_pham,
-            qty: i.so_luong
-        }))));
-        
-        currentTab.items.value = store.getAllSPHDArr.map(item => ({
-            id_hoa_don: item.id_hoa_don,
-            id_chi_tiet_san_pham: item.id_chi_tiet_san_pham,
-            hinh_anh: item.hinh_anh,
-            ten_san_pham: item.ten_san_pham,
-            mau_sac: item.ten_mau_sac || item.mau_sac || null,
-            kich_thuoc: item.gia_tri || null,
-            so_luong: item.so_luong,
-            gia_ban: item.gia_ban,  // ✅ Giá lẻ (đơn giá 1 sản phẩm)
-            tong_tien: item.don_gia,  // ✅ Tổng tiền (đã tính sẵn từ BE)
-            so_luong_ton_goc: item.so_luong_ton || 0
-        }));
-        
-        console.log('🎨 Mapped items:', currentTab.items.value.length, 'items');
-        console.log('🎨 Chi tiết items:', JSON.stringify(currentTab.items.value.map(i => ({
-            id: i.id_chi_tiet_san_pham,
-            name: i.ten_san_pham,
-            qty: i.so_luong
-        }))));
-        
-        await refreshHoaDon(currentTab.hd.id_hoa_don);
-
-        dropdownVisible.value = false;
-        searchQuery.value = '';
-        message.success(`Đã thêm "${product.ten_san_pham}" vào hóa đơn.`);
-        
-        await store.getAllCTSPKM();
-        allProducts.value = store.getAllCTSPKMList;
-        
-        console.log('✅ HOÀN TẤT thêm sản phẩm');
-
-    } catch (error) {
-        console.error('💥 Lỗi khi thêm sản phẩm:', error);
-        message.error('Đã xảy ra lỗi khi thêm sản phẩm!');
-    } finally {
-        isAdding = false;
+    // --- Optimistic UI Update ---
+    const existingItem = currentTab.items.value.find(item => item.id_chi_tiet_san_pham === product.id_chi_tiet_san_pham);
+    
+    if (existingItem) {
+        // Chỉ tăng số lượng local
+        existingItem.so_luong++;
+    } else {
+        // Thêm sản phẩm mới vào mảng local
+        const newItem = {
+            id_hoa_don: currentTab.hd.id_hoa_don,
+            id_chi_tiet_san_pham: product.id_chi_tiet_san_pham,
+            hinh_anh: product.hinh_anh,
+            ten_san_pham: product.ten_san_pham,
+            mau_sac: product.ten_mau,
+            kich_thuoc: product.gia_tri,
+            so_luong: 1,
+            gia_ban: product.gia_ban,
+            so_luong_ton_goc: product.so_luong - 1, // Giả định giảm tồn kho local
+        };
+        currentTab.items.value.push(newItem);
     }
+    message.success(`Đã thêm "${product.ten_san_pham}"`);
+    dropdownVisible.value = false;
+    searchQuery.value = '';
+    // --- Kết thúc Optimistic UI Update ---
+
+    // --- Gửi yêu cầu lên backend ở chế độ nền ---
+    store.themSPHDMoi(currentTab.hd.id_hoa_don, product.id_chi_tiet_san_pham, 1)
+        .then(result => {
+            if (!result) { throw new Error("Thêm sản phẩm thất bại"); }
+            // Cập nhật lại toàn bộ hóa đơn từ backend để đảm bảo đồng bộ 100%
+            refreshHoaDon(currentTab.hd.id_hoa_don); 
+            store.getAllCTSPKM().then(p => allProducts.value = p); // Tải lại danh sách sản phẩm
+        })
+        .catch(error => {
+            console.error('Lỗi khi thêm sản phẩm (backend):', error);
+            message.error('Lỗi: Không thể thêm sản phẩm vào hóa đơn.');
+            // --- Hoàn tác lại thay đổi trên UI nếu có lỗi ---
+            if (existingItem) {
+                existingItem.so_luong--; // Trả lại số lượng
+            } else {
+                const itemIndex = currentTab.items.value.findIndex(item => item.id_chi_tiet_san_pham === product.id_chi_tiet_san_pham);
+                if (itemIndex > -1) {
+                    currentTab.items.value.splice(itemIndex, 1);
+                }
+            }
+        })
+        .finally(() => {
+            isAdding = false;
+        });
 };
 
 
@@ -818,81 +790,155 @@ const tienKhachDua = ref(0);
 
 // Tính toán tiền thừa trả khách (calculatedChange) dựa trên tong_tien_sau_giam
 const calculatedChange = computed(() => {
-    const total = activeTabData.value?.hd?.tong_tien_sau_giam || 0;
+    const total = fe_tongThanhToan.value || 0;
     const cash = tienKhachDua.value || 0;
     return cash >= total ? cash - total : 0;
 });
 
 const isPaymentDisabled = computed(() => {
     if (currentInvoiceItems.value.length === 0) {
-        return true; // Không có sản phẩm nào trong hóa đơn
-
+        return true; 
     }
     if (activeTabData.value?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt') {
-        const total = activeTabData.value.hd.tong_tien_sau_giam || 0;
+        const total = fe_tongThanhToan.value || 0;
         const cash = tienKhachDua.value || 0;
         return cash < total;
     }
     return false;
 });
 
-// Cập nhật tổng tiền khi số lượng thay đổi trong bảng hóa đơn
-const updateItemTotal = async (item) => {
-    const productInfo = allProducts.value.find(p => p.id_chi_tiet_san_pham === item.id_chi_tiet_san_pham);
-    const sphdItem = store.getAllSPHDArr.find(sp =>
-        sp.id_hoa_don === item.id_hoa_don &&
-        sp.id_chi_tiet_san_pham === item.id_chi_tiet_san_pham
+// =================================================================
+// LOGIC TÍNH TOÁN VÀ VOUCHER TỰ ĐỘNG CỦA FRONTEND
+// =================================================================
+
+const userHasManuallyDeselectedVoucher = ref(false);
+const availableVouchers = ref([]);
+
+// 1. TÍNH TOÁN CÁC GIÁ TRỊ TỨC THÌ
+const fe_tongTienHang = computed(() => {
+    if (!currentInvoiceItems.value) return 0;
+    return currentInvoiceItems.value.reduce((total, item) => (total + (Number(item.gia_ban) || 0) * (Number(item.so_luong) || 0)), 0);
+});
+
+const fe_giamGia = computed(() => {
+    const currentTab = activeTabData.value;
+    if (!currentTab?.hd?.id_voucher || !availableVouchers.value.length) return 0;
+    const selectedVoucher = availableVouchers.value.find(v => v.id_voucher === currentTab.hd.id_voucher);
+    if (!selectedVoucher) return 0;
+
+    const subtotal = fe_tongTienHang.value;
+    if (subtotal < (Number(selectedVoucher.gia_tri_toi_thieu) || 0)) return 0;
+
+    let discount = 0;
+    const giaTriGiam = Number(selectedVoucher.gia_tri_giam) || 0;
+    if (selectedVoucher.kieu_giam_gia === 'Phần trăm') {
+        discount = subtotal * (giaTriGiam / 100);
+        const giaTriToiDa = Number(selectedVoucher.gia_tri_toi_da) || 0;
+        if (giaTriToiDa > 0 && discount > giaTriToiDa) discount = giaTriToiDa;
+    } else {
+        discount = giaTriGiam;
+    }
+    return Math.min(discount, subtotal);
+});
+
+const fe_phiVanChuyen = computed(() => {
+    const currentTab = activeTabData.value;
+    return (currentTab?.hd?.phuong_thuc_nhan_hang === 'Giao hàng') ? (Number(currentTab.hd.phi_van_chuyen) || 0) : 0;
+});
+
+const fe_tongThanhToan = computed(() => {
+    const total = fe_tongTienHang.value - fe_giamGia.value + fe_phiVanChuyen.value;
+    return total > 0 ? total : 0;
+});
+
+
+// 2. HÀM CẬP NHẬT VOUCHER KHI NGƯỜI DÙNG CHỌN
+const updateVoucher = async () => {
+    const currentTab = activeTabData.value;
+    if (!currentTab?.hd?.id_hoa_don) return;
+
+    // Ghi nhớ lựa chọn của người dùng
+    userHasManuallyDeselectedVoucher.value = currentTab.hd.id_voucher === null;
+
+    // Gọi API mới để áp dụng voucher
+    const updatedInvoice = await store.applyVoucherToInvoice(
+        currentTab.hd.id_hoa_don, 
+        currentTab.hd.id_voucher
     );
+    
+    if (updatedInvoice) {
+        // Cập nhật hóa đơn với dữ liệu mới từ backend
+        Object.assign(currentTab.hd, updatedInvoice);
+    }
+};
 
-    const soLuongTonKho = productInfo ? productInfo.so_luong : 0;
-    const soLuongTrongHD = sphdItem ? sphdItem.so_luong : 0;
+// 3. LOGIC TỰ ĐỘNG XỬ LÝ VOUCHER
+watch(fe_tongTienHang, async (newTotal) => {
+    const currentTab = activeTabData.value;
+    if (!currentTab || !currentTab.hd || !currentTab.hd.id_hoa_don) return;
+
+    // Lấy danh sách voucher phù hợp từ API mới
+    const vouchers = newTotal > 0 ? await store.getSuitableVouchersForInvoice(newTotal) : [];
+    availableVouchers.value = (vouchers && Array.isArray(vouchers)) ? vouchers : [];
+    
+    const currentVoucherId = currentTab.hd.id_voucher;
+
+    // Nếu người dùng đã chủ động chọn "không dùng", thì dừng lại
+    if (userHasManuallyDeselectedVoucher.value) {
+        return;
+    }
+
+    // Tìm voucher tốt nhất (giảm nhiều nhất)
+    const bestVoucher = availableVouchers.value.length > 0
+        ? [...availableVouchers.value].sort((a, b) => (b.so_tien_giam || 0) - (a.so_tien_giam || 0))[0]
+        : null;
+
+    // Kịch bản 1: Voucher đang dùng không còn hợp lệ (ví dụ: giảm số lượng)
+    if (currentVoucherId && !availableVouchers.value.some(v => v.id_voucher === currentVoucherId)) {
+        currentTab.hd.id_voucher = null; // Gỡ voucher khỏi giao diện
+        message.warning('Voucher không còn hợp lệ và đã được gỡ bỏ.');
+        await updateVoucher(); // Cập nhật thay đổi này về backend
+    } 
+    // Kịch bản 2: Chưa có voucher, nhưng giờ đã đủ điều kiện cho voucher tốt nhất
+    else if (!currentVoucherId && bestVoucher) {
+        currentTab.hd.id_voucher = bestVoucher.id_voucher; // Tự động áp dụng trên giao diện
+        message.success(`Đã tự động áp dụng voucher: ${bestVoucher.ten_voucher}`);
+        await updateVoucher(); // Cập nhật thay đổi này về backend
+    }
+});
+
+
+
+
+
+// Cập nhật tổng tiền khi số lượng thay đổi trong bảng hóa đơn
+const updateItemTotal = (item) => {
     let soLuongMoi = item.so_luong;
+    const gioiHanToiDa = item.so_luong_ton_goc;
 
-    // 1. Nếu nhập ≤ 0 → đặt lại 1
-    if (soLuongMoi <= 0) {
+    if (!soLuongMoi || soLuongMoi <= 0) {
         soLuongMoi = 1;
     }
-
-    // 2. Nếu nhập vượt quá tồn + trong hóa đơn → giới hạn lại
-    const gioiHanToiDa = soLuongTrongHD + soLuongTonKho;
     if (soLuongMoi > gioiHanToiDa) {
-        message.warning(`Tồn kho không đủ. Đặt lại số lượng tối đa là ${gioiHanToiDa}`);
+        message.warning(`Số lượng tồn kho không đủ. Số lượng đã được đặt lại thành ${gioiHanToiDa}.`);
         soLuongMoi = gioiHanToiDa;
     }
-
-    // Cập nhật lại item trong UI
+    
+    // Cập nhật lại số lượng trên giao diện. Giao diện sẽ tự tính toán lại tổng tiền.
     item.so_luong = soLuongMoi;
 
-    try {
-        // 🔄 Gọi API mới: set lại số lượng mong muốn
-        await store.setSPHD(item.id_hoa_don, item.id_chi_tiet_san_pham, soLuongMoi);
-
-        // Làm mới lại dữ liệu hóa đơn
-        await store.getAllSPHD(item.id_hoa_don);
-
-        const currentTab = activeTabData.value;
-        if (currentTab) {
-            currentTab.items.value = store.getAllSPHDArr.map(hd => ({
-                id_hoa_don: hd.id_hoa_don,
-                id_chi_tiet_san_pham: hd.id_chi_tiet_san_pham,
-                hinh_anh: hd.hinh_anh,
-                ten_san_pham: hd.ten_san_pham,
-                mau_sac: hd.ten_mau_sac || hd.mau_sac || null,
-                kich_thuoc: hd.gia_tri || null,
-                so_luong: hd.so_luong,
-                gia_ban: hd.gia_ban,  // ✅ Giá lẻ
-                tong_tien: hd.don_gia,  // ✅ Tổng tiền
-                so_luong_ton_goc: hd.so_luong_ton || 0
-            }));
-        }
-
-        await refreshHoaDon(item.id_hoa_don);
-        await store.getAllCTSPKM();
-        allProducts.value = store.getAllCTSPKMList;
-    } catch (error) {
-        console.error('Lỗi khi cập nhật số lượng:', error);
-        message.error('Đã xảy ra lỗi khi cập nhật số lượng!');
-    }
+    // Gửi yêu cầu cập nhật lên backend ở chế độ nền
+    store.setSPHD(item.id_hoa_don, item.id_chi_tiet_san_pham, soLuongMoi)
+        .then(() => {
+            console.log(`Updated quantity for ${item.ten_san_pham} on backend.`);
+            // Sau khi backend cập nhật thành công, làm mới lại dữ liệu của hóa đơn trong nền
+            // để đảm bảo trạng thái cuối cùng được đồng bộ.
+            refreshHoaDon(item.id_hoa_don);
+        })
+        .catch(err => {
+            console.error('Failed to update quantity on backend:', err);
+            message.error('Lỗi khi cập nhật số lượng trên máy chủ.');
+        });
 };
 
 
@@ -900,47 +946,37 @@ const updateItemTotal = async (item) => {
 
 
 // Xóa sản phẩm khỏi hóa đơn chi tiết của tab hiện tại
-const removeFromBill = async (productId) => {
+const removeFromBill = (productId) => {
     const currentTab = activeTabData.value;
-    if (!currentTab || !currentTab.items) return;
+    if (!currentTab?.items) return;
+
     const itemsArray = currentTab.items.value;
     const itemIndex = itemsArray.findIndex(item => item.id_chi_tiet_san_pham === productId);
     if (itemIndex === -1) return;
 
-    const removedItem = itemsArray[itemIndex];
+    // --- Optimistic UI Update ---
+    const removedItem = { ...itemsArray[itemIndex] }; // Sao chép item để có thể hoàn tác
+    itemsArray.splice(itemIndex, 1);
+    message.info(`Đã xóa "${removedItem.ten_san_pham}" khỏi hóa đơn.`);
+    // --- Kết thúc Optimistic UI Update ---
 
-    try {
-        const result = await store.xoaSPHD(currentTab.hd.id_hoa_don, productId);
-
-        if (!result || !result.success) {
-            message.error(result.message || 'Không xóa được sản phẩm khỏi hóa đơn!');
-            return;
-        }
-
-        // Làm mới danh sách sản phẩm từ server
-        await store.getAllSPHD(currentTab.hd.id_hoa_don);
-        currentTab.items.value = store.getAllSPHDArr.map(item => ({
-            id_hoa_don: item.id_hoa_don,
-            id_chi_tiet_san_pham: item.id_chi_tiet_san_pham,
-            hinh_anh: item.hinh_anh,
-            ten_san_pham: item.ten_san_pham,
-            mau_sac: item.ten_mau_sac || item.mau_sac || null,
-            kich_thuoc: item.gia_tri || null,
-            so_luong: item.so_luong,
-            gia_ban: item.gia_ban,  // ✅ Giá lẻ
-            tong_tien: item.don_gia,  // ✅ Tổng tiền
-            so_luong_ton_goc: item.so_luong_ton || 0,
-        }));
-
-        await refreshHoaDon(currentTab.hd.id_hoa_don);
-        await store.getAllCTSPKM();
-        allProducts.value = store.getAllCTSPKMList;
-
-        message.info(`Đã xóa "${removedItem.ten_san_pham}" khỏi hóa đơn.`);
-    } catch (error) {
-        console.error('Lỗi không mong đợi:', error);
-        message.error('Đã xảy ra lỗi bất ngờ khi xóa sản phẩm!');
-    }
+    // --- Gửi yêu cầu lên backend ở chế độ nền ---
+    store.xoaSPHD(currentTab.hd.id_hoa_don, productId)
+        .then(result => {
+            if (!result?.success) {
+                throw new Error(result.message || "Xóa sản phẩm thất bại");
+            }
+            console.log('Backend updated successfully for remove.');
+            // Đồng bộ lại hóa đơn và tồn kho trong nền
+            refreshHoaDon(currentTab.hd.id_hoa_don);
+            store.getAllCTSPKM().then(p => allProducts.value = p);
+        })
+        .catch(error => {
+            console.error('Lỗi khi xóa sản phẩm (backend):', error);
+            message.error('Lỗi: Không thể xóa sản phẩm.');
+            // --- Hoàn tác lại thay đổi trên UI nếu có lỗi ---
+            itemsArray.splice(itemIndex, 0, removedItem); // Thêm lại item vào vị trí cũ
+        });
 };
 
 
@@ -1444,23 +1480,16 @@ watch(() => activeKey.value, async (newKey) => {
         })) || [];
         
         console.log('🎨 WATCH: Mapped items:', currentTab.items.value.length, 'items');
+        
+        // Cập nhật các giá trị liên quan
+        ptnh.value = currentTab.hd.phuong_thuc_nhan_hang;
+        store.setCurrentHoaDonId(currentTab.hd.id_hoa_don);
     }
-    ptnh.value = currentTab.hd.phuong_thuc_nhan_hang;
-    store.setCurrentHoaDonId(currentTab.hd.id_hoa_don);
 }, { immediate: true });
 
-watch(() => searchQuery, (newVal) => {
-    if (newVal.length > 0) {
-        dropdownVisible.value = true
-    } else {
-        dropdownVisible.value = false
-    }
-})
+// Watcher kiểm soát dropdown đã được xóa - a-dropdown tự quản lý visibility qua trigger=['click']
 
-watch(searchQuery, (newQuery) => {
-    handleSearchInput(newQuery);
-    dropdownVisible.value = true;
-});
+// Watcher này đã được xóa vì không cần thiết (filteredProducts tự động update)
 
 const isLoading = ref(false);
 

@@ -20,7 +20,7 @@ const home = [
             {
                 path: "thanhtoan-banhang",
                 name: "thanhtoan-banhang",
-                component: () => import('../views/web/thanhToan-BanHang.vue'),
+                component: () => import('@/views/web/thanhToan-BanHang.vue'),
                 meta: { scrollToTop: true }
             },
             {

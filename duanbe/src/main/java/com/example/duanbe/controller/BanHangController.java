@@ -162,7 +162,8 @@ public class BanHangController {
             List<HoaDonChiTiet> chiTietList = hoaDonChiTietRepo.findByIdHoaDon(idHD);
 
             // Tính tổng tiền hàng (chưa bao gồm phí vận chuyển)
-            // Lưu ý: don_gia trong DB đã là tổng tiền (giá_lẻ × số_lượng), không cần nhân thêm
+            // Lưu ý: don_gia trong DB đã là tổng tiền (giá_lẻ × số_lượng), không cần nhân
+            // thêm
             BigDecimal tongTienHang = chiTietList.stream()
                     .map(HoaDonChiTiet::getDon_gia)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -174,7 +175,7 @@ public class BanHangController {
 
             hoaDonRepo.save(hoaDon);
 
-            capNhatVoucher(idHD);
+            updateTongTienHoaDon(idHD);
 
             return ResponseEntity.ok("Cập nhật phương thức nhận hàng và tính tổng tiền thành công!");
         } catch (Exception e) {
@@ -300,73 +301,44 @@ public class BanHangController {
     }
 
     @PutMapping("/updateHoaDon")
-    public ResponseEntity<String> updateHoaDon(
-            @RequestParam("idHoaDon") Integer idHD,
-            @RequestParam(value = "idKhachHang", required = false) Integer idKH,
-            @RequestParam(value = "trangThai", required = false) String trangThai,
-            @RequestParam(value = "idVoucher", required = false) Integer idVoucher,
-            @RequestParam(value = "sdtNguoiNhan", required = false) String sdtNguoiNhan,
-            @RequestParam(value = "diaChi", required = false) String diaChi,
-            @RequestParam(value = "email", required = false) String email,
-            @RequestParam(value = "tongTienTruocGiam", required = false) BigDecimal tongTienTruocGiam,
-            @RequestParam(value = "phiVanChuyen", required = false) BigDecimal phiVanChuyen,
-            @RequestParam(value = "tongTienSauGiam", required = false) BigDecimal tongTienSauGiam,
-            @RequestParam(value = "hinhThucThanhToan", required = false) String hinhThucThanhToan,
-            @RequestParam(value = "phuongThucNhanHang", required = false) String phuongThucNhanHang,
-            @RequestParam(value = "loaiHoaDon", required = false) String loaiHoaDon,
-            @RequestParam(value = "ghiChu", required = false) String ghiChu) {
-        try {
-            Optional<HoaDon> hoaDonOptional = hoaDonRepo.findById(idHD);
-            if (!hoaDonOptional.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy hóa đơn");
-            }
-
-            HoaDon hoaDon = hoaDonOptional.get();
-
-            // Cập nhật từng trường nếu có giá trị
-            if (idKH != null) {
-                Optional<KhachHang> khachHang = khachHangRepo.findById(idKH);
-                khachHang.ifPresent(hoaDon::setKhachHang);
-            }
-
-            if (trangThai != null)
-                hoaDon.setTrang_thai(trangThai);
-            if (sdtNguoiNhan != null)
-                hoaDon.setSdt(sdtNguoiNhan);
-            if (diaChi != null)
-                hoaDon.setDia_chi(diaChi);
-            if (email != null)
-                hoaDon.setEmail(email);
-            if (tongTienTruocGiam != null)
-                hoaDon.setTong_tien_truoc_giam(tongTienTruocGiam);
-            if (phiVanChuyen != null)
-                hoaDon.setPhi_van_chuyen(phiVanChuyen);
-            if (tongTienSauGiam != null)
-                hoaDon.setTong_tien_sau_giam(tongTienSauGiam);
-            if (hinhThucThanhToan != null)
-                hoaDon.setHinh_thuc_thanh_toan(hinhThucThanhToan);
-            if (phuongThucNhanHang != null)
-                hoaDon.setPhuong_thuc_nhan_hang(phuongThucNhanHang);
-            if (loaiHoaDon != null)
-                hoaDon.setLoai_hoa_don(loaiHoaDon);
-            if (ghiChu != null)
-                hoaDon.setGhi_chu(ghiChu);
-
-            // Xử lý voucher
-            if (idVoucher != null) {
-                if (idVoucher.describeConstable().isEmpty()) {
-                    hoaDon.setVoucher(null);
-                } else {
-                    Optional<Voucher> voucher = voucherRepository.findById(idVoucher);
-                    voucher.ifPresent(hoaDon::setVoucher);
-                }
-            }
-
-            hoaDonRepo.save(hoaDon);
-            return ResponseEntity.ok("Cập nhật thành công");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi cập nhật");
+    public ResponseEntity<HoaDonResponse> updateHoaDon(@RequestBody Map<String, Object> payload) {
+        Integer idHD = (Integer) payload.get("id_hoa_don");
+        if (idHD == null) {
+            return ResponseEntity.badRequest().build();
         }
+
+        Object idVoucherObj = payload.get("id_voucher");
+        Integer idVoucher = null;
+        if (idVoucherObj instanceof Number) {
+            idVoucher = ((Number) idVoucherObj).intValue();
+        }
+
+        HoaDon hoaDon = hoaDonRepo.findById(idHD)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Không tìm thấy hóa đơn với ID: " + idHD));
+
+        Voucher voucher = null;
+        if (idVoucher != null) {
+            // Fix for effectively final issue
+            final Integer finalIdVoucher = idVoucher;
+            voucher = voucherRepository.findById(finalIdVoucher)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Không tìm thấy voucher với ID: " + finalIdVoucher));
+        }
+
+        hoaDon.setVoucher(voucher);
+        hoaDonRepo.save(hoaDon);
+
+        updateTongTienHoaDon(idHD);
+
+        List<HoaDonResponse> responseList = hoaDonRepo.findHoaDonById(idHD);
+        if (responseList.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Không thể tải lại hóa đơn sau khi cập nhật");
+        }
+        HoaDonResponse updatedHoaDonResponse = responseList.get(0);
+
+        return ResponseEntity.ok(updatedHoaDonResponse);
     }
 
     @GetMapping("/getSPHD")
@@ -394,11 +366,11 @@ public class BanHangController {
 
             int soLuongTonKho = ctsp.getSo_luong();
             int soLuongTrongHD = existingItem.map(HoaDonChiTiet::getSo_luong).orElse(0);
-            
+
             // ✅ 2. Tính số lượng có thể thêm
             int soLuongCoTheThemToiDa = soLuongTonKho;
             int soLuong = Math.min(soLuongInput, soLuongCoTheThemToiDa);
-            
+
             if (soLuong <= 0) {
                 return ResponseEntity.badRequest().body("Sản phẩm đã hết hàng!");
             }
@@ -413,14 +385,14 @@ public class BanHangController {
             BigDecimal donGiaLe = giaGiamTotNhat.orElse(ctsp.getGia_ban());
 
             HoaDonChiTiet chiTiet;
-            
+
             // ✅ 4. NẾU ĐÃ TỒN TẠI -> CỘNG SỐ LƯỢNG
             if (existingItem.isPresent()) {
                 chiTiet = existingItem.get();
                 int soLuongMoi = chiTiet.getSo_luong() + soLuong;
                 chiTiet.setSo_luong(soLuongMoi);
                 chiTiet.setDon_gia(donGiaLe.multiply(BigDecimal.valueOf(soLuongMoi)));
-            } 
+            }
             // ✅ 5. NẾU CHƯA TỒN TẠI -> TẠO MỚI
             else {
                 chiTiet = new HoaDonChiTiet();
@@ -438,11 +410,11 @@ public class BanHangController {
             hoaDonChiTietRepo.save(chiTiet);
 
             // ✅ 8. Cập nhật lại tổng tiền và voucher (hàm này sẽ tính toàn bộ)
-            capNhatVoucher(idHD);
+            updateTongTienHoaDon(idHD);
 
-            return ResponseEntity.ok(existingItem.isPresent() 
-                ? "Đã cộng số lượng sản phẩm vào hóa đơn" 
-                : "Thêm sản phẩm mới vào hóa đơn thành công");
+            return ResponseEntity.ok(existingItem.isPresent()
+                    ? "Đã cộng số lượng sản phẩm vào hóa đơn"
+                    : "Thêm sản phẩm mới vào hóa đơn thành công");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi khi thêm sản phẩm: " + e.getMessage());
@@ -502,7 +474,7 @@ public class BanHangController {
             // Lưu lại DB
             chiTietSanPhamRepo.save(chiTietSP);
             hoaDonChiTietRepo.save(chiTiet);
-            capNhatTongTienVaVoucher(hoaDon);
+            updateTongTienHoaDon(hoaDon.getId_hoa_don());
 
             return ResponseEntity.ok("Cập nhật số lượng thành công");
         } catch (Exception e) {
@@ -541,7 +513,7 @@ public class BanHangController {
             HoaDon hoaDon = hoaDonRepo.findById(idHD)
                     .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại!"));
 
-            capNhatTongTienVaVoucher(hoaDon);
+            updateTongTienHoaDon(hoaDon.getId_hoa_don());
 
             return ResponseEntity.ok("Giảm sản phẩm thành công");
         } catch (Exception e) {
@@ -566,12 +538,12 @@ public class BanHangController {
             // Xóa sản phẩm
             hoaDonChiTietRepo.xoaSPKhoiHD(idHoaDon, idChiTietSanPham);
 
-            // Cập nhật voucher
+            // Cập nhật tổng tiền
             try {
-                capNhatVoucher(idHoaDon);
+                updateTongTienHoaDon(idHoaDon);
             } catch (Exception ex) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("success", false, "message", "Lỗi khi cập nhật voucher: " + ex.getMessage()));
+                        .body(Map.of("success", false, "message", "Lỗi khi cập nhật tổng tiền: " + ex.getMessage()));
             }
 
             return ResponseEntity.ok(Map.of("success", true));
@@ -581,76 +553,74 @@ public class BanHangController {
         }
     }
 
-    private void capNhatTongTienVaVoucher(HoaDon hoaDon) {
-        // Chỉ gọi hàm capNhatVoucher để tính toàn bộ
-        capNhatVoucher(hoaDon.getId_hoa_don());
+    @GetMapping("/get-suitable-vouchers")
+    public ResponseEntity<?> getSuitableVouchers(@RequestParam("tongTien") BigDecimal tongTien) {
+        try {
+            List<VoucherBHResponse> vouchers = voucherRepository.listVoucherHopLeTheoGia(tongTien);
+            return ResponseEntity.ok(vouchers);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi lấy danh sách voucher: " + e.getMessage());
+        }
     }
 
-    @Transactional
-    private void capNhatVoucher(Integer idHD) {
-        List<HoaDonChiTietResponse> dsSanPham = hoaDonChiTietRepo.findHoaDonChiTietById(idHD);
+    @PostMapping("/apply-voucher")
+    public ResponseEntity<?> applyVoucher(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "idVoucher", required = false) Integer idVoucher) {
+        try {
+            HoaDon hoaDon = hoaDonRepo.findById(idHoaDon)
+                    .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại!"));
 
-        HoaDon hoaDon = hoaDonRepo.findById(idHD)
-                .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại!"));
+            Voucher oldVoucher = hoaDon.getVoucher();
 
-        // Xử lý trường hợp không có sản phẩm
-        if (dsSanPham.isEmpty()) {
-            hoaDon.setTong_tien_truoc_giam(BigDecimal.ZERO);
-            hoaDon.setTong_tien_sau_giam(BigDecimal.ZERO);
-            if (hoaDon.getVoucher() != null) {
-                Voucher voucherCu = hoaDon.getVoucher();
-                voucherCu.setSoLuong(voucherCu.getSoLuong() + 1);
-                voucherRepository.save(voucherCu);
+            // Trường hợp 1: Bỏ voucher (idVoucher là null)
+            if (idVoucher == null) {
+                if (oldVoucher != null) {
+                    // Trả lại số lượng cho voucher cũ
+                    oldVoucher.setSoLuong(oldVoucher.getSoLuong() + 1);
+                    voucherRepository.save(oldVoucher);
+                }
                 hoaDon.setVoucher(null);
             }
-            hoaDonRepo.save(hoaDon);
-            return;
-        }
+            // Trường hợp 2: Áp dụng voucher mới
+            else {
+                Voucher newVoucher = voucherRepository.findById(idVoucher)
+                        .orElseThrow(() -> new RuntimeException("Voucher không tồn tại!"));
 
-        // Tính tổng tiền sản phẩm
-        // Lưu ý: don_gia trong DB đã là tổng tiền (giá_lẻ × số_lượng), không cần nhân thêm
-        BigDecimal tongTienSanPham = dsSanPham.stream()
-                .filter(ct -> ct.getDon_gia() != null)
-                .map(ct -> ct.getDon_gia())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                // Nếu voucher mới khác voucher cũ
+                if (oldVoucher == null || !oldVoucher.getId().equals(newVoucher.getId())) {
+                    // Trả lại số lượng cho voucher cũ (nếu có)
+                    if (oldVoucher != null) {
+                        oldVoucher.setSoLuong(oldVoucher.getSoLuong() + 1);
+                        voucherRepository.save(oldVoucher);
+                    }
 
-        BigDecimal phiVanChuyen = Optional.ofNullable(hoaDon.getPhi_van_chuyen()).orElse(BigDecimal.ZERO);
-        BigDecimal tongTruocGiam = tongTienSanPham.add(phiVanChuyen);
-        hoaDon.setTong_tien_truoc_giam(tongTruocGiam);
+                    // Kiểm tra số lượng voucher mới
+                    if (newVoucher.getSoLuong() <= 0) {
+                        return ResponseEntity.badRequest().body("Voucher đã hết số lượng!");
+                    }
 
-        Voucher voucherCu = hoaDon.getVoucher();
-        List<VoucherBHResponse> voucherBHResponse = voucherRepository.giaTriGiamThucTeByIDHD(idHD);
-
-        if (!voucherBHResponse.isEmpty()) {
-            VoucherBHResponse v = voucherBHResponse.get(0);
-            Voucher voucherMoi = voucherRepository.findById(v.getId_voucher())
-                    .orElseThrow(() -> new RuntimeException("Voucher không tồn tại!"));
-
-            if (voucherMoi.getSoLuong() <= 0) {
-                throw new RuntimeException("Voucher đã hết số lượng!");
-            }
-
-            hoaDon.setTong_tien_sau_giam(tongTruocGiam.subtract(v.getGia_tri_giam_thuc_te()));
-            hoaDon.setVoucher(voucherMoi);
-
-            if (voucherCu == null || !voucherCu.getId().equals(voucherMoi.getId())) {
-                if (voucherCu != null) {
-                    voucherCu.setSoLuong(voucherCu.getSoLuong() + 1);
-                    voucherRepository.save(voucherCu);
+                    // Trừ số lượng voucher mới
+                    newVoucher.setSoLuong(newVoucher.getSoLuong() - 1);
+                    voucherRepository.save(newVoucher);
+                    hoaDon.setVoucher(newVoucher);
                 }
-                voucherMoi.setSoLuong(voucherMoi.getSoLuong() - 1);
-                voucherRepository.save(voucherMoi);
+                // Nếu giống nhau thì không làm gì cả (hoặc có thể check lại điều kiện)
             }
-        } else {
-            if (voucherCu != null) {
-                voucherCu.setSoLuong(voucherCu.getSoLuong() + 1);
-                voucherRepository.save(voucherCu);
-            }
-            hoaDon.setVoucher(null);
-            hoaDon.setTong_tien_sau_giam(tongTruocGiam);
-        }
 
-        hoaDonRepo.save(hoaDon);
+            hoaDonRepo.save(hoaDon);
+
+            // Cập nhật lại tổng tiền (sẽ tự động tính lại giảm giá dựa trên voucher đã set)
+            updateTongTienHoaDon(idHoaDon);
+
+            // Trả về hóa đơn đã cập nhật
+            return ResponseEntity.ok(hoaDonRepo.findHoaDonById(idHoaDon).get(0));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi áp dụng voucher: " + e.getMessage());
+        }
     }
 
     @GetMapping("/trangThaiDonHang")
@@ -687,7 +657,7 @@ public class BanHangController {
             hd.setPhi_van_chuyen(BigDecimal.ZERO);
         }
         hoaDonRepo.save(hd);
-        capNhatVoucher(idHD);
+        updateTongTienHoaDon(idHD);
         return ResponseEntity.ok("ok");
     }
 

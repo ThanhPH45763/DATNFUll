@@ -304,7 +304,7 @@
                     'disabled': !isVoucherValid(voucher),
                     'selected': isVoucherSelected(voucher),
                     'not-selected': !isVoucherSelected(voucher) && appliedCoupons.length > 0
-                }" @click="selectVoucher(voucher)">
+                }" @click="toggleVoucher(voucher)">
                     <div class="voucher-left">
                         <div class="voucher-badge">
                             <span class="voucher-type">{{ voucher.loai === 'percent' ? 'GIẢM %' : 'GIẢM GIÁ' }}</span>
@@ -770,7 +770,7 @@ const calculateOrderTotals = () => {
             dia_chi: customer.value.so_nha + ', ' + customer.value.xa_phuong + ', ' + customer.value.quan_huyen + ', ' + customer.value.tinh_thanh_pho,
             email: customer.value.email,
             tong_tien_truoc_giam: subtotal.value,
-            tong_tien_sau_giam: grandTotal.value,
+            tong_tien_sau_giam: subtotal.value - discount.value,
             phi_van_chuyen: shippingFee.value,
             tong_tien_thanh_toan: grandTotal.value,
             ho_ten: customer.value.ho_ten,
@@ -1316,24 +1316,25 @@ const filterValidVouchers = () => {
     console.log('Filtered vouchers:', availableVouchers.value);
 };
 
-// Watch for changes in subtotal to update available vouchers
-watch(subtotal, () => {
-    filterValidVouchers();
-});
-
-// Show voucher selection modal
-const showVoucherModal = async () => {
+// Watch for subtotal changes to intelligently update available and applied vouchers
+watch(subtotal, async (newSubtotal) => {
+    // Chỉ thực hiện khi đã đăng nhập và có sản phẩm trong giỏ
     if (!isLoggedIn.value) {
-        message.info('Vui lòng đăng nhập để sử dụng voucher');
+        availableVouchers.value = [];
         return;
     }
 
-    // Tính lại subtotal và lấy voucher mới
-    const tongTien = subtotal.value;
     try {
-        const voucherResponse = await store.getVoucherByGiaTruyen(tongTien);
+        const voucherResponse = newSubtotal > 0 ? await store.getVoucherByGiaTruyen(newSubtotal) : [];
+        
+        let newAvailableVouchers = [];
         if (voucherResponse && Array.isArray(voucherResponse)) {
-            availableVouchers.value = voucherResponse.map(voucher => ({
+            // Sắp xếp voucher theo mức giảm giá tốt nhất và map dữ liệu
+            newAvailableVouchers = voucherResponse.sort((a, b) => {
+                const aValue = Number(a.so_tien_giam) || 0;
+                const bValue = Number(b.so_tien_giam) || 0;
+                return bValue - aValue;
+            }).map(voucher => ({
                 id: voucher.id_voucher,
                 ma: voucher.ma_voucher,
                 ten: voucher.ten_voucher,
@@ -1345,194 +1346,44 @@ const showVoucherModal = async () => {
                 ngay_bat_dau: voucher.ngay_tao,
                 ngay_het_han: voucher.ngay_het_han,
                 trang_thai: voucher.trang_thai,
-                so_luong: voucher.so_luong
+                so_luong: voucher.so_luong,
+                so_tien_giam: Number(voucher.so_tien_giam) || 0,
             }));
         }
-    } catch (error) {
-        console.error('Lỗi khi lấy voucher:', error);
-    }
+        
+        availableVouchers.value = newAvailableVouchers;
 
-    voucherModalVisible.value = true;
-};
+        const currentVoucher = appliedCoupons.value.length > 0 ? appliedCoupons.value[0] : null;
+        const bestVoucher = newAvailableVouchers.length > 0 ? newAvailableVouchers[0] : null;
 
-// Check if a voucher is valid to use
-const isVoucherValid = (voucher) => {
-    if (voucher.dieu_kien > 0 && subtotal.value < voucher.dieu_kien) {
-        return false;
-    }
+        if (currentVoucher) {
+            // Kiểm tra xem voucher đang áp dụng có còn trong danh sách hợp lệ không
+            const isStillValid = newAvailableVouchers.some(v => v.id === currentVoucher.id);
+            
+            if (!isStillValid) {
+                appliedCoupons.value = [];
+                message.warning('Voucher đang áp dụng không còn hợp lệ và đã được gỡ bỏ.');
 
-    // Check if voucher is in the valid date range
-    const currentDate = getCurrentDateVN();
-    const startDate = new Date(voucher.ngay_bat_dau);
-    const endDate = new Date(voucher.ngay_het_han);
-    if (currentDate < startDate || currentDate > endDate) {
-        return false;
-    }
-
-    // Check voucher status
-    if (voucher.trang_thai !== 'Đang diễn ra') {
-        return false;
-    }
-
-    // Check if voucher has quantity left
-    if (voucher.so_luong <= 0) {
-        return false;
-    }
-
-    return true;
-};
-
-// Check if a voucher is already selected
-const isVoucherSelected = (voucher) => {
-    return appliedCoupons.value.some(c => c.ma === voucher.ma);
-};
-
-// Hiển thị thông tin voucher đang áp dụng
-const getAppliedVoucherInfo = () => {
-    if (appliedCoupons.value.length > 0) {
-        const voucher = appliedCoupons.value[0];
-        const tienGiam = Number(voucher.so_tien_giam) || 0;
-        return `Đang áp dụng: ${voucher.ma} - ${formatCurrency(tienGiam)}`;
-    }
-    return "Chưa áp dụng voucher nào";
-};
-
-// Toggle voucher selection
-const toggleVoucher = (voucher) => {
-    if (isVoucherSelected(voucher)) {
-        // Remove voucher
-        appliedCoupons.value = [];
-        message.success('Đã bỏ áp dụng mã giảm giá');
-    } else {
-        // Add voucher if valid
-        if (isVoucherValid(voucher)) {
-            // Xóa tất cả voucher đã áp dụng trước đó
-            appliedCoupons.value = [];
-            // Thêm voucher mới
-            appliedCoupons.value.push(voucher);
-            message.success(`Đã áp dụng mã giảm giá ${voucher.ma}`);
-
-            // Update discount calculations
-            calculateOrderTotals();
+                // Nếu có voucher tốt nhất mới, tự động áp dụng
+                if (bestVoucher) {
+                    appliedCoupons.value.push(bestVoucher);
+                    message.success(`Đã tự động áp dụng voucher tốt nhất: ${bestVoucher.ma}`);
+                }
+            }
         } else {
-            message.warning(`Đơn hàng chưa đạt điều kiện áp dụng mã (tối thiểu ${formatCurrency(voucher.dieu_kien)})`);
-        }
-    }
-};
-
-// Select a voucher (just for handling UI interaction)
-const selectVoucher = (voucher) => {
-    // Only for UI highlighting purposes, actual selection happens in toggleVoucher
-    if (!isVoucherValid(voucher)) {
-        message.warning(`Đơn hàng chưa đạt điều kiện áp dụng mã (tối thiểu ${formatCurrency(voucher.dieu_kien)})`);
-    }
-};
-
-// Đặt ở cuối script setup, trước khi đóng thẻ script
-// Theo dõi sự thay đổi của selectedAddressId để cập nhật địa chỉ hiển thị
-watch(selectedAddressId, (newIndex) => {
-    if (typeof newIndex === 'number' && store.danhSachDiaChi && store.danhSachDiaChi[newIndex]) {
-        const selectedAddr = store.danhSachDiaChi[newIndex];
-
-        if (selectedAddr) {
-            console.log('Đã tìm thấy địa chỉ được chọn:', selectedAddr);
-
-            // Cập nhật thông tin địa chỉ vào form
-            customer.value = {
-                ...customer.value, // Giữ nguyên thông tin cá nhân hiện tại
-                tinh_thanh_pho: selectedAddr.tinh_thanh_pho,
-                quan_huyen: selectedAddr.quan_huyen,
-                xa_phuong: selectedAddr.xa_phuong,
-                so_nha: selectedAddr.so_nha
-            };
-
-            console.log('Đã cập nhật form với thông tin mới:', customer.value);
-        }
-    }
-});
-
-
-watch(
-    customer,
-    () => {
-        calculateShippingFee();
-        console.log("Có vào tính phí ship");
-    },
-    { deep: true } // Theo dõi sâu để phát hiện thay đổi trong các thuộc tính con
-);
-
-// Address deletion
-const confirmDeleteAddress = (address) => {
-    if (address.dia_chi_mac_dinh) {
-        message.warning('Không thể xóa địa chỉ mặc định');
-        return;
-    }
-
-    // Show confirmation dialog
-    const confirmDelete = window.confirm('Bạn có chắc chắn muốn xóa địa chỉ này?');
-
-    if (confirmDelete) {
-        deleteAddress(address.id);
-    }
-};
-
-const deleteAddress = (addressId) => {
-    // Find address index
-    const index = customerAddresses.value.findIndex(addr => addr.id === addressId);
-
-    if (index !== -1) {
-        // Remove the address
-        customerAddresses.value.splice(index, 1);
-
-        // If the deleted address was selected, select another one
-        if (selectedAddressId.value === addressId) {
-            if (customerAddresses.value.length > 0) {
-                // Find default address or use the first one
-                const defaultAddress = customerAddresses.value.find(addr => addr.dia_chi_mac_dinh);
-                selectedAddressId.value = defaultAddress ? defaultAddress.id : customerAddresses.value[0].id;
-            } else {
-                selectedAddressId.value = null;
+            // Nếu chưa có voucher nào, tự động áp dụng voucher tốt nhất (nếu có)
+            if (bestVoucher) {
+                appliedCoupons.value.push(bestVoucher);
+                message.success(`Đã tự động áp dụng voucher: ${bestVoucher.ma}`);
             }
         }
 
-        message.success('Đã xóa địa chỉ thành công');
+    } catch (error) {
+        console.error('Lỗi khi cập nhật danh sách voucher:', error);
+        availableVouchers.value = [];
+        appliedCoupons.value = [];
     }
-};
-
-// Thêm computed property để lấy địa chỉ đã chọn
-const selectedAddress = computed(() => {
-    if (!selectedAddressId.value) return null;
-    return customerAddresses.value.find(addr => addr.id === selectedAddressId.value);
-});
-
-// Trong phần script, thêm các hàm xử lý thanh toán ZaloPay
-
-// Thêm watch để lấy danh sách voucher khi tổng tiền thay đổi
-watch(subtotal, async (newValue) => {
-    if (newValue > 0) {
-        try {
-            const voucherResponse = await store.getVoucherByGiaTruyen(newValue);
-            if (voucherResponse && Array.isArray(voucherResponse)) {
-                availableVouchers.value = voucherResponse.map(voucher => ({
-                    id: voucher.id_voucher,
-                    ma: voucher.ma_voucher,
-                    ten: voucher.ten_voucher,
-                    mo_ta: voucher.mo_ta,
-                    loai: voucher.kieu_giam_gia === 'Phần trăm' ? 'percent' : 'fixed',
-                    gia_tri: voucher.gia_tri_giam,
-                    dieu_kien: voucher.gia_tri_toi_thieu,
-                    gia_tri_toi_da: voucher.gia_tri_toi_da,
-                    ngay_bat_dau: voucher.ngay_tao,
-                    ngay_het_han: voucher.ngay_het_han,
-                    trang_thai: voucher.trang_thai,
-                    so_luong: voucher.so_luong
-                }));
-            }
-        } catch (error) {
-            console.error('Lỗi khi cập nhật voucher theo giá mới:', error);
-        }
-    }
-});
+}, { immediate: false }); // immediate: false để tránh chạy lần đầu khi component mount (đã có onMounted xử lý)
 
 // Tính toán danh sách voucher hiển thị - giữ nguyên thứ tự từ API
 const displayVouchers = computed(() => {

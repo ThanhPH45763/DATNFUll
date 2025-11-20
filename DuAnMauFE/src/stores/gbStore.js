@@ -159,8 +159,8 @@ export const useGbStore = defineStore('gbStore', {
   }),
 
   ///Đầu mút2
-    actions: {
-      // Sản phẩm siêu sale
+  actions: {
+    // Sản phẩm siêu sale
     // Thêm action mới cho siêu sale
     async getSanPhamSieuSale() {
       try {
@@ -209,55 +209,55 @@ export const useGbStore = defineStore('gbStore', {
     getIsThanhToanMuaNgay() {
       return this.isThanhToanMuaNgay;
     },
-// List sản phẩm theo tên sản phẩm(trang sản phẩm)
-      async getSanPhamByTenSP(keywords) {
-        console.log('Gọi getSanPhamByTenSP với:', keywords);
-        let tenSanPham = '';
-        if (Array.isArray(keywords)) {
-          tenSanPham = keywords.join(',');
-        } else if (typeof keywords === 'string') {
-          tenSanPham = keywords;
-        }
-        const data = await sanPhamService.getSanPhamByTenSP(tenSanPham);
-        // Map lại field nếu cần
-        this.listSanPhamBanHang = data.map(item => ({
-          id: item.id_san_pham,
-          name: item.ten_san_pham,
-          price: Number(item.gia_ban || item.gia_khuyen_mai_cao_nhat || 0),
-          oldPrice: Number(item.gia_max || 0),
-          brand: item.ten_thuong_hieu,
-          image: item.hinh_anh,
-          gender: item.gioi_tinh || '',
-          type: item.ten_danh_muc || '',
-          colors: item.mau_sac ? item.mau_sac.split(',') : [],
-          rating: item.danh_gia || 0,
-          reviews: item.so_luong_danh_gia || 0,
-        }));
-      },
-      // List sản phẩm theo tên danh mục(trang sản phẩm)
-      async getSanPhamByTenDM(keywords) {
-        let tenDanhMuc = '';
-        if (Array.isArray(keywords)) {
-          tenDanhMuc = keywords.join(',');
-        } else if (typeof keywords === 'string') {
-          tenDanhMuc = keywords;
-        }
-        // Nếu tenDanhMuc là '', backend nên trả về tất cả sản phẩm
-        const data = await sanPhamService.getSanPhamByTenDM(tenDanhMuc);
-        this.listSanPhamBanHang = data.map(item => ({
-          id: item.id_san_pham,
-          name: item.ten_san_pham,
-          price: Number(item.gia_ban || item.gia_khuyen_mai_cao_nhat || 0),
-          oldPrice: Number(item.gia_max || 0),
-          brand: item.ten_thuong_hieu,
-          image: item.hinh_anh,
-          gender: item.gioi_tinh || '',
-          type: item.ten_danh_muc || '',
-          colors: item.mau_sac ? item.mau_sac.split(',') : [],
-          rating: item.danh_gia || 0,
-          reviews: item.so_luong_danh_gia || 0,
-        }));
-      },
+    // List sản phẩm theo tên sản phẩm(trang sản phẩm)
+    async getSanPhamByTenSP(keywords) {
+      console.log('Gọi getSanPhamByTenSP với:', keywords);
+      let tenSanPham = '';
+      if (Array.isArray(keywords)) {
+        tenSanPham = keywords.join(',');
+      } else if (typeof keywords === 'string') {
+        tenSanPham = keywords;
+      }
+      const data = await sanPhamService.getSanPhamByTenSP(tenSanPham);
+      // Map lại field nếu cần
+      this.listSanPhamBanHang = data.map(item => ({
+        id: item.id_san_pham,
+        name: item.ten_san_pham,
+        price: Number(item.gia_ban || item.gia_khuyen_mai_cao_nhat || 0),
+        oldPrice: Number(item.gia_max || 0),
+        brand: item.ten_thuong_hieu,
+        image: item.hinh_anh,
+        gender: item.gioi_tinh || '',
+        type: item.ten_danh_muc || '',
+        colors: item.mau_sac ? item.mau_sac.split(',') : [],
+        rating: item.danh_gia || 0,
+        reviews: item.so_luong_danh_gia || 0,
+      }));
+    },
+    // List sản phẩm theo tên danh mục(trang sản phẩm)
+    async getSanPhamByTenDM(keywords) {
+      let tenDanhMuc = '';
+      if (Array.isArray(keywords)) {
+        tenDanhMuc = keywords.join(',');
+      } else if (typeof keywords === 'string') {
+        tenDanhMuc = keywords;
+      }
+      // Nếu tenDanhMuc là '', backend nên trả về tất cả sản phẩm
+      const data = await sanPhamService.getSanPhamByTenDM(tenDanhMuc);
+      this.listSanPhamBanHang = data.map(item => ({
+        id: item.id_san_pham,
+        name: item.ten_san_pham,
+        price: Number(item.gia_ban || item.gia_khuyen_mai_cao_nhat || 0),
+        oldPrice: Number(item.gia_max || 0),
+        brand: item.ten_thuong_hieu,
+        image: item.hinh_anh,
+        gender: item.gioi_tinh || '',
+        type: item.ten_danh_muc || '',
+        colors: item.mau_sac ? item.mau_sac.split(',') : [],
+        rating: item.danh_gia || 0,
+        reviews: item.so_luong_danh_gia || 0,
+      }));
+    },
     // lấy số lượng còn lại của sản phẩm theo ID
     async getMaxSoLuongSP(idCTSP) {
       const response = await banHangOnlineService.maxSoLuongSP(idCTSP);
@@ -1918,12 +1918,14 @@ export const useGbStore = defineStore('gbStore', {
         if (response.error) {
           toast.error('Không lấy được dữ liệu chi tiết sản phẩm khuyến mãi')
           this.getAllCTSPKMList = []
-          return
+          return []
         }
         this.getAllCTSPKMList = response
+        return response
       } catch (error) {
         console.log(error)
         this.getAllCTSPKMList = []
+        return []
       }
     },
     async getAllHoaDonCTT() {
@@ -1952,6 +1954,49 @@ export const useGbStore = defineStore('gbStore', {
         console.error(error)
         toast.error('Có lỗi xảy ra')
         throw error
+      }
+    },
+    async updateHoaDon(payload) {
+      try {
+        const result = await banHangService.updateHoaDon(payload);
+        if (result.error) {
+          toast.error(result.message || 'Không thể cập nhật hoá đơn');
+          return null;
+        }
+        return result;
+      } catch (error) {
+        console.error('Lỗi store updateHoaDon:', error);
+        toast.error('Có lỗi xảy ra khi cập nhật hoá đơn');
+        throw error;
+      }
+    },
+    // Lấy danh sách voucher phù hợp với tổng tiền
+    async getSuitableVouchersForInvoice(tongTien) {
+      try {
+        console.log('Đang lấy voucher phù hợp với tổng tiền:', tongTien);
+        const vouchers = await banHangService.getSuitableVouchers(tongTien);
+        return vouchers || [];
+      } catch (error) {
+        console.error('Lỗi khi lấy voucher phù hợp:', error);
+        toast.error('Có lỗi xảy ra khi lấy danh sách voucher');
+        return [];
+      }
+    },
+    // Áp dụng voucher cho hóa đơn
+    async applyVoucherToInvoice(idHoaDon, idVoucher) {
+      try {
+        console.log('Đang áp dụng voucher:', { idHoaDon, idVoucher });
+        const result = await banHangService.applyVoucher(idHoaDon, idVoucher);
+        if (result.error) {
+          toast.error(result.message || 'Không thể áp dụng voucher');
+          return null;
+        }
+        toast.success(idVoucher ? 'Áp dụng voucher thành công' : 'Đã bỏ voucher');
+        return result;
+      } catch (error) {
+        console.error('Lỗi khi áp dụng voucher:', error);
+        toast.error('Có lỗi xảy ra khi áp dụng voucher');
+        return null;
       }
     },
     async deleteHoaDon(idHoaDon) {
@@ -3633,7 +3678,7 @@ export const useGbStore = defineStore('gbStore', {
       try {
         // Ensure idHoaDon is a number
         const invoiceId = typeof idHoaDon === 'object' ? idHoaDon.id_hoa_don : idHoaDon;
-        
+
         const response = await axiosInstance.post('api/zalopay/create-order', null, {
           params: { idHoaDon: invoiceId }
         });
@@ -3649,7 +3694,7 @@ export const useGbStore = defineStore('gbStore', {
       try {
         // Ensure idHoaDon is a number
         const invoiceId = typeof idHoaDon === 'object' ? idHoaDon.id_hoa_don : idHoaDon;
-        
+
         const response = await axiosInstance.get('api/zalopay/check-status', {
           params: { idHoaDon: invoiceId }
         });

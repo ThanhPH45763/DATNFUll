@@ -22,13 +22,14 @@ const createHoaDon = async () => {
     }
 }
 
-const updateHoaDon = async () => {
+const updateHoaDon = async (payload) => {
     try {
-        const { data } = await axiosInstance.get(banHang + `updateHoaDon`);
+        // Gửi dữ liệu dưới dạng JSON body để khớp với @RequestBody của backend
+        const { data } = await axiosInstance.put(banHang + `updateHoaDon`, payload);
         return data;
     } catch (error) {
         console.error('Lỗi API update hoá đơn:', error);
-        return { error: true };
+        return { error: true, message: error.response?.data?.message || 'Có lỗi xảy ra' };
     }
 }
 
@@ -188,6 +189,31 @@ const tinhPhiShip = async (pickProvince, pickDistrict, province, district, weigh
     }
 }
 
+const getSuitableVouchers = async (tongTien) => {
+    try {
+        const { data } = await axiosInstance.get(banHang + `get-suitable-vouchers?tongTien=${tongTien}`);
+        return data;
+    } catch (error) {
+        console.error('Lỗi API lấy danh sách voucher phù hợp:', error);
+        return [];
+    }
+}
+
+const applyVoucher = async (idHoaDon, idVoucher) => {
+    try {
+        const params = new URLSearchParams();
+        params.append('idHoaDon', idHoaDon);
+        if (idVoucher !== null && idVoucher !== undefined) {
+            params.append('idVoucher', idVoucher);
+        }
+        const { data } = await axiosInstance.post(banHang + `apply-voucher?${params.toString()}`);
+        return data;
+    } catch (error) {
+        console.error('Lỗi API áp dụng voucher:', error);
+        return { error: true, message: error.response?.data || 'Có lỗi xảy ra khi áp dụng voucher' };
+    }
+}
+
 export const banHangService = {
     getAllHoaDonCTT,
     createHoaDon,
@@ -205,5 +231,7 @@ export const banHangService = {
     setTrangThaiNhanHang,
     thanhToanMomo,
     setSPHD,
-    tinhPhiShip
+    tinhPhiShip,
+    getSuitableVouchers,
+    applyVoucher
 }

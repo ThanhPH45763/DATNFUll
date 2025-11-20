@@ -1,6 +1,6 @@
 <template>
     <a-modal
-        v-model:visible="visible"
+        :visible="visible"
         title="Chọn phương thức thanh toán"
         :footer="null"
         :width="600"

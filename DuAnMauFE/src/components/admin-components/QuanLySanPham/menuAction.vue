@@ -1707,16 +1707,75 @@ const filteredImportData = computed(() => {
 
 // Tải template mẫu
 const downloadTemplate = () => {
-    // Thông báo nếu chưa có API tải template
-    message.info('Tính năng tải template sẽ được cập nhật sau');
+    try {
+        // Định nghĩa các cột cho file mẫu
+        const headers = [
+            'Tên sản phẩm',
+            'Danh mục',
+            'Thương hiệu',
+            'Chất liệu',
+            'Giá bán',
+            'Số lượng',
+            'Màu sắc',
+            'Giá trị kích thước',
+            'Đơn vị'
+        ];
 
-    // Khi có API tải template, thực hiện như sau:
-    // const link = document.createElement('a');
-    // link.href = '/api/template/excel-import-template.xlsx';
-    // link.download = 'san-pham-template.xlsx';
-    // document.body.appendChild(link);
-    // link.click();
-    // document.body.removeChild(link);
+        // Dữ liệu mẫu
+        const sampleData = [
+            {
+                'Tên sản phẩm': 'Áo thun Cotton',
+                'Danh mục': 'Áo thun',
+                'Thương hiệu': 'Nike',
+                'Chất liệu': 'Cotton',
+                'Giá bán': 150000,
+                'Số lượng': 100,
+                'Màu sắc': 'Đen',
+                'Giá trị kích thước': 'L',
+                'Đơn vị': 'Size'
+            },
+            {
+                'Tên sản phẩm': 'Quần Jean Nam',
+                'Danh mục': 'Quần Jean',
+                'Thương hiệu': 'Levi\'s',
+                'Chất liệu': 'Jean',
+                'Giá bán': 550000,
+                'Số lượng': 50,
+                'Màu sắc': 'Xanh dương',
+                'Giá trị kích thước': '32',
+                'Đơn vị': 'Size'
+            }
+        ];
+
+        // Tạo workbook và worksheet
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(sampleData, { header: headers });
+
+        // Thiết lập độ rộng cột
+        const wscols = [
+            { wch: 30 }, // Tên sản phẩm
+            { wch: 20 }, // Danh mục
+            { wch: 20 }, // Thương hiệu
+            { wch: 20 }, // Chất liệu
+            { wch: 15 }, // Giá bán
+            { wch: 10 }, // Số lượng
+            { wch: 15 }, // Màu sắc
+            { wch: 15 }, // Giá trị kích thước
+            { wch: 10 }  // Đơn vị
+        ];
+        ws['!cols'] = wscols;
+
+        // Thêm worksheet vào workbook
+        XLSX.utils.book_append_sheet(wb, ws, "Mau_Nhap_San_Pham");
+
+        // Xuất file
+        XLSX.writeFile(wb, "mau_nhap_san_pham.xlsx");
+        
+        message.success('Đã tải xuống file mẫu thành công!');
+    } catch (error) {
+        console.error('Lỗi khi tạo file mẫu:', error);
+        message.error('Có lỗi xảy ra khi tạo file mẫu');
+    }
 };
 
 // Khi người dùng chọn/bỏ chọn tất cả các trường

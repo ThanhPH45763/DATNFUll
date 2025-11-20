@@ -538,7 +538,7 @@ const getSanPhamByTenSP = async (tenSanPham) => {
     }
   }
 }
-const getSanPhamByTenDM  = async (tenDanhMuc) => {
+const getSanPhamByTenDM = async (tenDanhMuc) => {
   try {
     const response = await axiosInstance.get(qlsp + 'getSanPhamByTenDM?tenDanhMuc=' + tenDanhMuc)
     return response.data

@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.duanbe.ImportAndExportEx.ExcelSaveDB;
 import com.example.duanbe.dto.SanPhamDisplayDTO;
+import com.example.duanbe.entity.ChiTietSanPham;
 import com.example.duanbe.entity.SanPham;
 import com.example.duanbe.request.SanPhamRequest;
 import com.example.duanbe.response.ChiTietSanPhamView;
@@ -166,5 +168,14 @@ public class SanPhamController {
     @GetMapping("/getSanPhamSieuSale/formatted")
     public List<SanPhamDisplayDTO> getSanPhamSieuSaleFormatted() {
         return sanPhamService.getSanPhamSieuSaleFormatted();
+    }
+
+    @Autowired
+    ExcelSaveDB excelSaveDB;
+
+    @PostMapping("/save")
+    public ResponseEntity<?> saveToDB(@RequestBody List<ChiTietSanPham> list) {
+        excelSaveDB.saveToDB(list);
+        return ResponseEntity.ok("ok");
     }
 }

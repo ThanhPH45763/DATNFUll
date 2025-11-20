@@ -798,20 +798,7 @@ const validateNewAttribute = () => {
             return;
         }
 
-        if (!/^\d*\.?\d*$/.test(newAttribute.value.value)) {
-            validationStatus.value.sizeValue = 'error';
-            validationError.value.sizeValue = 'Giá trị kích thước chỉ được chứa số và dấu chấm thập phân';
-            isValidNewAttr.value = false;
-            return;
-        }
 
-        // Kiểm tra giá trị kích thước phải lớn hơn 0
-        if (parseFloat(newAttribute.value.value) <= 0) {
-            validationStatus.value.sizeValue = 'error';
-            validationError.value.sizeValue = 'Giá trị kích thước phải lớn hơn 0';
-            isValidNewAttr.value = false;
-            return;
-        }
 
         // Kiểm tra trùng lặp size
         const isDuplicateSize = sizes.value.some(item =>
@@ -1089,26 +1076,7 @@ const validateEditingData = () => {
             return false;
         }
 
-        // Kiểm tra độ dài giá trị
-        if (editingData.value.value.trim().length > 10) {
-            editValidationStatus.value.value = 'error';
-            editValidationError.value.value = 'Giá trị kích thước không được vượt quá 10 ký tự';
-            return false;
-        }
 
-        // Kiểm tra không chứa ký tự đặc biệt
-        if (!/^[a-zA-Z0-9À-ỹ\s]+$/.test(editingData.value.value)) {
-            editValidationStatus.value.value = 'error';
-            editValidationError.value.value = 'Giá trị không được chứa ký tự đặc biệt';
-            return false;
-        }
-
-        // Kiểm tra giá trị kích thước phải lớn hơn 0 nếu là số
-        if (!isNaN(parseFloat(editingData.value.value)) && parseFloat(editingData.value.value) <= 0) {
-            editValidationStatus.value.value = 'error';
-            editValidationError.value.value = 'Nếu giá trị là số, phải lớn hơn 0';
-            return false;
-        }
 
         // Kiểm tra trùng lặp size (ngoại trừ chính nó)
         const isDuplicateSize = sizes.value.some(item =>

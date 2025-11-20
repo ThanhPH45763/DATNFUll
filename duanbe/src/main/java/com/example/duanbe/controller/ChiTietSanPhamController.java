@@ -19,27 +19,25 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import jakarta.validation.Valid;
+
 @RestController
 @CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*", methods = { RequestMethod.GET, RequestMethod.POST,
         RequestMethod.PUT, RequestMethod.DELETE })
 @RequestMapping("/admin/quan_ly_san_pham")
 public class ChiTietSanPhamController {
-@Autowired
+    @Autowired
     ChiTietSanPhamService chiTietSanPhamService;
 
-    
     @GetMapping("/getAllCTSP")
     public List<ChiTietSanPhamView> getAllCTSP() {
         return chiTietSanPhamService.getAllCTSP();
     }
 
-    
     @GetMapping("/getAllCTSPFindAll")
     public List<ChiTietSanPham> getAllCTSPFindAll() {
         return chiTietSanPhamService.getAllCTSPFindAll();
     }
 
-    
     @GetMapping("/getAllCTSPPhanTrang")
     public List<ChiTietSanPhamView> phanTrang(@RequestParam(value = "page", defaultValue = "0") Integer page,
             @RequestParam(value = "size", defaultValue = "5") Integer size) {
@@ -58,14 +56,12 @@ public class ChiTietSanPhamController {
         return chiTietSanPhamService.deleteChiTietSanPham(id);
     }
 
-    
     @PutMapping("/changeStatusCTSP")
     public ResponseEntity<?> changeStatus(@RequestParam("id") Integer id) {
         System.out.println("Chạy vào đây");
         return chiTietSanPhamService.chuyenTrangThai(id);
     }
 
-    
     @GetMapping("/searchCTSP")
     public ArrayList<ChiTietSanPhamView> search(@RequestParam(name = "keyword") String keyword) {
         return chiTietSanPhamService.listTimKiem(keyword);
@@ -97,7 +93,6 @@ public class ChiTietSanPhamController {
         return chiTietSanPhamService.sapXep(pageable).getContent();
     }
 
-    
     @GetMapping("/CTSPTheoSanPham")
     public List<ChiTietSanPhamView> ctspTheoSanPham(@RequestParam(name = "id") Integer id) {
         return chiTietSanPhamService.listCTSPTheoSanPham(id);
@@ -109,13 +104,11 @@ public class ChiTietSanPhamController {
         return chiTietSanPhamService.getCTSPBySanPhamFull(idSanPham);
     }
 
-    
     @PutMapping("/changeAllCTSPHoatDong")
     public ResponseEntity<?> allCTSPHoatDong(@RequestParam("id") Integer id) {
         return chiTietSanPhamService.changeAllCTSPHoatDong(id);
     }
 
-    
     @PutMapping("/changeAllCTSPKhongHoatDong")
     public ResponseEntity<?> allCTSPKhongHoatDong(@RequestParam("id") Integer id) {
         return chiTietSanPhamService.changeAllCTSPKhongHoatDong(id);

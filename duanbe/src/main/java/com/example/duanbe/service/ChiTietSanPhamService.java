@@ -77,19 +77,6 @@ public class ChiTietSanPhamService {
      */
     public ResponseEntity<?> saveChiTietSanPham(@Valid @RequestBody ChiTietSanPhamRequest chiTietSanPhamRequest,
             BindingResult result) {
-        // DEBUG: Log request nhận được
-        System.out.println("========================================");
-        System.out.println("saveChiTietSanPham - Request nhận được:");
-        System.out.println("ID CTSP: " + chiTietSanPhamRequest.getId_chi_tiet_san_pham());
-        System.out.println("ID SP: " + chiTietSanPhamRequest.getId_san_pham());
-        System.out.println("Số lượng ảnh: " + 
-            (chiTietSanPhamRequest.getHinh_anh() != null ? chiTietSanPhamRequest.getHinh_anh().size() : "null"));
-        if (chiTietSanPhamRequest.getHinh_anh() != null) {
-            for (int i = 0; i < chiTietSanPhamRequest.getHinh_anh().size(); i++) {
-                System.out.println("  Ảnh #" + (i+1) + ": " + chiTietSanPhamRequest.getHinh_anh().get(i));
-            }
-        }
-        System.out.println("========================================");
         
         // Kiểm tra lỗi validation
         if (result.hasErrors()) {
@@ -116,251 +103,97 @@ public class ChiTietSanPhamService {
             // Biến để lưu trữ chi tiết sản phẩm cần xử lý
             ChiTietSanPham chiTietSanPham = null;
             String message = "";
-            boolean isNewDetail = false;
-            Integer oldQuantity = 0;
-            boolean isUpdateByAttribute = false; // Biến đánh dấu trường hợp update theo thuộc tính
 
-            // CASE 1: Kiểm tra nếu có ID chi tiết sản phẩm (cập nhật)
+            // CASE 1: Cập nhật nếu có ID chi tiết sản phẩm
             if (chiTietSanPhamRequest.getId_chi_tiet_san_pham() != null &&
-                    !chiTietSanPhamRequest.getId_chi_tiet_san_pham().toString().isEmpty()) {
+                    chiTietSanPhamRepo.existsById(chiTietSanPhamRequest.getId_chi_tiet_san_pham())) {
 
-                Optional<ChiTietSanPham> existingById = chiTietSanPhamRepo.findById(
-                        chiTietSanPhamRequest.getId_chi_tiet_san_pham());
+                chiTietSanPham = chiTietSanPhamRepo.findById(chiTietSanPhamRequest.getId_chi_tiet_san_pham()).get();
+                message = "Cập nhật chi tiết sản phẩm thành công";
+                
+                // Cập nhật các thuộc tính
+                chiTietSanPham.setGia_ban(chiTietSanPhamRequest.getGia_ban());
+                chiTietSanPham.setSo_luong(chiTietSanPhamRequest.getSo_luong());
+                chiTietSanPham.setQr_code(chiTietSanPhamRequest.getQr_code());
 
-                if (existingById.isPresent()) {
-                    chiTietSanPham = existingById.get();
-                    message = "Cập nhật chi tiết sản phẩm thành công";
-                    // Giữ lại SanPham hiện tại để tránh mất tham chiếu
-                    SanPham currentProduct = chiTietSanPham.getSanPham();
-                    Date ngayTaoGoc = chiTietSanPham.getNgay_tao();
-
-                    // Sao chép các thuộc tính cơ bản (có thể loại trừ sanPham)
-                    chiTietSanPham.setGia_ban(chiTietSanPhamRequest.getGia_ban());
-                    chiTietSanPham.setSo_luong(chiTietSanPhamRequest.getSo_luong());
-                    
-                    // Tự động cập nhật trạng thái dựa trên số lượng
-                    if (chiTietSanPhamRequest.getSo_luong() > 0) {
-                        chiTietSanPham.setTrang_thai(true);
-                    } else {
-                        chiTietSanPham.setTrang_thai(false);
-                    }
-                    
-                    chiTietSanPham.setQr_code(chiTietSanPhamRequest.getQr_code());
-
-                    // Giữ ngày tạo gốc
-                    chiTietSanPham.setNgay_tao(ngayTaoGoc);
-                }
-            }
-
-            // CASE 2: Nếu không có ID hoặc ID không tồn tại, kiểm tra trùng lặp thuộc tính
-            if (chiTietSanPham == null) {
-                // Tìm chi tiết sản phẩm dựa trên ID của các thuộc tính
-                Optional<ChiTietSanPham> existingSanPhamByAttributes = chiTietSanPhamRepo
+            } else {
+                // CASE 2: Nếu không có ID, kiểm tra trùng lặp thuộc tính (màu và size) để cập nhật số lượng
+                Optional<ChiTietSanPham> existingByAttributes = chiTietSanPhamRepo
                         .findByIdSanPhamIdMauSacIdKichThuoc(
                                 chiTietSanPhamRequest.getId_san_pham(),
                                 chiTietSanPhamRequest.getId_mau_sac(),
                                 chiTietSanPhamRequest.getId_kich_thuoc());
 
-                // CASE 2.1: Nếu chi tiết sản phẩm với cùng thuộc tính đã tồn tại (cập nhật số
-                // lượng)
-                if (existingSanPhamByAttributes.isPresent()) {
-                    chiTietSanPham = existingSanPhamByAttributes.get();
-                    oldQuantity = chiTietSanPham.getSo_luong();
+                if (existingByAttributes.isPresent()) {
+                    chiTietSanPham = existingByAttributes.get();
+                    int oldQuantity = chiTietSanPham.getSo_luong();
                     chiTietSanPham.setSo_luong(oldQuantity + chiTietSanPhamRequest.getSo_luong());
-
-                    // Tự động cập nhật trạng thái dựa trên số lượng mới
-                    if (chiTietSanPham.getSo_luong() > 0) {
-                        chiTietSanPham.setTrang_thai(true);
-                    } else {
-                        chiTietSanPham.setTrang_thai(false);
-                    }
-
-                    // Đánh dấu đây là trường hợp cập nhật theo thuộc tính
-                    isUpdateByAttribute = true;
-
                     message = "Cập nhật số lượng chi tiết sản phẩm thành công";
                 }
-                // CASE 3: Tạo mới chi tiết sản phẩm
+                // CASE 3: Tạo mới hoàn toàn
                 else {
                     chiTietSanPham = new ChiTietSanPham();
-                    // Sao chép các thuộc tính cơ bản (không bao gồm các đối tượng entity)
                     chiTietSanPham.setGia_ban(chiTietSanPhamRequest.getGia_ban());
                     chiTietSanPham.setSo_luong(chiTietSanPhamRequest.getSo_luong());
-                    chiTietSanPham.setTrang_thai(true); // Gán trực tiếp thay vì lấy từ request
                     chiTietSanPham.setQr_code(chiTietSanPhamRequest.getQr_code());
                     chiTietSanPham.setNgay_tao(new Date());
                     message = "Thêm mới chi tiết sản phẩm thành công";
-                    isNewDetail = true;
                 }
             }
 
-            // Đặt các entity liên quan và ngày sửa
+            // Cập nhật các thông tin chung cho cả trường hợp thêm mới và cập nhật
             chiTietSanPham.setMauSac(mauSac);
             chiTietSanPham.setKichThuoc(kichThuoc);
-            chiTietSanPham.setSanPham(sanPham); // Đảm bảo sử dụng SanPham đã tìm thấy từ DB
+            chiTietSanPham.setSanPham(sanPham);
             chiTietSanPham.setNgay_sua(new Date());
+            
+            // Tự động cập nhật trạng thái dựa trên số lượng
+            chiTietSanPham.setTrang_thai(chiTietSanPham.getSo_luong() > 0);
 
-            // Lưu chi tiết sản phẩm
+            // Lưu chi tiết sản phẩm để có ID
             ChiTietSanPham savedProduct = chiTietSanPhamRepo.save(chiTietSanPham);
 
-            // DEBUG: Log thông tin ảnh nhận được
-            System.out.println("=== DEBUG HÌNH ẢNH ===");
-            System.out.println("Số lượng ảnh nhận được: " + 
-                (chiTietSanPhamRequest.getHinh_anh() != null ? chiTietSanPhamRequest.getHinh_anh().size() : 0));
-            System.out.println("Danh sách URL ảnh: " + chiTietSanPhamRequest.getHinh_anh());
-            System.out.println("isNewDetail: " + isNewDetail);
-            System.out.println("isUpdateByAttribute: " + isUpdateByAttribute);
-            System.out.println("======================");
-
-            // Xử lý hình ảnh - Đã điều chỉnh logic để giải quyết vấn đề
-            if (isNewDetail) {
-                // Nếu là chi tiết sản phẩm mới
-                if (chiTietSanPhamRequest.getHinh_anh() != null && !chiTietSanPhamRequest.getHinh_anh().isEmpty()) {
-                    System.out.println("Gọi saveProductImages với " + chiTietSanPhamRequest.getHinh_anh().size() + " ảnh");
-                    saveProductImages(savedProduct, chiTietSanPhamRequest.getHinh_anh());
-                }
-            } else if (isUpdateByAttribute) {
-                // Nếu là cập nhật theo thuộc tính (CASE 2.1 - trùng màu sắc và kích thước)
-                // Thêm ảnh mới nếu có, nhưng KHÔNG xóa ảnh cũ
-                if (chiTietSanPhamRequest.getHinh_anh() != null && !chiTietSanPhamRequest.getHinh_anh().isEmpty()) {
-                    addNewProductImagesOnly(savedProduct, chiTietSanPhamRequest.getHinh_anh());
-                }
-            } else {
-                // Nếu là cập nhật theo ID chi tiết sản phẩm (CASE 1)
-                if (chiTietSanPhamRequest.getHinh_anh() != null && !chiTietSanPhamRequest.getHinh_anh().isEmpty()) {
-                    processProductImages(savedProduct, chiTietSanPhamRequest.getHinh_anh());
-                }
-            }
+            // Xử lý hình ảnh (luôn xóa cũ và thêm mới để đảm bảo đồng bộ)
+            updateAndSaveImages(savedProduct, chiTietSanPhamRequest.getHinh_anh());
 
             // Chuẩn bị response
             Map<String, Object> response = new HashMap<>();
             response.put("message", message);
             response.put("data", savedProduct);
 
-            // Thêm thông tin về số lượng cũ/mới nếu cập nhật số lượng
-            if (oldQuantity > 0) {
-                response.put("oldQuantity", oldQuantity);
-                response.put("newQuantity", savedProduct.getSo_luong());
-            }
-
             return ResponseEntity.ok().body(response);
 
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
+            // Log lỗi chi tiết
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Đã xảy ra lỗi: " + e.getMessage());
+                    .body("Đã xảy ra lỗi phía máy chủ: " + e.getMessage());
         }
     }
 
     /**
-     * Lưu hình ảnh cho sản phẩm mới
+     * Phương thức duy nhất để xử lý ảnh: Xóa tất cả ảnh cũ và thêm lại từ danh sách mới.
+     * Cách tiếp cận "Source of Truth", đảm bảo trạng thái DB khớp với FE.
      */
-    private void saveProductImages(ChiTietSanPham product, List<String> imagePaths) {
-        if (imagePaths == null || imagePaths.isEmpty()) {
-            System.out.println("saveProductImages: Không có ảnh để lưu");
-            return;
-        }
+    private void updateAndSaveImages(ChiTietSanPham product, List<String> newImagePaths) {
+        // 1. Xóa tất cả các ảnh cũ liên quan đến chi tiết sản phẩm này
+        // Sử dụng một phương thức xóa tùy chỉnh trong repository
+        hinhAnhSanPhamRepo.deleteByChiTietSanPham(product);
 
-        System.out.println("saveProductImages: Bắt đầu lưu " + imagePaths.size() + " ảnh");
-        boolean firstImage = true;
-        int count = 0;
-        for (String path : imagePaths) {
-            HinhAnhSanPham image = new HinhAnhSanPham();
-            image.setChiTietSanPham(product);
-            image.setHinh_anh(path);
-            image.setAnh_chinh(firstImage); // Ảnh đầu tiên là ảnh chính
-            HinhAnhSanPham saved = hinhAnhSanPhamRepo.save(image);
-            count++;
-            System.out.println("Đã lưu ảnh #" + count + " - ID: " + saved.getId_hinh_anh() + " - URL: " + path + " - Ảnh chính: " + firstImage);
-            firstImage = false;
-        }
-        System.out.println("saveProductImages: Đã lưu thành công " + count + " ảnh");
-    }
-
-    /**
-     * Đảm bảo luôn có một ảnh chính
-     */
-    private void ensureMainImageExists(Integer productId) {
-        List<HinhAnhView> images = hinhAnhSanPhamRepo.listHinhAnhTheoSanPham(productId);
-        boolean hasMainImage = images.stream().anyMatch(HinhAnhView::getAnh_chinh);
-
-        if (!hasMainImage && !images.isEmpty()) {
-            HinhAnhSanPham firstImage = hinhAnhSanPhamRepo.findById(images.get(0).getId_hinh_anh())
-                    .orElse(null);
-            if (firstImage != null) {
-                firstImage.setAnh_chinh(true);
-                hinhAnhSanPhamRepo.save(firstImage);
-            }
-        }
-    }
-
-    private void addNewProductImagesOnly(ChiTietSanPham product, List<String> newImagePaths) {
-        if (newImagePaths == null || newImagePaths.isEmpty()) {
-            return;
-        }
-
-        // Lấy danh sách đường dẫn hình ảnh hiện có
-        List<HinhAnhView> existingImages = hinhAnhSanPhamRepo.listHinhAnhTheoSanPham(product.getId_chi_tiet_san_pham());
-        List<String> existingImagePaths = existingImages.stream()
-                .map(HinhAnhView::getHinh_anh)
-                .collect(Collectors.toList());
-
-        // Chỉ thêm các ảnh mới chưa tồn tại, KHÔNG xóa ảnh cũ
-        for (String path : newImagePaths) {
-            if (!existingImagePaths.contains(path)) {
+        // 2. Thêm lại các ảnh từ danh sách mới, đảm bảo đúng thứ tự và ảnh chính
+        if (newImagePaths != null && !newImagePaths.isEmpty()) {
+            boolean firstImage = true;
+            for (String path : newImagePaths) {
                 HinhAnhSanPham newImage = new HinhAnhSanPham();
                 newImage.setChiTietSanPham(product);
                 newImage.setHinh_anh(path);
-                newImage.setAnh_chinh(false); // Giữ nguyên ảnh chính cũ
+                newImage.setAnh_chinh(firstImage); // Ảnh đầu tiên trong list là ảnh chính
                 hinhAnhSanPhamRepo.save(newImage);
+                firstImage = false; // Chỉ ảnh đầu tiên là ảnh chính
             }
         }
-
-        // Đảm bảo luôn có một ảnh chính
-        ensureMainImageExists(product.getId_chi_tiet_san_pham());
-    }
-
-    /**
-     * Xử lý hình ảnh sản phẩm khi cập nhật theo ID
-     */
-    private void processProductImages(ChiTietSanPham product, List<String> newImagePaths) {
-        if (newImagePaths == null || newImagePaths.isEmpty()) {
-            return;
-        }
-
-        // Lấy danh sách đường dẫn hình ảnh hiện có
-        List<HinhAnhView> existingImages = hinhAnhSanPhamRepo.listHinhAnhTheoSanPham(product.getId_chi_tiet_san_pham());
-        List<String> existingImagePaths = existingImages.stream()
-                .map(HinhAnhView::getHinh_anh)
-                .collect(Collectors.toList());
-
-        // 1. Xóa ảnh không còn trong danh sách mới
-        for (HinhAnhView img : existingImages) {
-            if (!newImagePaths.contains(img.getHinh_anh())) {
-                hinhAnhSanPhamRepo.deleteById(img.getId_hinh_anh());
-            }
-        }
-
-        // 2. Thêm ảnh mới
-        for (String path : newImagePaths) {
-            if (!existingImagePaths.contains(path)) {
-                HinhAnhSanPham newImage = new HinhAnhSanPham();
-                newImage.setChiTietSanPham(product);
-                newImage.setHinh_anh(path);
-
-                // Nếu chưa có ảnh hoặc đây là ảnh đầu tiên, đặt làm ảnh chính
-                boolean isMainImage = existingImagePaths.isEmpty() ||
-                        (existingImages.stream().noneMatch(HinhAnhView::getAnh_chinh) &&
-                                newImagePaths.indexOf(path) == 0);
-
-                newImage.setAnh_chinh(isMainImage);
-                hinhAnhSanPhamRepo.save(newImage);
-            }
-        }
-
-        // 3. Kiểm tra và đảm bảo có ảnh chính
-        ensureMainImageExists(product.getId_chi_tiet_san_pham());
     }
 
     /**

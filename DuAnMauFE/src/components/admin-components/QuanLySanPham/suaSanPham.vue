@@ -1382,6 +1382,18 @@ const onFinish = async () => {
 
         // Bước 2: Lưu từng biến thể
         const savePromises = variants.value.map(async (variant) => {
+            // Sắp xếp lại danh sách ảnh để ảnh chính luôn ở đầu
+            const sortedFileList = [...(variant.fileList || [])].sort((a, b) => {
+                const aIsPrimary = a.anh_chinh === '1' || a.anh_chinh === 1 || a.anh_chinh === true;
+                const bIsPrimary = b.anh_chinh === '1' || b.anh_chinh === 1 || b.anh_chinh === true;
+                if (aIsPrimary) return -1;
+                if (bIsPrimary) return 1;
+                return 0;
+            });
+
+            // Lấy URL từ danh sách đã sắp xếp
+            const hinhAnhUrls = sortedFileList.map(file => file.url).filter(url => url);
+
             // Chuẩn bị dữ liệu biến thể
             const variantData = {
                 id_chi_tiet_san_pham: variant.id_chi_tiet_san_pham,
@@ -1392,7 +1404,7 @@ const onFinish = async () => {
                 gia_ban: convertPriceToNumber(variant.gia_ban),
                 trang_thai: variant.trang_thai === 'Hoạt động' || variant.trang_thai === true,
                 qr_code: variant.qr_code || '',
-                hinh_anh: variant.fileList.map(file => file.url).filter(url => url)
+                hinh_anh: hinhAnhUrls // Sử dụng mảng URL đã được sắp xếp
             };
 
             console.log('Đang lưu biến thể:', variantData);

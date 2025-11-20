@@ -54,13 +54,42 @@
             <div id="qr-reader" style="width: 100%;"></div>
         </a-modal>
 
-        <!-- Invoice Tabs -->
-        <div class="invoice-tabs">
-            <a-tabs v-model:activeKey="activeKey" type="editable-card" @edit="onEdit">
-                <a-tab-pane v-for="pane in panes" :key="pane.key" :tab="pane.title" :closable="pane.closable">
+        <!-- Invoice Tabs with Suspended Dropdown -->
+        <div class="invoice-tabs" style="display: flex; align-items: center;">
+            <a-tabs v-model:activeKey="activeKey" type="editable-card" @edit="onEdit" style="flex: 1;">
+                <a-tab-pane v-for="pane in activeInvoices" :key="pane.key" :tab="pane.title" :closable="pane.closable">
                     {{ pane.content }}
                 </a-tab-pane>
             </a-tabs>
+            
+            <!-- Dropdown cho hóa đơn treo - ngay sau dấu + -->
+            <a-dropdown v-if="suspendedInvoices.length > 0" :trigger="['click']" placement="bottomRight">
+                <a-button type="dashed" style="margin-left: 8px; white-space: nowrap;">
+                    <template #icon><more-outlined /></template>
+                    Hóa đơn treo ({{ suspendedInvoices.length }})
+                </a-button>
+                <template #overlay>
+                    <a-menu>
+                        <a-menu-item 
+                            v-for="(invoice, index) in suspendedInvoices" 
+                            :key="invoice.key"
+                            @click="activateSuspendedInvoice(invoice.hd.id_hoa_don)"
+                        >
+                            <div style="display: flex; justify-content: space-between; align-items: center; min-width: 200px;">
+                                <span>
+                                    <strong>{{ invoice.title }}</strong> - {{ invoice.hd.ma_hoa_don }}
+                                </span>
+                                <a-badge 
+                                    :count="`${getRemainingMinutes(invoice.hd.id_hoa_don)}p`" 
+                                    :number-style="{ 
+                                        backgroundColor: getRemainingMinutes(invoice.hd.id_hoa_don) <= 5 ? '#ff4d4f' : '#faad14'
+                                    }"
+                                />
+                            </div>
+                        </a-menu-item>
+                    </a-menu>
+                </template>
+            </a-dropdown>
         </div>
 
 
@@ -252,7 +281,7 @@
                     <div class="mb-3">
                         <label for="idVoucher" class="form-label">Voucher</label>
                         <select name="idVoucher" id="idVoucher" class="form-select"
-                            v-model="activeTabData.hd.id_voucher" @change="updateVoucher">
+                            v-model="activeTabData.hd.id_voucher" @change="updateVoucher(true)">
                             <option :value="null">-- Không dùng voucher --</option>
                              <option v-for="voucher in availableVouchers" :key="voucher.id_voucher" :value="voucher.id_voucher">
                                 {{ voucher.ten_voucher }} (Giảm {{ formatCurrency(voucher.so_tien_giam) }})
@@ -371,7 +400,8 @@ import {
     RollbackOutlined,
     BarChartOutlined,
     DeleteOutlined,
-    QrcodeOutlined
+    QrcodeOutlined,
+    MoreOutlined
 } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import { useGbStore } from '@/stores/gbStore';
@@ -564,6 +594,21 @@ const panes = ref([]); // Khởi tạo rỗng, sẽ tạo tab đầu tiên trong
 const activeKey = ref('');
 const newTabIndex = ref(0); // Chỉ dùng để tạo key duy nhất nếu cần, không dùng cho tiêu đề
 
+// ==================== INVOICE QUEUE MANAGEMENT ====================
+const MAX_ACTIVE_INVOICES = 5;
+const EXPIRY_WARNING_TIME = 5 * 60 * 1000; // 5 phút
+const EXPIRY_TIME = 10 * 60 * 1000; // 10 phút
+
+// Map lưu trữ timer data cho mỗi hóa đơn
+const invoiceTimers = ref(new Map());
+// Structure: Map<invoiceId, { createdAt, warningTimeoutId, expiryTimeoutId, warningShown }>
+
+// Computed: Danh sách hóa đơn chờ (hiển thị trên tabs)
+const activeInvoices = computed(() => panes.value.slice(0, MAX_ACTIVE_INVOICES));
+
+// Computed: Danh sách hóa đơn treo (trong dropdown)
+const suspendedInvoices = computed(() => panes.value.slice(MAX_ACTIVE_INVOICES));
+
 const loading = ref(false);
 const open = ref(false);
 const showModal = () => {
@@ -649,12 +694,115 @@ const currentInvoiceItems = computed(() => {
 });
 
 // --- Methods ---
-// Định dạng tiền tệ
+// Định dang tiền tệ
 const formatCurrency = (value) => {
-    if (value === null || value === undefined) return '';
-    return value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+    if (!value && value !== 0) return '0';
+    return Number(value).toLocaleString('vi-VN');
 };
 
+// ==================== TIMER MANAGEMENT FUNCTIONS ====================
+// Bắt đầu timer cho hóa đơn suspended
+const startInvoiceTimer = (invoiceId, invoiceCode) => {
+    console.log(`⏰ Starting timer for invoice ${invoiceCode} (ID: ${invoiceId})`);
+    
+    const now = Date.now();
+    
+    // Set timeout cho cảnh báo (5 phút)
+    const warningTimeoutId = setTimeout(() => {
+        const timerData = invoiceTimers.value.get(invoiceId);
+        if (timerData && !timerData.warningShown) {
+            message.warning(`Hóa đơn ${invoiceCode} sắp hết hạn (còn 5 phút). Vui lòng thanh toán!`, 10);
+            timerData.warningShown = true;
+        }
+    }, EXPIRY_WARNING_TIME);
+    
+    // Set timeout cho tự động xóa (10 phút)
+    const expiryTimeoutId = setTimeout(async () => {
+        await deleteExpiredInvoice(invoiceId, invoiceCode);
+    }, EXPIRY_TIME);
+    
+    // Lưu timer data
+    invoiceTimers.value.set(invoiceId, {
+        createdAt: now,
+        warningTimeoutId,
+        expiryTimeoutId,
+        warningShown: false
+    });
+};
+
+// Xóa timer cho hóa đơn
+const clearInvoiceTimer = (invoiceId) => {
+    const timerData = invoiceTimers.value.get(invoiceId);
+    if (timerData) {
+        clearTimeout(timerData.warningTimeoutId);
+        clearTimeout(timerData.expiryTimeoutId);
+        invoiceTimers.value.delete(invoiceId);
+        console.log(`⏰ Cleared timer for invoice ID: ${invoiceId}`);
+    }
+};
+
+// Lấy thời gian còn lại (phút) cho hóa đơn
+const getRemainingMinutes = (invoiceId) => {
+    const timerData = invoiceTimers.value.get(invoiceId);
+    if (!timerData) return null;
+    
+    const elapsed = Date.now() - timerData.createdAt;
+    const remaining = EXPIRY_TIME - elapsed;
+    return Math.ceil(remaining / 60000); // Convert to minutes
+};
+
+// Xóa hóa đơn hết hạn
+const deleteExpiredInvoice = async (invoiceId, invoiceCode) => {
+    try {
+        console.log(`🗑️ Deleting expired invoice ${invoiceCode}`);
+        
+        // Xóa hóa đơn qua API
+        await store.deleteHoaDon(invoiceId);
+        
+        // Xóa khỏi panes
+        const index = panes.value.findIndex(p => p.hd.id_hoa_don === invoiceId);
+        if (index !== -1) {
+            panes.value.splice(index, 1);
+        }
+        
+        // Clear timer
+        clearInvoiceTimer(invoiceId);
+        
+        // Thông báo
+        message.error(`Hóa đơn ${invoiceCode} đã hết hạn và bị xóa tự động.`, 5);
+    } catch (error) {
+        console.error('Lỗi khi xóa hóa đơn hết hạn:', error);
+    }
+};
+
+// Kích hoạt hóa đơn treo (đưa lên active)
+const activateSuspendedInvoice = (invoiceId) => {
+    const suspendedIndex = panes.value.findIndex(p => p.hd.id_hoa_don === invoiceId);
+    if (suspendedIndex === -1 || suspendedIndex < MAX_ACTIVE_INVOICES) return;
+    
+    // Lấy hóa đơn suspended
+    const suspendedInvoice = panes.value[suspendedIndex];
+    
+    // Xóa khỏi vị trí hiện tại
+    panes.value.splice(suspendedIndex, 1);
+    
+    // Thêm vào đầu danh sách (làm active)
+    panes.value.unshift(suspendedInvoice);
+    
+    // Clear timer vì đã active
+    clearInvoiceTimer(invoiceId);
+    
+    // Set làm active key
+    activeKey.value = suspendedInvoice.key;
+    
+    // Kiểm tra xem có hóa đơn nào mới vào suspended không
+    if (panes.value.length > MAX_ACTIVE_INVOICES) {
+        const newSuspendedInvoice = panes.value[MAX_ACTIVE_INVOICES];
+        startInvoiceTimer(newSuspendedInvoice.hd.id_hoa_don, newSuspendedInvoice.hd.ma_hoa_don);
+    }
+    
+    message.success(`Đã kích hoạt hóa đơn ${suspendedInvoice.hd.ma_hoa_don}`);
+};
 // Xử lý khi người dùng gõ vào ô tìm kiếm
 const normalizeString = (str) => {
     if (!str) return '';
@@ -853,12 +1001,15 @@ const fe_tongThanhToan = computed(() => {
 
 
 // 2. HÀM CẬP NHẬT VOUCHER KHI NGƯỜI DÙNG CHỌN
-const updateVoucher = async () => {
+const updateVoucher = async (isManualAction = false) => {
     const currentTab = activeTabData.value;
     if (!currentTab?.hd?.id_hoa_don) return;
 
-    // Ghi nhớ lựa chọn của người dùng
-    userHasManuallyDeselectedVoucher.value = currentTab.hd.id_voucher === null;
+    // CHỈ set flag khi người dùng CHỌN THỦ CÔNG "Không dùng voucher"
+    // KHÔNG set khi voucher bị gỡ tự động do không hợp lệ
+    if (isManualAction && currentTab.hd.id_voucher === null) {
+        userHasManuallyDeselectedVoucher.value = true;
+    }
 
     // Gọi API mới để áp dụng voucher
     const updatedInvoice = await store.applyVoucherToInvoice(
@@ -897,13 +1048,17 @@ watch(fe_tongTienHang, async (newTotal) => {
     if (currentVoucherId && !availableVouchers.value.some(v => v.id_voucher === currentVoucherId)) {
         currentTab.hd.id_voucher = null; // Gỡ voucher khỏi giao diện
         message.warning('Voucher không còn hợp lệ và đã được gỡ bỏ.');
-        await updateVoucher(); // Cập nhật thay đổi này về backend
+        // Reset flag để cho phép tự động áp dụng lại sau
+        userHasManuallyDeselectedVoucher.value = false;
+        await updateVoucher(false); // false = không phải manual action
     } 
     // Kịch bản 2: Chưa có voucher, nhưng giờ đã đủ điều kiện cho voucher tốt nhất
     else if (!currentVoucherId && bestVoucher) {
         currentTab.hd.id_voucher = bestVoucher.id_voucher; // Tự động áp dụng trên giao diện
         message.success(`Đã tự động áp dụng voucher: ${bestVoucher.ten_voucher}`);
-        await updateVoucher(); // Cập nhật thay đổi này về backend
+        // Reset flag vì đây là auto-apply
+        userHasManuallyDeselectedVoucher.value = false;
+        await updateVoucher(false); // false = không phải manual action
     }
 });
 
@@ -916,11 +1071,13 @@ const updateItemTotal = (item) => {
     let soLuongMoi = item.so_luong;
     const gioiHanToiDa = item.so_luong_ton_goc;
 
+    // Validate số lượng
     if (!soLuongMoi || soLuongMoi <= 0) {
         soLuongMoi = 1;
+        message.warning('Số lượng phải lớn hơn 0. Đã đặt lại thành 1.');
     }
     if (soLuongMoi > gioiHanToiDa) {
-        message.warning(`Số lượng tồn kho không đủ. Số lượng đã được đặt lại thành ${gioiHanToiDa}.`);
+        message.warning(`Số lượng vượt quá tồn kho (${gioiHanToiDa}). Đã đặt lại về số lượng tối đa.`);
         soLuongMoi = gioiHanToiDa;
     }
     
@@ -991,7 +1148,7 @@ const add = async () => {
         newTabIndex.value++;
         const newKey = `invoiceTab_${Date.now()}_${newTabIndex.value}`;
 
-        panes.value.push({
+        const newInvoice = {
             title: `Đơn ${panes.value.length + 1}`,
             key: newKey,
             closable: true,
@@ -1009,11 +1166,22 @@ const add = async () => {
                 phi_van_chuyen: 0,
                 tong_tien_truoc_giam: 0,
                 tong_tien_sau_giam: 0
-
             })
-        });
+        };
+
+        // Thêm hóa đơn mới vào đầu danh sách
+        panes.value.unshift(newInvoice);
         ptnh.value = 'Nhận tại cửa hàng';
         activeKey.value = newKey;
+
+        // Nếu có >= 5 hóa đơn, hóa đơn thứ 5 (index 4) sẽ vào suspended
+        if (panes.value.length > MAX_ACTIVE_INVOICES) {
+            const suspendedInvoice = panes.value[MAX_ACTIVE_INVOICES];
+            startInvoiceTimer(suspendedInvoice.hd.id_hoa_don, suspendedInvoice.hd.ma_hoa_don);
+            message.info(`Hóa đơn ${suspendedInvoice.hd.ma_hoa_don} đã chuyển vào danh sách treo.`);
+        }
+
+        console.log(`📝 Created invoice ${response.ma_hoa_don}, total: ${panes.value.length}`);
     } catch (error) {
         console.error("Lỗi khi tạo hóa đơn:", error);
         toast.error(error.message || 'Lỗi khi tạo hóa đơn!');
@@ -1043,6 +1211,9 @@ const remove = async (targetKey) => {
 const performRemove = async (tabToRemove, targetKey) => {
     try {
         if (tabToRemove.hd?.id_hoa_don) {
+            // Clear timer nếu hóa đơn này đang có timer
+            clearInvoiceTimer(tabToRemove.hd.id_hoa_don);
+            
             const result = await store.deleteHoaDon(tabToRemove.hd.id_hoa_don);
             if (result.error || !result.success) {
                 message.error(result.message || 'Xóa hóa đơn thất bại');
@@ -1283,14 +1454,15 @@ const handlePayment = async () => {
         }
     }
     if (currentTab.hd.hinh_thuc_thanh_toan === 'Tiền mặt') {
-        if (currentTab.hd.tien_khach_dua === null || currentTab.hd.tien_khach_dua < currentTab.hd.tong_tien_sau_giam) {
+        const totalAfterVoucher = fe_tongThanhToan.value; // Sử dụng giá trị FE đã tính voucher
+        if (currentTab.hd.tien_khach_dua === null || currentTab.hd.tien_khach_dua < totalAfterVoucher) {
             message.error("Vui lòng nhập đủ tiền khách đưa.");
             return;
         }
-        currentTab.hd.tien_du = currentTab.hd.tien_khach_dua - currentTab.hd.tong_tien_sau_giam;
+        currentTab.hd.tien_du = currentTab.hd.tien_khach_dua - totalAfterVoucher;
     }
 
-    const total = activeTabData.value.hd.tong_tien_sau_giam || 0;
+    const total = fe_tongThanhToan.value || 0; // Sử dụng FE computed thay vì BE data
     const cash = tienKhachDua.value || 0;
 
     if (activeTabData.value.hd.hinh_thuc_thanh_toan === 'Tiền mặt' && cash < total) {

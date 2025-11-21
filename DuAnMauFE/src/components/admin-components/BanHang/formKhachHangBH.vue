@@ -450,8 +450,19 @@ const luuThongTin = async () => {
 
 const confirmThemKhachHang = () => {
     AModal.confirm({
-        title: 'Xác nhận',
-        content: 'Bạn có đồng ý thêm khách hàng không?',
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(UserAddOutlined, { style: 'color: #52c41a; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Thêm khách hàng mới')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0; font-size: 14px;' }, 'Bạn có muốn thêm khách hàng này vào hệ thống không?')
+        ]),
+        okText: 'Thêm khách hàng',
+        cancelText: 'Hủy',
+        okButtonProps: { size: 'large', style: { height: '38px', background: '#52c41a', borderColor: '#52c41a' } },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 450,
         onOk: () => {
             themKhachHang();
         },
@@ -460,8 +471,19 @@ const confirmThemKhachHang = () => {
 
 const luuThongTinKhachHang = () => {
     AModal.confirm({
-        title: 'Xác nhận',
-        content: 'Bạn có muốn lưu thông tin khách hàng không?',
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(SaveOutlined, { style: 'color: #1890ff; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Lưu thông tin KH')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0; font-size: 14px;' }, 'Bạn có muốn lưu thông tin khách hàng này không?')
+        ]),
+        okText: 'Lưu',
+        cancelText: 'Hủy',
+        okButtonProps: { size: 'large', style: { height: '38px' } },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 420,
         onOk: () => {
             luuThongTin();
         }

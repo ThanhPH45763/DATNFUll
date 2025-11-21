@@ -623,10 +623,25 @@ const deleteImageFromCloud = async (imageUrl) => {
 // Reset form
 const resetForm = () => {
     Modal.confirm({
-        title: 'Xác nhận làm mới',
-        content: 'Bạn có chắc muốn làm mới form? Tất cả dữ liệu sẽ bị xóa.',
-        okText: 'Đồng ý',
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(ExclamationCircleOutlined, { style: 'color: #faad14; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Làm mới form')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, 'Bạn có chắc muốn làm mới form?'),
+            h('div', { style: 'background: #fffbe6; padding: 12px; border-radius: 6px; border: 1px solid #ffe58f;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #d48806;' }, [
+                    h(ExclamationCircleOutlined, { style: 'font-size: 14px;' }),
+                    h('span', { style: 'font-size: 13px;' }, 'Dữ liệu sẽ trở về trạng thái ban đầu')
+                ])
+            ])
+        ]),
+        okText: 'Làm mới',
         cancelText: 'Hủy',
+        okButtonProps: { danger: true, size: 'large', style: { height: '38px' } },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 450,
         onOk: async () => {
             try {
                 // Lấy thông tin nhân viên gốc để giữ lại thông tin quan trọng
@@ -796,10 +811,22 @@ const suaNhanVien = async () => {
 
         if (isUnchanged) {
             Modal.confirm({
-                title: 'Thông báo',
-                content: 'Bạn chưa sửa gì, bạn có muốn tiếp tục sửa không?',
+                title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+                    h(InfoCircleOutlined, { style: 'color: #1890ff; font-size: 22px;' }),
+                    h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Chưa có thay đổi')
+                ]),
+                content: () => h('div', { style: 'padding: 8px 0;' }, [
+                    h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, 'Bạn chưa sửa gì, bạn có muốn tiếp tục sửa không?'),
+                    h('div', { style: 'background: #e6f7ff; padding: 12px; border-radius: 6px; border: 1px solid #91d5ff;' }, [
+                        h('div', { style: 'color: #096dd9; font-size: 13px;' }, 'Không phát hiện thay đổi nào trong biểu mẫu')
+                    ])
+                ]),
                 okText: 'Tiếp tục sửa',
                 cancelText: 'Quay lại danh sách',
+                okButtonProps: { size: 'large', style: { height: '38px' } },
+                cancelButtonProps: { size: 'large', style: { height: '38px' } },
+                centered: true,
+                width: 450,
                 onOk() {
                     return;
                 },
@@ -811,7 +838,26 @@ const suaNhanVien = async () => {
         }
 
         Modal.confirm({
-            title: 'Bạn có chắc chắn muốn sửa nhân viên này không?',
+            title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+                h(EditOutlined, { style: 'color: #1890ff; font-size: 22px;' }),
+                h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Cập nhật nhân viên')
+            ]),
+            content: () => h('div', { style: 'padding: 8px 0;' }, [
+                h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, 'Bạn có chắc chắn muốn cập nhật thông tin nhân viên này không?'),
+                h('div', { style: 'background: #e6f7ff; padding: 12px; border-radius: 6px; border: 1px solid #91d5ff;' }, [
+                    h('div', { style: 'color: #096dd9; font-size: 13px;' }, [
+                        h('div', { style: 'font-weight: 500; margin-bottom: 4px;' }, 'Nhân viên:'),
+                        h('div', null, `• ${formData.tenNhanVien} (${formData.maNhanVien})`),
+                        h('div', null, `• ${formData.email}`)
+                    ])
+                ])
+            ]),
+            okText: 'Cập nhật',
+            cancelText: 'Hủy',
+            okButtonProps: { size: 'large', style: { height: '38px' } },
+            cancelButtonProps: { size: 'large', style: { height: '38px' } },
+            centered: true,
+            width: 480,
             onOk: async () => {
                 try {
                     const province = provinces.value.find(p => p.code === selectedProvince.value)?.name || '';

@@ -336,12 +336,97 @@
                     <button type="submit" class="btn btn-primary w-100" :disabled="isPaymentDisabled">
                         Thanh toán
                     </button>
-                    <a-modal v-model:open="showPrintConfirm" title="Xác nhận in hóa đơn" @ok="confirmPrint(true)"
-                        @cancel="confirmPrint(false)">
-                        <p>Bạn có muốn in hóa đơn không?</p>
+                    <!-- Modal 1: Xác nhận thanh toán -->
+                    <a-modal 
+                        v-model:open="showPaymentConfirm" 
+                        :closable="false"
+                        :maskClosable="false"
+                        width="450px"
+                        centered
+                    >
+                        <template #title>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <ExclamationCircleOutlined style="color: #faad14; font-size: 24px;" />
+                                <span style="font-size: 18px; font-weight: 600;">Xác nhận thanh toán</span>
+                            </div>
+                        </template>
+                        
+                        <div style="padding: 20px 0;">
+                            <p style="font-size: 15px; margin-bottom: 16px;">
+                                Bạn có chắc chắn muốn thanh toán đơn hàng này?
+                            </p>
+                            <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin-top: 16px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="color: #666;">Mã hóa đơn:</span>
+                                    <strong>{{ activeTabData?.hd?.ma_hoa_don }}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="color: #666;">Tổng tiền:</span>
+                                    <strong style="color: #ff6600; font-size: 16px;">{{ formatCurrency(fe_tongThanhToan) }}</strong>
+                                </div>
+                                <div v-if="activeTabData?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt'" style="display: flex; justify-content: space-between;">
+                                    <span style="color: #666;">Tiền trả khách:</span>
+                                    <strong style="color: #52c41a;">{{ formatCurrency(calculatedChange) }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <template #footer>
-                            <a-button key="cancel" @click="confirmPrint(false)">Không</a-button>
-                            <a-button key="ok" type="primary" @click="confirmPrint(true)">Có</a-button>
+                            <a-button key="cancel" size="large" @click="cancelPayment" style="height: 40px;">
+                                Hủy
+                            </a-button>
+                            <a-button 
+                                key="ok" 
+                                type="primary" 
+                                size="large"
+                                @click="proceedToPayment" 
+                                style="height: 40px; background: #ff6600; border-color: #ff6600;"
+                            >
+                                Xác nhận thanh toán
+                            </a-button>
+                        </template>
+                    </a-modal>
+
+                    <!-- Modal 2: Xác nhận in hóa đơn (sau khi thanh toán) -->
+                    <a-modal 
+                        v-model:open="showPrintConfirm" 
+                        :closable="false"
+                        :maskClosable="false"
+                        width="450px"
+                        centered
+                    >
+                        <template #title>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <PrinterOutlined style="color: #1890ff; font-size: 24px;" />
+                                <span style="font-size: 18px; font-weight: 600;">In hóa đơn</span>
+                            </div>
+                        </template>
+                        
+                        <div style="padding: 20px 0;">
+                            <p style="font-size: 15px; margin-bottom: 16px;">
+                                Thanh toán thành công! Bạn có muốn in hóa đơn không?
+                            </p>
+                            <div style="background: #e6f7ff; padding: 16px; border-radius: 8px; border: 1px solid #91d5ff;">
+                                <div style="display: flex; align-items: center; gap: 8px; color: #1890ff;">
+                                    <CheckCircleOutlined style="font-size: 18px;" />
+                                    <span style="font-weight: 500;">Đơn hàng {{ activeTabData?.hd?.ma_hoa_don }} đã được thanh toán</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <template #footer>
+                            <a-button key="cancel" size="large" @click="confirmPrint(false)" style="height: 40px;">
+                                Không in
+                            </a-button>
+                            <a-button 
+                                key="ok" 
+                                type="primary" 
+                                size="large"
+                                @click="confirmPrint(true)" 
+                                style="height: 40px; background: #52c41a; border-color: #52c41a;"
+                            >
+                                In hóa đơn
+                            </a-button>
                         </template>
                     </a-modal>
                     
@@ -401,13 +486,16 @@ import {
     BarChartOutlined,
     DeleteOutlined,
     QrcodeOutlined,
-    MoreOutlined
+    MoreOutlined,
+    ExclamationCircleOutlined,
+    PrinterOutlined,
+    CheckCircleOutlined
 } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import { useGbStore } from '@/stores/gbStore';
 import { Empty } from 'ant-design-vue';
 import jsPDF from 'jspdf';
-import logo from '../../../images/logo/logo2.png';
+import logo from '../../../images/logo/LogoM.png';
 import '../../../config/fonts/Roboto-normal'
 import '../../../config/fonts/Roboto-bold'
 import { toast } from 'vue3-toastify';
@@ -1195,10 +1283,25 @@ const remove = async (targetKey) => {
 
     if (tabToRemove.items?.value?.length > 0) {
         Modal.confirm({
-            title: `Xác nhận hủy hóa đơn "${tabToRemove.title}"`,
-            content: `Hóa đơn có ${tabToRemove.items.value.length} sản phẩm. Bạn chắc chắn muốn hủy?`,
-            okText: 'Xác nhận',
-            cancelText: 'Hủy',
+            title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+                h(DeleteOutlined, { style: 'color: #ff4d4f; font-size: 22px;' }),
+                h('span', { style: 'font-size: 16px; font-weight: 600;' }, `Hủy ${tabToRemove.title}`)
+            ]),
+            content: () => h('div', { style: 'padding: 8px 0;' }, [
+                h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, `Hóa đơn có ${tabToRemove.items.value.length} sản phẩm. Bạn chắc chắn muốn hủy?`),
+                h('div', { style: 'background: #fff1f0; padding: 12px; border-radius: 6px; border: 1px solid #ffccc7;' }, [
+                    h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #cf1322;' }, [
+                        h(ExclamationCircleOutlined, { style: 'font-size: 14px;' }),
+                        h('span', { style: 'font-size: 13px;' }, 'Hóa đơn và tất cả sản phẩm sẽ bị xóa')
+                    ])
+                ])
+            ]),
+            okText: 'Hủy hóa đơn',
+            cancelText: 'Quay lại',
+            okButtonProps: { danger: true, size: 'large', style: { height: '38px' } },
+            cancelButtonProps: { size: 'large', style: { height: '38px' } },
+            centered: true,
+            width: 450,
             onOk: async () => {
                 await performRemove(tabToRemove, targetKey);
             }
@@ -1282,11 +1385,11 @@ const printInvoice = async () => {
     // Thông tin cửa hàng
     doc.setFontSize(16);
     doc.setFont("Roboto", "bold");
-    doc.text("G&B SPORTS", 105, 55, { align: "center" });
+    doc.text("Tập đoàn R", 105, 55, { align: "center" });
     doc.setFontSize(10);
     doc.setFont("Roboto", "normal");
-    doc.text("Địa chỉ: Phương Canh, Nam Từ Liêm, Hà Nội", 105, 63, { align: "center" });
-    doc.text("Điện thoại: 0397572262", 105, 69, { align: "center" });
+    doc.text("Địa chỉ: Trịnh Văn Bô, Nam Từ Liêm, Hà Nội", 105, 63, { align: "center" });
+    doc.text("Điện thoại: 0987654321", 105, 69, { align: "center" });
     // Vẽ đường kẻ ngang
     doc.setLineWidth(0.5);
     doc.line(20, 73, 190, 73);
@@ -1423,9 +1526,10 @@ const onEdit = (targetKeyOrAction, action) => {
     }
 };
 
+const showPaymentConfirm = ref(false);
 const showPrintConfirm = ref(false);
 
-// Hàm xử lý thanh toán
+// Hàm xử lý thanh toán - Bước 1: Hiển thị modal confirm thanh toán
 const handlePayment = async () => {
     const currentTab = activeTabData.value;
     if (!currentTab) {
@@ -1439,7 +1543,6 @@ const handlePayment = async () => {
     }
 
     if (currentTab.hd.phuong_thuc_nhan_hang === 'Giao hàng') {
-        // Kiểm tra thông tin giao hàng (tên, SĐT, địa chỉ phải đầy đủ)
         const tenKH = currentTab.hd.ten_khach_hang || currentTab.hd.ho_ten || '';
         const sdt = currentTab.hd.so_dien_thoai || currentTab.hd.sdt || currentTab.hd.sdt_nguoi_nhan || '';
         const diaChi = currentTab.hd.dia_chi || '';
@@ -1454,7 +1557,7 @@ const handlePayment = async () => {
         }
     }
     if (currentTab.hd.hinh_thuc_thanh_toan === 'Tiền mặt') {
-        const totalAfterVoucher = fe_tongThanhToan.value; // Sử dụng giá trị FE đã tính voucher
+        const totalAfterVoucher = fe_tongThanhToan.value;
         if (currentTab.hd.tien_khach_dua === null || currentTab.hd.tien_khach_dua < totalAfterVoucher) {
             message.error("Vui lòng nhập đủ tiền khách đưa.");
             return;
@@ -1462,7 +1565,7 @@ const handlePayment = async () => {
         currentTab.hd.tien_du = currentTab.hd.tien_khach_dua - totalAfterVoucher;
     }
 
-    const total = fe_tongThanhToan.value || 0; // Sử dụng FE computed thay vì BE data
+    const total = fe_tongThanhToan.value || 0;
     const cash = tienKhachDua.value || 0;
 
     if (activeTabData.value.hd.hinh_thuc_thanh_toan === 'Tiền mặt' && cash < total) {
@@ -1470,49 +1573,66 @@ const handlePayment = async () => {
         return;
     }
 
-    showPrintConfirm.value = true;
+    // Hiển thị modal confirm thanh toán
+    showPaymentConfirm.value = true;
 };
 
+// Hủy thanh toán
+const cancelPayment = () => {
+    showPaymentConfirm.value = false;
+};
 
-
-const confirmPrint = async (shouldPrint) => {
-    showPrintConfirm.value = false; // Đóng modal
-
+// Bước 2: Xác nhận thanh toán -> Thực hiện thanh toán -> Hiển thị modal in hóa đơn
+const proceedToPayment = async () => {
+    showPaymentConfirm.value = false;
+    
     const hinhThuc = activeTabData.value.hd.hinh_thuc_thanh_toan;
-
-    if (shouldPrint) {
-        printInvoice();
-    }
-
-    if (hinhThuc === "Tiền mặt") {
-        try {
+    
+    // Thực hiện thanh toán
+    try {
+        if (hinhThuc === "Tiền mặt") {
             await store.trangThaiDonHang(activeTabData.value.hd.id_hoa_don);
-            message.success('Thanh toán tiền mặt thành công!');
-            localStorage.removeItem('khachHangBH');
-            router.push('/admin/banhang');
-            window.location.reload();
-        } catch (error) {
-            console.error('Lỗi khi thanh toán:', error);
-            message.error('Đã xảy ra lỗi khi thanh toán!');
-        }
-    } else if (hinhThuc === "Chuyển khoản") {
-        try {
+            // Sau khi thanh toán thành công -> hiển thị modal in hóa đơn
+            showPrintConfirm.value = true;
+        } else if (hinhThuc === "Chuyển khoản") {
             const payment_info = {
-                productName: "Đơn hàng " + `GB-${activeTabData.value.hd.id_hoa_don}-${new Date().getTime()}`,
-                description: `GB Sport - ${allProducts.value.length} sản phẩm`,
+                productName: "Đơn hàng " + `R-${activeTabData.value.hd.id_hoa_don}-${new Date().getTime()}`,
+                description: `R- ${allProducts.value.length} sản phẩm`,
                 returnUrl: "http://localhost:5173/admin/banhang",
                 price: Number(activeTabData.value.hd.tong_tien_sau_giam || 0),
                 cancelUrl: "http://localhost:5173/admin/banhang"
-            }
+            };
             localStorage.setItem('checkPaymentStatus', 'true');
             localStorage.setItem('idHDPayMent', JSON.stringify(activeTabData.value.hd.id_hoa_don));
             localStorage.removeItem('khachHangBH');
             await thanhToanService.handlePayOSPayment(payment_info);
-        } catch (error) {
-            console.error('Lỗi khi tạo yêu cầu thanh toán PayOS:', error);
-            message.error('Không thể tạo thanh toán PayOs!');
         }
+    } catch (error) {
+        console.error('Lỗi khi thanh toán:', error);
+        message.error('Đã xảy ra lỗi khi thanh toán!');
     }
+};
+
+// Bước 3: Xác nhận in hóa đơn
+const confirmPrint = async (shouldPrint) => {
+    showPrintConfirm.value = false;
+    
+    if (shouldPrint) {
+        printInvoice();
+    }
+    
+    // Thông báo thành công và reload
+    message.success({
+        content: `✅ Thanh toán thành công đơn hàng ${activeTabData.value.hd.ma_hoa_don}!`,
+        duration: 3
+    });
+    
+    localStorage.removeItem('khachHangBH');
+    
+    setTimeout(() => {
+        router.push('/admin/banhang');
+        window.location.reload();
+    }, 1500);
 };
 
 const updateHinhThucThanhToan = async () => {

@@ -449,7 +449,7 @@
                 { required: true, message: 'Vui lòng nhập tên danh mục!' },
                 { validator: validateDanhMucName }
             ]">
-                <a-input v-model:value="newDanhMuc.ten_danh_muc" :maxLength="50" show-count />
+                <a-input v-model:value="newDanhMuc.ten_danh_muc" :maxLength="50" show-count @keyup.enter="submitDanhMuc" />
             </a-form-item>
         </a-form>
     </a-modal>
@@ -460,7 +460,7 @@
                 { required: true, message: 'Vui lòng nhập tên thương hiệu!' },
                 { validator: validateThuongHieuName }
             ]">
-                <a-input v-model:value="newThuongHieu.ten_thuong_hieu" :maxLength="50" show-count />
+                <a-input v-model:value="newThuongHieu.ten_thuong_hieu" :maxLength="50" show-count @keyup.enter="submitThuongHieu" />
             </a-form-item>
         </a-form>
     </a-modal>
@@ -471,7 +471,7 @@
                 { required: true, message: 'Vui lòng nhập tên chất liệu!' },
                 { validator: validateChatLieuName }
             ]">
-                <a-input v-model:value="newChatLieu.ten_chat_lieu" :maxLength="50" show-count />
+                <a-input v-model:value="newChatLieu.ten_chat_lieu" :maxLength="50" show-count @keyup.enter="submitChatLieu" />
             </a-form-item>
         </a-form>
     </a-modal>
@@ -482,7 +482,7 @@
                 { required: true, message: 'Vui lòng nhập tên màu sắc!' },
                 { validator: validateMauSacName }
             ]">
-                <a-input v-model:value="newMauSac.ten_mau_sac" :maxLength="15" show-count />
+                <a-input v-model:value="newMauSac.ten_mau_sac" :maxLength="15" show-count @keyup.enter="submitMauSac" />
             </a-form-item>
         </a-form>
     </a-modal>
@@ -493,10 +493,10 @@
                 { required: true, message: 'Vui lòng nhập giá trị kích thước!' },
                 { validator: validateKichThuocValue }
             ]">
-                <a-input v-model:value="newKichThuoc.gia_tri" :maxLength="5" show-count />
+                <a-input v-model:value="newKichThuoc.gia_tri" :maxLength="5" show-count @keyup.enter="submitKichThuoc" />
             </a-form-item>
             <a-form-item label="Đơn vị" name="don_vi">
-                <a-input v-model:value="newKichThuoc.don_vi" :maxLength="5" show-count />
+                <a-input v-model:value="newKichThuoc.don_vi" :maxLength="5" show-count @keyup.enter="submitKichThuoc" />
             </a-form-item>
         </a-form>
     </a-modal>
@@ -1602,10 +1602,25 @@ const handleCustomRequest = async ({ file, onSuccess, onError, onProgress }, typ
 // Hàm xử lý xóa ảnh
 const handleRemoveImage = async (file, variantType, typeIndex) => {
     Modal.confirm({
-        title: 'Xác nhận xóa',
-        content: 'Bạn có chắc chắn muốn xóa ảnh này không?',
-        okText: 'Đồng ý',
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(DeleteOutlined, { style: 'color: #ff4d4f; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Xóa ảnh biến thể')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, 'Bạn có chắc chắn muốn xóa ảnh này không?'),
+            h('div', { style: 'background: #fff1f0; padding: 12px; border-radius: 6px; border: 1px solid #ffccc7;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #cf1322;' }, [
+                    h(ExclamationCircleOutlined, { style: 'font-size: 14px;' }),
+                    h('span', { style: 'font-size: 13px;' }, 'Ảnh sẽ bị xóa vĩnh viễn khỏi Cloudinary')
+                ])
+            ])
+        ]),
+        okText: 'Xóa',
         cancelText: 'Hủy',
+        okButtonProps: { danger: true, size: 'large', style: { height: '38px' } },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 450,
         async onOk() {
             try {
                 const loadingKey = 'deletingImage';
@@ -3412,10 +3427,25 @@ const handleProductImageUpload = async ({ file, onSuccess, onError, onProgress }
 // Hàm xử lý xóa ảnh sản phẩm chính
 const handleProductImageRemove = async (file) => {
     Modal.confirm({
-        title: 'Xác nhận xóa',
-        content: 'Bạn có chắc chắn muốn xóa ảnh sản phẩm này không?',
-        okText: 'Đồng ý',
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(DeleteOutlined, { style: 'color: #ff4d4f; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Xóa ảnh sản phẩm')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, 'Bạn có chắc chắn muốn xóa ảnh sản phẩm chính này không?'),
+            h('div', { style: 'background: #fff1f0; padding: 12px; border-radius: 6px; border: 1px solid #ffccc7;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #cf1322;' }, [
+                    h(ExclamationCircleOutlined, { style: 'font-size: 14px;' }),
+                    h('span', { style: 'font-size: 13px;' }, 'Ảnh sẽ bị xóa vĩnh viễn khỏi Cloudinary')
+                ])
+            ])
+        ]),
+        okText: 'Xóa',
         cancelText: 'Hủy',
+        okButtonProps: { danger: true, size: 'large', style: { height: '38px' } },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 450,
         async onOk() {
             try {
                 const loadingKey = 'deletingProductImage';

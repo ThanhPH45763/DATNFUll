@@ -150,7 +150,25 @@ const updateDataNhanVien = () => {
 // Cập nhật hàm chuyển trạng thái
 const chuyenTrangThai = (id) => {
   Modal.confirm({
-    title: 'Bạn có chắc chắn muốn chuyển trạng thái nhân viên này không?',
+    title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+      h(SwapOutlined, { style: 'color: #faad14; font-size: 22px;' }),
+      h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Chuyển trạng thái')
+    ]),
+    content: () => h('div', { style: 'padding: 8px 0;' }, [
+      h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, 'Bạn có chắc chắn muốn chuyển trạng thái nhân viên này không?'),
+      h('div', { style: 'background: #fffbe6; padding: 12px; border-radius: 6px; border: 1px solid #ffe58f;' }, [
+        h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #d48806;' }, [
+          h(ExclamationCircleOutlined, { style: 'font-size: 14px;' }),
+          h('span', { style: 'font-size: 13px;' }, 'Trạng thái sẽ chuyển giữa Đang hoạt động / Ngừng hoạt động')
+        ])
+      ])
+    ]),
+    okText: 'Chắc chắn',
+    cancelText: 'Hủy',
+    okButtonProps: { size: 'large', style: { height: '38px' } },
+    cancelButtonProps: { size: 'large', style: { height: '38px' } },
+    centered: true,
+    width: 480,
     async onOk() {
       try {
         const nhanVien = dataNhanVien.value.find(nv => nv.idNhanVien === id);

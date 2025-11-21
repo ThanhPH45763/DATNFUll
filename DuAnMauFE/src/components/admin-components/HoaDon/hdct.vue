@@ -1161,8 +1161,25 @@ const saveCustomerInfo = () => {
         return;
     }
     AModal.confirm({
-        title: 'Xác nhận',
-        content: 'Phí vận chuyển có thể tăng lên khi bạn thay đổi thông tin địa chỉ nhận hàng. Bạn có đồng ý sửa thông tin khách hàng không?',
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(EditOutlined, { style: 'color: #faad14; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Cập nhật thông tin KH')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, 'Phí vận chuyển có thể thay đổi khi bạn cập nhật địa chỉ.'),
+            h('div', { style: 'background: #fffbe6; padding: 12px; border-radius: 6px; border: 1px solid #ffe58f;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #d48806;' }, [
+                    h(ExclamationCircleOutlined, { style: 'font-size: 14px;' }),
+                    h('span', { style: 'font-size: 13px;' }, 'Phí vận chuyển sẽ được tính lại')
+                ])
+            ])
+        ]),
+        okText: 'Cập nhật',
+        cancelText: 'Hủy',
+        okButtonProps: { size: 'large', style: { height: '38px' } },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 480,
         onOk: async () => {
             // Ghép địa chỉ từ các trường
             if (
@@ -1393,8 +1410,19 @@ const saveNote = () => {
         return;
     }
     AModal.confirm({
-        title: 'Xác nhận',
-        content: 'Bạn có đồng ý sửa ghi chú không?',
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(EditOutlined, { style: 'color: #1890ff; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Cập nhật ghi chú')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0; font-size: 14px;' }, 'Bạn có muốn cập nhật ghi chú cho hóa đơn này không?')
+        ]),
+        okText: 'Cập nhật',
+        cancelText: 'Hủy',
+        okButtonProps: { size: 'large', style: { height: '38px' } },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 420,
         onOk: () => {
             store.updateNote(store.hoaDonDetail.ma_hoa_don, trimmedNote);
             isEditingNote.value = false;
@@ -1547,8 +1575,25 @@ const removeProduct = async (item, index) => {
     }
     // Hiển thị modal xác nhận xóa
     AModal.confirm({
-        title: 'Xác nhận xóa sản phẩm',
-        content: `Bạn có chắc chắn muốn xóa sản phẩm "${item.ten_san_pham}" khỏi hóa đơn không?<br>Phí vận chuyển có thể thay đổi khi bạn xóa sản phẩm.`,
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(DeleteOutlined, { style: 'color: #ff4d4f; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Xóa sản phẩm')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, `Bạn có chắc chắn muốn xóa "${item.ten_san_pham}" không?`),
+            h('div', { style: 'background: #fff1f0; padding: 12px; border-radius: 6px; border: 1px solid #ffccc7;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #cf1322;' }, [
+                    h(ExclamationCircleOutlined, { style: 'font-size: 14px;' }),
+                    h('span', { style: 'font-size: 13px;' }, 'Phí vận chuyển có thể thay đổi')
+                ])
+            ])
+        ]),
+        okText: 'Xóa',
+        cancelText: 'Hủy',
+        okButtonProps: { danger: true, size: 'large', style: { height: '38px' } },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 450,
         onOk: async () => {
             try {
                 const response = await store.removeProductFromInvoice(

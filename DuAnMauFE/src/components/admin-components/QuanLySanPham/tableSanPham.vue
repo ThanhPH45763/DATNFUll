@@ -576,10 +576,26 @@ const columnsCTSP = [
 const showConfirmDownload = (ctspRecord) => {
     console.log('Record:', ctspRecord);
     AModal.confirm({
-        title: 'Xác nhận tải QR Code',
-        content: `Bạn có muốn tải QR Code sản phẩm chi tiết này không?`,
-        okText: 'Có',
-        cancelText: 'Không',
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(QrcodeOutlined, { style: 'color: #1890ff; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Tải QR Code')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, `Bạn có muốn tải QR Code cho sản phẩm này không?`),
+            h('div', { style: 'background: #e6f7ff; padding: 12px; border-radius: 6px; border: 1px solid #91d5ff;' }, [
+                h('div', { style: 'color: #096dd9; font-size: 13px;' }, [
+                    h('div', { style: 'font-weight: 500; margin-bottom: 6px;' }, 'Thông tin sản phẩm:'),
+                    h('div', null, `• ${ctspRecord.ten_san_pham}`),
+                    h('div', null, `• Màu: ${ctspRecord.mau_sac} - Size: ${ctspRecord.size}`)
+                ])
+            ])
+        ]),
+        okText: 'Tải v\u1ec1',
+        cancelText: 'Hủy',
+        okButtonProps: { size: 'large', style: { height: '38px' } },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 450,
         onOk: () => generateQRCodePDF(ctspRecord),
     });
 };

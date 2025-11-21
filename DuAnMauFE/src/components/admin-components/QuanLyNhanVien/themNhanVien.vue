@@ -603,10 +603,25 @@ const handleDistrictChange = async (value) => {
 // Reset form
 const resetForm = () => {
     Modal.confirm({
-        title: 'Xác nhận làm mới',
-        content: 'Bạn có chắc muốn làm mới form? Tất cả dữ liệu sẽ bị xóa.',
-        okText: 'Đồng ý',
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(ExclamationCircleOutlined, { style: 'color: #faad14; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Làm mới form')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, 'Bạn có chắc muốn làm mới form?'),
+            h('div', { style: 'background: #fffbe6; padding: 12px; border-radius: 6px; border: 1px solid #ffe58f;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #d48806;' }, [
+                    h(ExclamationCircleOutlined, { style: 'font-size: 14px;' }),
+                    h('span', { style: 'font-size: 13px;' }, 'Tất cả dữ liệu đã nhập sẽ bị xóa')
+                ])
+            ])
+        ]),
+        okText: 'Làm mới',
         cancelText: 'Hủy',
+        okButtonProps: { danger: true, size: 'large', style: { height: '38px' } },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 450,
         onOk: async () => {
             try {
                 Object.assign(formData, {
@@ -678,7 +693,27 @@ const themNhanVien = async () => {
 
     if (validateForm()) {
         Modal.confirm({
-            title: 'Bạn có chắc chắn muốn thêm nhân viên này không?',
+            title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+                h(UserAddOutlined, { style: 'color: #52c41a; font-size: 22px;' }),
+                h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Thêm nhân viên mới')
+            ]),
+            content: () => h('div', { style: 'padding: 8px 0;' }, [
+                h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, 'Bạn có chắc chắn muốn thêm nhân viên này không?'),
+                h('div', { style: 'background: #f6ffed; padding: 12px; border-radius: 6px; border: 1px solid #b7eb8f;' }, [
+                    h('div', { style: 'color: #389e0d; font-size: 13px;' }, [
+                        h('div', { style: 'font-weight: 500; margin-bottom: 4px;' }, 'Thông tin nhân viên:'),
+                        h('div', null, `• Tên: ${formData.tenNhanVien}`),
+                        h('div', null, `• SĐT: ${formData.soDienThoai}`),
+                        h('div', null, `• Email: ${formData.email}`)
+                    ])
+                ])
+            ]),
+            okText: 'Thêm nhân viên',
+            cancelText: 'Hủy',
+            okButtonProps: { size: 'large', style: { height: '38px', background: '#52c41a', borderColor: '#52c41a' } },
+            cancelButtonProps: { size: 'large', style: { height: '38px' } },
+            centered: true,
+            width: 480,
             onOk: async () => {
                 try {
                     const province = provinces.value.find(p => p.code === selectedProvince.value)?.name || '';

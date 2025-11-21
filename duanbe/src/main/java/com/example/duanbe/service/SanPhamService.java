@@ -7,14 +7,14 @@ import com.example.duanbe.request.SanPhamRequest;
 import com.example.duanbe.response.ChiTietSanPhamView;
 import com.example.duanbe.response.SanPhamView;
 import jakarta.validation.Valid;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.repository.query.Param;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -23,10 +23,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Service
@@ -167,6 +165,55 @@ public class SanPhamService {
         }
     }
 
+    // ✅ NEW: Update existing sản phẩm
+    public ResponseEntity<?> updateSanPham(@RequestBody SanPhamRequest sanPhamRequest) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            // Tìm sản phẩm theo ID
+            Optional<SanPham> sanPhamOpt = sanPhamRepo.findById(sanPhamRequest.getId_san_pham());
+
+            if (!sanPhamOpt.isPresent()) {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy sản phẩm với ID: " + sanPhamRequest.getId_san_pham());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            SanPham sanPham = sanPhamOpt.get();
+
+            // Lấy các entity liên quan
+            Optional<DanhMuc> danhMucOp = danhMucRepo.findById(sanPhamRequest.getId_danh_muc());
+            Optional<ThuongHieu> thuongHieuOp = thuongHieuRepo.findById(sanPhamRequest.getId_thuong_hieu());
+            Optional<ChatLieu> chatLieuOp = chatLieuRepo.findById(sanPhamRequest.getId_chat_lieu());
+
+            ChatLieu chatLieu = chatLieuOp.orElse(sanPham.getChatLieu());
+            ThuongHieu thuongHieu = thuongHieuOp.orElse(sanPham.getThuongHieu());
+            DanhMuc danhMuc = danhMucOp.orElse(sanPham.getDanhMuc());
+
+            // Cập nhật thông tin sản phẩm
+            sanPham.setMa_san_pham(sanPhamRequest.getMa_san_pham());
+            sanPham.setTen_san_pham(sanPhamRequest.getTen_san_pham());
+            sanPham.setMo_ta(sanPhamRequest.getMo_ta());
+            sanPham.setHinh_anh(sanPhamRequest.getHinh_anh()); // ✅ Cập nhật ảnh
+            sanPham.setTrang_thai(sanPhamRequest.getTrang_thai());
+            sanPham.setChatLieu(chatLieu);
+            sanPham.setDanhMuc(danhMuc);
+            sanPham.setThuongHieu(thuongHieu);
+            // sanPham.setNgay_sua(LocalDateTime.now());
+
+            SanPham updatedSanPham = sanPhamRepo.save(sanPham);
+
+            response.put("success", true);
+            response.put("message", "Cập nhật thành công");
+            response.put("data", updatedSanPham);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi khi cập nhật sản phẩm");
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
     public String deleteSanPham(@PathVariable Integer id) {
         ArrayList<ChiTietSanPham> list = new ArrayList<>();
         SanPham spDelete = new SanPham();
@@ -220,13 +267,13 @@ public class SanPhamService {
                     chiTietSanPhamRepo.save(ctspXoa);
                 }
             }
-            //  else {
-            //     for (ChiTietSanPham ctspXoa : list) {
-            //         ctspXoa.setTrang_thai("Hoạt động".trim());
-            //         chiTietSanPhamRepo.save(ctspXoa);
-            //     }
-            //     spDelete.setTrang_thai("Hoạt động".trim());
-            //     sanPhamRepo.save(spDelete);
+            // else {
+            // for (ChiTietSanPham ctspXoa : list) {
+            // ctspXoa.setTrang_thai("Hoạt động".trim());
+            // chiTietSanPhamRepo.save(ctspXoa);
+            // }
+            // spDelete.setTrang_thai("Hoạt động".trim());
+            // sanPhamRepo.save(spDelete);
             // }
         }
         return ResponseEntity.ok(spDelete);
@@ -327,7 +374,7 @@ public class SanPhamService {
     public List<ChiTietSanPhamView> getAllCTSPKM() {
         return chiTietSanPhamRepo.getAllCTSPKM();
     }
-    
+
     // Method mới: trả về dữ liệu đã format cho frontend
     public List<SanPhamDisplayDTO> getSanPhamTheoTenDMFormatted(@RequestParam("tenDanhMuc") String tenDanhMuc) {
         List<SanPhamView> views = sanPhamRepo.listSanPhamByTenDM(tenDanhMuc);
@@ -335,14 +382,14 @@ public class SanPhamService {
                 .map(SanPhamDisplayDTO::fromView)
                 .collect(Collectors.toList());
     }
-    
+
     public List<SanPhamDisplayDTO> getSanPhamTheoTenSPFormatted(@RequestParam("tenSanPham") String tenSanPham) {
         List<SanPhamView> views = sanPhamRepo.listSanPhamByTenSP(tenSanPham);
         return views.stream()
                 .map(SanPhamDisplayDTO::fromView)
                 .collect(Collectors.toList());
     }
-    
+
     public List<SanPhamDisplayDTO> getSanPhamSieuSaleFormatted() {
         List<SanPhamView> views = sanPhamRepo.listSanPhamSieuKhuyeMai();
         return views.stream()

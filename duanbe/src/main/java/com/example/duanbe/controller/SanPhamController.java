@@ -79,6 +79,11 @@ public class SanPhamController {
         return sanPhamService.saveSanPham(sanPhamRequest);
     }
 
+    @PutMapping("/updateSanPham")
+    public ResponseEntity<?> updateSanPham(@RequestBody SanPhamRequest sanPhamRequest) {
+        return sanPhamService.updateSanPham(sanPhamRequest);
+    }
+
     @PostMapping("/xoaSanPham")
     public String xoaSanPham(@RequestParam("id") Integer id) {
         return sanPhamService.deleteSanPham(id);
@@ -137,12 +142,14 @@ public class SanPhamController {
     public List<ChiTietSanPhamView> getAllCTSPKM() {
         return sanPhamService.getAllCTSPKM();
     }
-    
-    // ============= ENDPOINTS MỚI: TRẢ VỀ DỮ LIỆU ĐÃ FORMAT CHO FRONTEND =============
-    
+
+    // ============= ENDPOINTS MỚI: TRẢ VỀ DỮ LIỆU ĐÃ FORMAT CHO FRONTEND
+    // =============
+
     /**
      * Lấy danh sách sản phẩm theo tên danh mục với giá đã format
      * Ưu tiên hiển thị giá khuyến mãi nếu có
+     * 
      * @param tenDanhMuc Tên danh mục (có thể nhiều, cách nhau bởi dấu phẩy)
      * @return List sản phẩm với thông tin giá đã format
      */
@@ -150,9 +157,10 @@ public class SanPhamController {
     public List<SanPhamDisplayDTO> getSanPhamByTenDMFormatted(@RequestParam("tenDanhMuc") String tenDanhMuc) {
         return sanPhamService.getSanPhamTheoTenDMFormatted(tenDanhMuc);
     }
-    
+
     /**
      * Lấy danh sách sản phẩm theo tên sản phẩm với giá đã format
+     * 
      * @param tenSanPham Tên sản phẩm (có thể nhiều, cách nhau bởi dấu phẩy)
      * @return List sản phẩm với thông tin giá đã format
      */
@@ -160,9 +168,10 @@ public class SanPhamController {
     public List<SanPhamDisplayDTO> getSanPhamByTenSPFormatted(@RequestParam("tenSanPham") String tenSanPham) {
         return sanPhamService.getSanPhamTheoTenSPFormatted(tenSanPham);
     }
-    
+
     /**
      * Lấy danh sách sản phẩm siêu khuyến mãi với giá đã format
+     * 
      * @return List sản phẩm đang có khuyến mãi
      */
     @GetMapping("/getSanPhamSieuSale/formatted")

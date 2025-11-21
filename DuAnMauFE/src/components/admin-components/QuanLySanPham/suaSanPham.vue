@@ -252,7 +252,7 @@
 <script setup>
 import { h, ref, reactive, onMounted, watch, readonly } from 'vue';
 import { PlusOutlined, DeleteOutlined, ExclamationCircleOutlined, StarFilled, EyeOutlined } from '@ant-design/icons-vue';
-import { message, Modal } from 'ant-design-vue';
+import { message, Modal, notification } from 'ant-design-vue';
 import { useGbStore } from '@/stores/gbStore';
 import { useRouter } from 'vue-router';
 import { useRoute } from 'vue-router';
@@ -754,10 +754,12 @@ const handleVariantCustomRequest = async (options, variantIndex) => {
     try {
         console.log('Upload ảnh cho biến thể:', variantIndex, file.name);
         
-        // Kiểm tra số lượng ảnh hiện tại
-        const currentCount = variant.fileList ? variant.fileList.length : 0;
-        if (currentCount >= 2) {
-            message.error('Chỉ được upload tối đa 2 ảnh!');
+        // Kiểm tra số lượng ảnh đã upload xong (không đếm ảnh đang upload)
+        const currentDoneCount = variant.fileList ? variant.fileList.filter(f => f.status === 'done').length : 0;
+        const MAX_IMAGES = 2; // Giới hạn tối đa 2 ảnh cho mỗi biến thể
+        
+        if (currentDoneCount >= MAX_IMAGES) {
+            message.error(`Chỉ được upload tối đa ${MAX_IMAGES} ảnh cho mỗi biến thể!`);
             onError(new Error('Max count reached'));
             return;
         }
@@ -771,20 +773,40 @@ const handleVariantCustomRequest = async (options, variantIndex) => {
         
         if (imageUrl) {
             // Tạo file object mới
+            // Đếm số ảnh đã done để xác định ảnh chính
+            const currentDoneCountForPrimary = variant.fileList ? variant.fileList.filter(f => f.status === 'done').length : 0;
+            
             const newFile = {
-                uid: file.uid || Date.now(),
+                uid: file.uid,
                 name: file.name,
                 status: 'done',
                 url: imageUrl,
-                anh_chinh: currentCount === 0 ? '1' : '0', // Ảnh đầu tiên = ảnh chính
+                response: imageUrl, // ✅ Thêm response để đảm bảo tương thích
+                anh_chinh: currentDoneCountForPrimary === 0 ? '1' : '0', // Ảnh đầu tiên = ảnh chính
                 id_hinh_anh: null // Ảnh mới chưa có trong DB
             };
             
-            // Thêm vào fileList
+            // ✅ FIX: Remove file gốc (uploading) và chỉ giữ file đã upload xong
+            // Ant Design tự động thêm file vào fileList khi upload → có duplicate
+            // Phải remove file gốc trước khi thêm newFile
             if (!variant.fileList) {
                 variant.fileList = [];
             }
-            variant.fileList.push(newFile);
+            
+            // Lọc bỏ file đang upload (cùng uid nhưng chưa done)
+            const filteredFileList = variant.fileList.filter(f => f.uid !== file.uid);
+            
+            // Thêm file đã upload xong
+            const newFileList = [...filteredFileList, newFile];
+            
+            // ✅ Cập nhật lại toàn bộ variant trong variants array
+            variants.value[variantIndex] = {
+                ...variant,
+                fileList: newFileList
+            };
+            
+            console.log('✅ Đã thêm ảnh vào variant:', variantIndex);
+            console.log('FileList sau khi thêm:', variants.value[variantIndex].fileList);
             
             message.success({ content: 'Tải ảnh lên thành công!', key: loadingKey });
             onSuccess(imageUrl, file);
@@ -856,13 +878,22 @@ const handleRemoveImage = async (file, variantIndex) => {
 const removeFileFromList = (variant, file) => {
     const wasMain = file.anh_chinh === '1' || file.anh_chinh === 1 || file.anh_chinh === true;
     
-    // Xóa file
-    variant.fileList = variant.fileList.filter(f => f.uid !== file.uid);
+    // Xóa file và tạo mảng mới
+    const newFileList = variant.fileList.filter(f => f.uid !== file.uid);
     
     // Nếu xóa ảnh chính và còn ảnh khác → chọn ảnh đầu tiên làm ảnh chính
-    if (wasMain && variant.fileList.length > 0) {
-        variant.fileList[0].anh_chinh = '1';
+    if (wasMain && newFileList.length > 0) {
+        newFileList[0].anh_chinh = '1';
         message.info('Đã tự động chọn ảnh đầu tiên làm ảnh chính');
+    }
+    
+    // ✅ Cập nhật lại variant trong mảng variants
+    const variantIndex = variants.value.findIndex(v => v.id_chi_tiet_san_pham === variant.id_chi_tiet_san_pham);
+    if (variantIndex !== -1) {
+        variants.value[variantIndex] = {
+            ...variant,
+            fileList: newFileList
+        };
     }
 };
 
@@ -874,17 +905,19 @@ const setPrimaryImage = (variantIndex, file) => {
         return;
     }
     
-    // Reset tất cả về '0'
-    variant.fileList.forEach(f => {
-        f.anh_chinh = '0';
-    });
+    // Tạo mảng mới với ảnh chính được cập nhật
+    const newFileList = variant.fileList.map(f => ({
+        ...f,
+        anh_chinh: f.uid === file.uid ? '1' : '0'
+    }));
     
-    // Set ảnh được click thành '1'
-    const targetFile = variant.fileList.find(f => f.uid === file.uid);
-    if (targetFile) {
-        targetFile.anh_chinh = '1';
-        message.success('Đã chọn làm ảnh chính');
-    }
+    // ✅ Cập nhật lại variant trong mảng variants
+    variants.value[variantIndex] = {
+        ...variant,
+        fileList: newFileList
+    };
+    
+    message.success('Đã chọn làm ảnh chính');
 };
 
 // Handle change event
@@ -1378,11 +1411,11 @@ const onFinish = async () => {
             ngay_cap_nhat: new Date().toISOString()
         };
 
-        console.log('Đang cập nhật sản phẩm:', sanPhamData);
+        // ✅ Update sản phẩm chính
+        await axiosInstance.put('/admin/quan_ly_san_pham/updateSanPham', sanPhamData);
 
-        // Bước 2: Lưu từng biến thể
+        // Lưu từng biến thể
         const savePromises = variants.value.map(async (variant) => {
-            // Sắp xếp lại danh sách ảnh để ảnh chính luôn ở đầu
             const sortedFileList = [...(variant.fileList || [])].sort((a, b) => {
                 const aIsPrimary = a.anh_chinh === '1' || a.anh_chinh === 1 || a.anh_chinh === true;
                 const bIsPrimary = b.anh_chinh === '1' || b.anh_chinh === 1 || b.anh_chinh === true;
@@ -1391,10 +1424,10 @@ const onFinish = async () => {
                 return 0;
             });
 
-            // Lấy URL từ danh sách đã sắp xếp
-            const hinhAnhUrls = sortedFileList.map(file => file.url).filter(url => url);
+            const hinhAnhUrls = sortedFileList
+                .map(file => file.url || file.response || null)
+                .filter(url => url !== null && url !== undefined && url !== '');
 
-            // Chuẩn bị dữ liệu biến thể
             const variantData = {
                 id_chi_tiet_san_pham: variant.id_chi_tiet_san_pham,
                 id_san_pham: formState.id_san_pham,
@@ -1404,29 +1437,34 @@ const onFinish = async () => {
                 gia_ban: convertPriceToNumber(variant.gia_ban),
                 trang_thai: variant.trang_thai === 'Hoạt động' || variant.trang_thai === true,
                 qr_code: variant.qr_code || '',
-                hinh_anh: hinhAnhUrls // Sử dụng mảng URL đã được sắp xếp
+                hinh_anh: hinhAnhUrls
             };
 
-            console.log('Đang lưu biến thể:', variantData);
-
-            // Gọi API lưu chi tiết sản phẩm
             const response = await axiosInstance.post('/admin/quan_ly_san_pham/saveCTSP', variantData);
             return response.data;
         });
 
-        // Đợi tất cả biến thể được lưu
         await Promise.all(savePromises);
 
-        message.success('Cập nhật sản phẩm và biến thể thành công!');
+        message.success('Cập nhật sản phẩm thành công!');
         
-        // Reload lại dữ liệu
-        await store.getSanPhamById(route.params.id);
-        await store.getCTSPBySanPham(formState.id_san_pham);
+        // Clear cache và search/filter params
+        localStorage.removeItem('products_data');
         
-        // Chuyển về trang danh sách hoặc reload
-        setTimeout(() => {
-            router.push('/admin/quanlysanpham');
-        }, 1000);
+        // Clear search/filter params trong store để table không trigger API filter
+        if (store.searchFilterParams) {
+            store.searchFilterParams = { keyword: '' };
+        }
+        
+        // ✅ SET FLAG để table load theo ngày sửa!
+        store.justAddedProduct = true;
+        
+        // Refresh danh sách theo ngày sửa
+        await store.getAllSanPhamNgaySua();
+        
+        // Chuyển về trang danh sách
+        router.push('/admin/quanlysanpham');
+
 
     } catch (error) {
         console.error('Lỗi khi lưu:', error);

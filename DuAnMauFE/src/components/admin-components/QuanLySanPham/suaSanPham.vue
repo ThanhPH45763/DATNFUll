@@ -3,7 +3,7 @@
         <div class="col-md-6 border-end">
             <h5>Sửa sản phẩm</h5>
             <a-form :model="formState" :label-col="labelCol" :wrapper-col="wrapperCol" layout="horizontal" ref="formRef"
-                :rules="rules">
+                :rules="rules" @submit.prevent="onFinish">
                 <a-form-item label="Mã sản phẩm" name="ma_san_pham"
                     :rules="[{ required: true, message: 'Vui lòng nhập mã sản phẩm!' }]">
                     <a-input v-model:value="formState.ma_san_pham" readonly disabled />

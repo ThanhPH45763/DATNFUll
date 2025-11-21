@@ -9,7 +9,7 @@
                     <div class="content-area">
                         <div class="add-form">
                             <a-input v-model:value="newAttribute.name" placeholder="Thêm danh mục mới"
-                                class="input-field" :status="validationStatus.category" @blur="validateNewAttribute">
+                                class="input-field" :status="validationStatus.category" @blur="validateNewAttribute" @keyup.enter="addNewAttribute">
                                 <template #suffix>
                                     <a-button type="primary" @click="addNewAttribute" :disabled="!isValidNewAttr">
                                         <template #icon>
@@ -63,7 +63,7 @@
                     <div class="content-area">
                         <div class="add-form">
                             <a-input v-model:value="newAttribute.name" placeholder="Thêm thương hiệu mới"
-                                class="input-field" :status="validationStatus.brand" @blur="validateNewAttribute">
+                                class="input-field" :status="validationStatus.brand" @blur="validateNewAttribute" @keyup.enter="addNewAttribute">
                                 <template #suffix>
                                     <a-button type="primary" @click="addNewAttribute" :disabled="!isValidNewAttr">
                                         <template #icon>
@@ -117,7 +117,7 @@
                     <div class="content-area">
                         <div class="add-form">
                             <a-input v-model:value="newAttribute.name" placeholder="Thêm chất liệu mới"
-                                class="input-field" :status="validationStatus.material" @blur="validateNewAttribute">
+                                class="input-field" :status="validationStatus.material" @blur="validateNewAttribute" @keyup.enter="addNewAttribute">
                                 <template #suffix>
                                     <a-button type="primary" @click="addNewAttribute" :disabled="!isValidNewAttr">
                                         <template #icon>
@@ -171,7 +171,7 @@
                     <div class="content-area">
                         <div class="add-form">
                             <a-input v-model:value="newAttribute.name" placeholder="Thêm màu sắc mới"
-                                class="input-field" :status="validationStatus.color" @blur="validateNewAttribute">
+                                class="input-field" :status="validationStatus.color" @blur="validateNewAttribute" @keyup.enter="addNewAttribute">
                                 <template #suffix>
                                     <a-button type="primary" @click="addNewAttribute" :disabled="!isValidNewAttr">
                                         <template #icon>
@@ -227,10 +227,10 @@
                             <div class="d-flex gap-2">
                                 <a-input v-model:value="newAttribute.value" placeholder="Nhập giá trị"
                                     class="input-field" :status="validationStatus.sizeValue"
-                                    @blur="validateNewAttribute" style="width: 60%">
+                                    @blur="validateNewAttribute" style="width: 60%" @keyup.enter="addNewAttribute">
                                 </a-input>
                                 <a-input v-model:value="newAttribute.unit" placeholder="Nhập đơn vị (tùy chọn)"
-                                    class="input-field" style="width: 30%">
+                                    class="input-field" style="width: 30%" @keyup.enter="addNewAttribute">
                                 </a-input>
                                 <a-button type="primary" @click="addNewAttribute" :disabled="!isValidNewAttr"
                                     style="width: 10%">
@@ -393,14 +393,14 @@ const categoryColumns = [
         dataIndex: 'ngay_tao',
         key: 'ngay_tao',
         width: '15%',
-        render: (text) => dayjs(text).format('DD/MM/YYYY HH:mm')
+        customRender: ({ text }) => dayjs(text).format('HH:mm:ss DD/MM/YYYY')
     },
     {
         title: 'Ngày sửa',
         dataIndex: 'ngay_sua',
         key: 'ngay_sua',
         width: '15%',
-        render: (text) => text ? dayjs(text).format('DD/MM/YYYY HH:mm') : ''
+        customRender: ({ text }) => text ? dayjs(text).format('HH:mm:ss DD/MM/YYYY') : ''
     },
     {
         title: 'Thao tác',
@@ -433,14 +433,14 @@ const brandColumns = [
         dataIndex: 'ngay_tao',
         key: 'ngay_tao',
         width: '15%',
-        render: (text) => dayjs(text).format('DD/MM/YYYY HH:mm')
+        customRender: ({ text }) => dayjs(text).format('HH:mm:ss DD/MM/YYYY')
     },
     {
         title: 'Ngày sửa',
         dataIndex: 'ngay_sua',
         key: 'ngay_sua',
         width: '15%',
-        render: (text) => text ? dayjs(text).format('DD/MM/YYYY HH:mm') : ''
+        customRender: ({ text }) => text ? dayjs(text).format('HH:mm:ss DD/MM/YYYY') : ''
     },
     {
         title: 'Thao tác',
@@ -473,14 +473,14 @@ const materialColumns = [
         dataIndex: 'ngay_tao',
         key: 'ngay_tao',
         width: '15%',
-        render: (text) => dayjs(text).format('DD/MM/YYYY HH:mm')
+        customRender: ({ text }) => dayjs(text).format('HH:mm:ss DD/MM/YYYY')
     },
     {
         title: 'Ngày sửa',
         dataIndex: 'ngay_sua',
         key: 'ngay_sua',
         width: '15%',
-        render: (text) => text ? dayjs(text).format('DD/MM/YYYY HH:mm') : ''
+        customRender: ({ text }) => text ? dayjs(text).format('HH:mm:ss DD/MM/YYYY') : ''
     },
     {
         title: 'Thao tác',
@@ -508,20 +508,20 @@ const colorColumns = [
         key: 'status',
         width: '15%'
     },
-    // {
-    //     title: 'Ngày tạo',
-    //     dataIndex: 'ngay_tao',
-    //     key: 'ngay_tao',
-    //     width: '15%',
-    //     render: (text) => dayjs(text).format('DD/MM/YYYY HH:mm')
-    // },
-    // {
-    //     title: 'Ngày sửa',
-    //     dataIndex: 'ngay_sua',
-    //     key: 'ngay_sua',
-    //     width: '15%',
-    //     render: (text) => text ? dayjs(text).format('DD/MM/YYYY HH:mm') : ''
-    // },
+    {
+        title: 'Ngày tạo',
+        dataIndex: 'ngay_tao',
+        key: 'ngay_tao',
+        width: '15%',
+        customRender: ({ text }) => dayjs(text).format('HH:mm:ss DD/MM/YYYY')
+    },
+    {
+        title: 'Ngày sửa',
+        dataIndex: 'ngay_sua',
+        key: 'ngay_sua',
+        width: '15%',
+        customRender: ({ text }) => text ? dayjs(text).format('HH:mm:ss DD/MM/YYYY') : ''
+    },
     {
         title: 'Thao tác',
         key: 'action',
@@ -555,20 +555,20 @@ const sizeColumns = [
         key: 'status',
         width: '15%'
     },
-    // {
-    //     title: 'Ngày tạo',
-    //     dataIndex: 'ngay_tao',
-    //     key: 'ngay_tao',
-    //     width: '15%',
-    //     render: (text) => dayjs(text).format('DD/MM/YYYY HH:mm')
-    // },
-    // {
-    //     title: 'Ngày sửa',
-    //     dataIndex: 'ngay_sua',
-    //     key: 'ngay_sua',
-    //     width: '15%',
-    //     render: (text) => text ? dayjs(text).format('DD/MM/YYYY HH:mm') : ''
-    // },
+    {
+        title: 'Ngày tạo',
+        dataIndex: 'ngay_tao',
+        key: 'ngay_tao',
+        width: '15%',
+        customRender: ({ text }) => dayjs(text).format('HH:mm:ss DD/MM/YYYY')
+    },
+    {
+        title: 'Ngày sửa',
+        dataIndex: 'ngay_sua',
+        key: 'ngay_sua',
+        width: '15%',
+        customRender: ({ text }) => text ? dayjs(text).format('HH:mm:ss DD/MM/YYYY') : ''
+    },
     {
         title: 'Thao tác',
         key: 'action',
@@ -609,7 +609,7 @@ async function loadCategories() {
             isEditing: false,
             editName: '',
             status: item.trang_thai
-        }))
+        })).sort((a, b) => new Date(b.ngay_tao) - new Date(a.ngay_tao))
     } catch (error) {
         console.error('Error loading categories:', error)
         message.error('Không thể tải danh sách danh mục')
@@ -625,7 +625,7 @@ async function loadBrands() {
             isEditing: false,
             editName: '',
             status: item.trang_thai
-        }))
+        })).sort((a, b) => new Date(b.ngay_tao) - new Date(a.ngay_tao))
     } catch (error) {
         console.error('Error loading brands:', error)
         message.error('Không thể tải danh sách thương hiệu')
@@ -641,7 +641,7 @@ async function loadMaterials() {
             isEditing: false,
             editName: '',
             status: item.trang_thai
-        }))
+        })).sort((a, b) => new Date(b.ngay_tao) - new Date(a.ngay_tao))
     } catch (error) {
         console.error('Error loading materials:', error)
         message.error('Không thể tải danh sách chất liệu')
@@ -657,7 +657,7 @@ async function loadColors() {
             isEditing: false,
             editName: '',
             status: item.trang_thai
-        }))
+        })).sort((a, b) => new Date(b.ngay_tao) - new Date(a.ngay_tao))
     } catch (error) {
         console.error('Error loading colors:', error)
         message.error('Không thể tải danh sách màu sắc')
@@ -673,7 +673,7 @@ async function loadSizes() {
             isEditing: false,
             editName: '',
             status: item.trang_thai
-        }))
+        })).sort((a, b) => new Date(b.ngay_tao) - new Date(a.ngay_tao))
     } catch (error) {
         console.error('Error loading sizes:', error)
         message.error('Không thể tải danh sách kích thước')

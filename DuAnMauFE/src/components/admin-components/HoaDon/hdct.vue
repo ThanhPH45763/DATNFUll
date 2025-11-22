@@ -2181,11 +2181,11 @@ const printInvoice = async () => {
 };
 const validateProductsInInvoice = async () => {
     const invalidProducts = [];
-    // Lấy trạng thái trước đó (bỏ qua "Đã cập nhật")
-    const previousStatus = getPreviousStatus();
+    // Lấy trạng thái hiện tại
+    const currentStatus = store.hoaDonDetail?.trang_thai;
 
-    // Nếu trạng thái trước đó là "Đang giao", "Hoàn thành", hoặc "Đã hủy", bỏ qua kiểm tra
-    if (['Đã xác nhận', 'Chờ đóng gói', 'Đang giao', 'Hoàn thành', 'Đã hủy', 'Trả hàng'].includes(previousStatus)) {
+    // Nếu trạng thái là các trạng thái đã chốt đơn, bỏ qua kiểm tra
+    if (['Chờ xác nhận', 'Đã xác nhận', 'Chờ đóng gói', 'Đang giao', 'Hoàn thành', 'Đã hủy', 'Trả hàng'].includes(currentStatus)) {
         return;
     }
 
@@ -2194,7 +2194,7 @@ const validateProductsInInvoice = async () => {
             (product) => product.id_chi_tiet_san_pham === item.id_chi_tiet_san_pham
         );
 
-        if (!productInStore || productInStore.trang_thai !== 'Hoạt động') {
+        if (!productInStore || !productInStore.trang_thai || productInStore.trang_thai !== 'Hoạt động') {
             // Sản phẩm ngừng hoạt động
             invalidProducts.push({
                 ...item,

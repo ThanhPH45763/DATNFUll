@@ -117,7 +117,7 @@ public interface ChiTietSanPhamRepo
                         FROM chi_tiet_khuyen_mai ctkm
                         JOIN khuyen_mai km ON ctkm.id_khuyen_mai = km.id_khuyen_mai
                         WHERE km.trang_thai = N'Đang diễn ra'
-                        AND GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+                        AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
                         GROUP BY ctkm.id_chi_tiet_san_pham
                         ) km_max ON ctsp.id_chi_tiet_san_pham = km_max.id_chi_tiet_san_pham
             WHERE ctsp.trang_thai = 1
@@ -141,7 +141,7 @@ public interface ChiTietSanPhamRepo
                         FROM chi_tiet_khuyen_mai ctkm
                         JOIN khuyen_mai km ON ctkm.id_khuyen_mai = km.id_khuyen_mai
                         WHERE km.trang_thai = N'Đang diễn ra'
-                        AND GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+                        AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
                         GROUP BY ctkm.id_chi_tiet_san_pham
                         ) km_max ON ctsp.id_chi_tiet_san_pham = km_max.id_chi_tiet_san_pham
             WHERE ctsp.trang_thai = 1
@@ -173,10 +173,10 @@ public interface ChiTietSanPhamRepo
                     ) AS rn
                 FROM chi_tiet_khuyen_mai ctkm
                 JOIN khuyen_mai km ON ctkm.id_khuyen_mai = km.id_khuyen_mai
-                WHERE GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+                WHERE DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
             ),
             KhuyenMaiHieuLucNhat AS (
-                SELECT 
+                SELECT
                     id_chi_tiet_san_pham,
                     kieu_giam_gia,
                     gia_tri_giam
@@ -269,6 +269,7 @@ public interface ChiTietSanPhamRepo
             kt.gia_tri,
             ctsp.so_luong,
             COALESCE(km_max.giaHienTai, ctsp.gia_ban) AS gia_ban,
+            ctsp.gia_ban AS giaGoc,
             ctsp.trang_thai,
             sp.anh_dai_dien as hinh_anh
             FROM chi_tiet_san_pham ctsp
@@ -283,7 +284,7 @@ public interface ChiTietSanPhamRepo
             	FROM chi_tiet_khuyen_mai ctkm
             	JOIN khuyen_mai km ON ctkm.id_khuyen_mai = km.id_khuyen_mai
             	WHERE km.trang_thai = N'Đang diễn ra'
-            	AND GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+            	AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
             	GROUP BY ctkm.id_chi_tiet_san_pham
             	) km_max ON ctsp.id_chi_tiet_san_pham = km_max.id_chi_tiet_san_pham
             WHERE ctsp.trang_thai = 1

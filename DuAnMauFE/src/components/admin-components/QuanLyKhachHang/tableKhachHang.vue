@@ -63,7 +63,7 @@
             <tr v-for="(khachHang, index) in danhSachKhachHang" :key="khachHang.idKhachHang">
               <td>{{ index + 1 }}</td>
               <td>{{ khachHang.maKhachHang }}</td>
-              <td>{{ khachHang.tenKhachHang }}</td>
+              <td>{{ khachHang.hoTen }}</td>
               <td>{{ khachHang.gioiTinh ? 'Nam' : 'Nữ' }}</td>
               <td>{{ formatDate(khachHang.ngaySinh) }}</td>
               <td>{{ khachHang.soDienThoai }}</td>
@@ -106,11 +106,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed, h } from 'vue';
 import { useGbStore } from '@/stores/gbStore';
 import { toast } from 'vue3-toastify';
-import { Empty } from 'ant-design-vue';
+import { Empty, Modal } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
+import { SwapOutlined, EyeOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue';
 
 const simpleImage = Empty.PRESENTED_IMAGE_SIMPLE;
 const router = useRouter();
@@ -154,9 +155,31 @@ const confirmChuyenTrangThai = (idKhachHang) => {
   }
   const khachHang = danhSachKhachHang.value.find(kh => kh.idKhachHang === idKhachHang);
   const newStatus = khachHang.trangThai === 'Đang hoạt động' ? 'Không hoạt động' : 'Đang hoạt động';
-  if (confirm(`Bạn có chắc chắn muốn chuyển trạng thái của khách hàng này sang "${newStatus}" không?`)) {
-    chuyenTrangThai(idKhachHang);
-  }
+  
+  Modal.confirm({
+    title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+      h(SwapOutlined, { style: 'color: #faad14; font-size: 22px;' }),
+      h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Xác nhận chuyển trạng thái')
+    ]),
+    content: () => h('div', { style: 'padding: 8px 0;' }, [
+      h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, `Bạn có chắc chắn muốn chuyển trạng thái của khách hàng này sang "${newStatus}" không?`),
+      h('div', { style: 'background: #fffbe6; padding: 12px; border-radius: 6px; border: 1px solid #ffe58f;' }, [
+        h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #faad14;' }, [
+          h(ExclamationCircleOutlined, { style: 'font-size: 14px;' }),
+          h('span', { style: 'font-size: 13px;' }, 'Trạng thái sẽ được cập nhật ngay lập tức')
+        ])
+      ])
+    ]),
+    okText: 'Xác nhận',
+    cancelText: 'Hủy',
+    okButtonProps: { size: 'large', style: { height: '38px' } },
+    cancelButtonProps: { size: 'large', style: { height: '38px' } },
+    centered: true,
+    width: 450,
+    onOk: () => {
+      chuyenTrangThai(idKhachHang);
+    }
+  });
 };
 
 // Hàm chuyển trạng thái
@@ -176,9 +199,24 @@ const chuyenTrangThai = async (idKhachHang) => {
 };
 
 const confirmShowDetail = (id) => {
-  if (confirm('Bạn có muốn xem chi tiết thông tin khách hàng này không?')) {
-    showDetail(id);
-  }
+  Modal.confirm({
+    title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+      h(EyeOutlined, { style: 'color: #1890ff; font-size: 22px;' }),
+      h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Xem chi tiết khách hàng')
+    ]),
+    content: () => h('div', { style: 'padding: 8px 0;' }, [
+      h('p', { style: 'margin: 0; font-size: 14px;' }, 'Bạn có muốn xem chi tiết thông tin khách hàng này không?')
+    ]),
+    okText: 'Xem chi tiết',
+    cancelText: 'Hủy',
+    okButtonProps: { size: 'large', style: { height: '38px' } },
+    cancelButtonProps: { size: 'large', style: { height: '38px' } },
+    centered: true,
+    width: 420,
+    onOk: () => {
+      showDetail(id);
+    }
+  });
 };
 // Hàm chuyển hướng đến trang chi tiết
 const showDetail = (id) => {

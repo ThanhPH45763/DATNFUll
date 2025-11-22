@@ -11,9 +11,9 @@
       @reset="resetForm" class="form-container">
       <a-row :gutter="[16, 16]">
         <a-col :xs="24" :sm="12" :md="8">
-          <a-form-item label="Họ tên khách hàng" :validate-status="errors.tenKhachHang ? 'error' : ''"
-            :help="errors.tenKhachHang">
-            <a-input v-model:value="formData.tenKhachHang" placeholder="Nhập tên khách hàng" class="input-field" />
+          <a-form-item label="Họ tên khách hàng" :validate-status="errors.hoTen ? 'error' : ''"
+            :help="errors.hoTen">
+            <a-input v-model:value="formData.hoTen" placeholder="Nhập tên khách hàng" class="input-field" />
           </a-form-item>
         </a-col>
         <a-col :xs="24" :sm="12" :md="8">
@@ -119,11 +119,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, h } from 'vue';
 import { useGbStore } from '@/stores/gbStore';
 import { toast } from 'vue3-toastify';
 import { useRouter } from 'vue-router';
-import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined, UserAddOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue';
+import { Modal } from 'ant-design-vue';
 
 const gbStore = useGbStore();
 const router = useRouter();
@@ -133,7 +134,7 @@ const wards = ref([]);
 
 const formData = reactive({
   maKhachHang: '',
-  tenKhachHang: '',
+  hoTen: '',
   gioiTinh: null,
   soDienThoai: '',
   ngaySinh: null,
@@ -149,7 +150,7 @@ const formData = reactive({
 });
 
 const errors = reactive({
-  tenKhachHang: '',
+  hoTen: '',
   gioiTinh: '',
   ngaySinh: '',
   soDienThoai: '',
@@ -165,22 +166,22 @@ const validateForm = () => {
   errors.diaChiErrors = formData.diaChiList.map(() => ({}));
 
   // Chuẩn hóa các trường văn bản
-  formData.tenKhachHang = formData.tenKhachHang?.replace(/\s+/g, ' ').trim() || '';
+  formData.hoTen = formData.hoTen?.replace(/\s+/g, ' ').trim() || '';
   formData.soDienThoai = formData.soDienThoai?.replace(/\s+/g, '').trim() || '';
   formData.email = formData.email?.replace(/\s+/g, '').trim() || '';
 
   // Validate họ tên (từ backend: NotBlank, Size max 100, Pattern chỉ chữ cái)
-  if (!formData.tenKhachHang) {
-    errors.tenKhachHang = 'Tên khách hàng không được để trống';
+  if (!formData.hoTen) {
+    errors.hoTen = 'Tên khách hàng không được để trống';
     isValid = false;
-  } else if (!/^[a-zA-Z\s\u00C0-\u1EF9]+$/.test(formData.tenKhachHang)) {
-    errors.tenKhachHang = 'Tên chỉ được chứa chữ cái';
+  } else if (!/^[a-zA-Z\s\u00C0-\u1EF9]+$/.test(formData.hoTen)) {
+    errors.hoTen = 'Tên chỉ được chứa chữ cái';
     isValid = false;
-  } else if (formData.tenKhachHang.length > 100) {
-    errors.tenKhachHang = 'Tên khách hàng không được vượt quá 100 ký tự';
+  } else if (formData.hoTen.length > 100) {
+    errors.hoTen = 'Tên khách hàng không được vượt quá 100 ký tự';
     isValid = false;
-  } else if (formData.tenKhachHang.length < 2) {
-    errors.tenKhachHang = 'Tên khách hàng không được nhỏ hơn 2 ký tự';
+  } else if (formData.hoTen.length < 2) {
+    errors.hoTen = 'Tên khách hàng không được nhỏ hơn 2 ký tự';
     isValid = false;
   }
 
@@ -374,7 +375,7 @@ const handleDefaultChange = (index) => {
 const resetForm = () => {
   Object.assign(formData, {
     maKhachHang: '',
-    tenKhachHang: '',
+    hoTen: '',
     gioiTinh: null,
     soDienThoai: '',
     ngaySinh: null,
@@ -436,9 +437,30 @@ const themKhachHang = async () => {
 };
 
 const confirmThemKhachHang = () => {
-  if (confirm('Bạn có chắc chắn muốn tạo tài khoản khách hàng này không?')) {
-    themKhachHang();
-  }
+  Modal.confirm({
+    title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+      h(UserAddOutlined, { style: 'color: #52c41a; font-size: 22px;' }),
+      h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Tạo tài khoản khách hàng')
+    ]),
+    content: () => h('div', { style: 'padding: 8px 0;' }, [
+      h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, 'Bạn có chắc chắn muốn tạo tài khoản khách hàng này không?'),
+      h('div', { style: 'background: #f6ffed; padding: 12px; border-radius: 6px; border: 1px solid #b7eb8f;' }, [
+        h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #52c41a;' }, [
+          h(ExclamationCircleOutlined, { style: 'font-size: 14px;' }),
+          h('span', { style: 'font-size: 13px;' }, 'Mật khẩu sẽ được gửi qua email')
+        ])
+      ])
+    ]),
+    okText: 'Tạo tài khoản',
+    cancelText: 'Hủy',
+    okButtonProps: { size: 'large', style: { height: '38px', background: '#52c41a', borderColor: '#52c41a' } },
+    cancelButtonProps: { size: 'large', style: { height: '38px' } },
+    centered: true,
+    width: 450,
+    onOk: () => {
+      themKhachHang();
+    }
+  });
 };
 
 onMounted(async () => {

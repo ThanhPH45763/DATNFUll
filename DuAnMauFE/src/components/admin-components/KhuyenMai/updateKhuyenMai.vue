@@ -386,8 +386,9 @@ const refreshChiTietSanPham = async () => {
         console.error(`Invalid response for sanPhamId ${sanPhamId}:`, response);
         continue;
       }
+      const filteredChiTiet = (response || []).filter(ctsp => ctsp.trang_thai === true);
 
-      response.forEach(ctsp => {
+      filteredChiTiet.forEach(ctsp => {
         const mappedCtsp = {
           idChiTietSanPham: ctsp.idChiTietSanPham || ctsp.id_chi_tiet_san_pham,
           sanPham: {

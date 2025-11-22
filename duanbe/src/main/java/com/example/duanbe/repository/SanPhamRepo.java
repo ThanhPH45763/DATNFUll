@@ -130,7 +130,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
             FROM chi_tiet_khuyen_mai ctkm
             JOIN khuyen_mai km
             ON ctkm.id_khuyen_mai = km.id_khuyen_mai
-            AND GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+            AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
             JOIN chi_tiet_san_pham ctsp
             ON ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham
             ),
@@ -194,7 +194,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
             FROM chi_tiet_khuyen_mai ctkm
             JOIN khuyen_mai km
             ON ctkm.id_khuyen_mai = km.id_khuyen_mai
-            AND GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+            AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
             JOIN chi_tiet_san_pham ctsp
             ON ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham
             ),
@@ -263,7 +263,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
                 FROM chi_tiet_khuyen_mai ctkm
                 JOIN khuyen_mai km
                     ON ctkm.id_khuyen_mai = km.id_khuyen_mai
-                    AND GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+                    AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
                     AND km.trang_thai = N'Đang diễn ra'
                 JOIN chi_tiet_san_pham ctsp
                     ON ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham
@@ -379,7 +379,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
                 FROM chi_tiet_khuyen_mai ctkm
                 JOIN khuyen_mai km\s
                     ON ctkm.id_khuyen_mai = km.id_khuyen_mai
-                    AND GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+                    AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
                     AND km.trang_thai = N'Đang diễn ra'
                 JOIN chi_tiet_san_pham ctsp\s
                     ON ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham

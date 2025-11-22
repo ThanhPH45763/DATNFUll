@@ -327,7 +327,7 @@ public class KhachHangController {
             }
 
             // Gửi email chào mừng
-            String subject = "Chào mừng bạn đến với GB Sports!";
+            String subject = "Chào mừng bạn đến với R!";
             String body = "<!DOCTYPE html>" +
                     "<html lang='vi'>" +
                     "<head>" +
@@ -353,7 +353,7 @@ public class KhachHangController {
                     "<body>" +
                     "<div class='container'>" +
                     "<div class='header'>" +
-                    "<h1>Chào mừng bạn đến với G&B SPORTS</h1>" +
+                    "<h1>Chào mừng bạn đến với R</h1>" +
                     "</div>" +
                     "<div class='content'>" +
                     "<h3>Xin chào " + khachHang.getHoTen() + ",</h3>" +
@@ -366,7 +366,7 @@ public class KhachHangController {
                     "<p>Vui lòng đăng nhập để bắt đầu sử dụng dịch vụ và khám phá các ưu đãi hấp dẫn.</p>" +
                     "</div>" +
                     "<div class='footer'>" +
-                    "<p>Trân trọng,<br>Đội ngũ G&B SPORTS</p>" +
+                    "<p>Trân trọng,<br>Đội ngũ R</p>" +
                     "<p><a href='http://localhost:5173/home'>Ghé thăm website của chúng tôi</a> | <a href='mailto:support@gbsports.com'>Liên hệ hỗ trợ</a></p>"
                     +
                     "</div>" +
@@ -441,9 +441,11 @@ public class KhachHangController {
                     return ResponseEntity.badRequest().body(response);
                 }
             }
-
+            String matKhau = khachHang.getMatKhau();
             // Cập nhật thông tin khách hàng
             BeanUtils.copyProperties(request, khachHang);
+            khachHang.setTenDangNhap(request.getEmail());
+            khachHang.setMatKhau(matKhau);
             khachHang = khachHangRepo.save(khachHang);
 
             // Xóa địa chỉ cũ
@@ -692,7 +694,7 @@ public class KhachHangController {
             // Tìm khách hàng theo email
             KhachHang khachHang = khachHangRepo.findByEmail(loginRequest.getEmail())
                     .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại"));
-            
+
             // Kiểm tra trạng thái
             if ("Không hoạt động".equals(khachHang.getTrangThai())) {
                 response.put("error", "Tài khoản của bạn đã bị ngừng hoạt động!");
@@ -854,7 +856,8 @@ public class KhachHangController {
         return ResponseEntity.ok(response);
     }
 
-    // Xóa các endpoint reset-password cũ sử dụng token vì đã chuyển sang gửi mật khẩu mới trực tiếp
+    // Xóa các endpoint reset-password cũ sử dụng token vì đã chuyển sang gửi mật
+    // khẩu mới trực tiếp
 
     @GetMapping("/details")
     public ResponseEntity<KhachHang> getKhachHangDetails(@RequestParam String email) {

@@ -13,10 +13,10 @@ import java.util.Optional;
 
 public interface KhachHangRepo extends JpaRepository<KhachHang, Integer> {
 
-    @Query(nativeQuery = true, value = "SELECT id_khach_hang, ma_khach_hang, ho_ten, ngay_sinh, email, gioi_tinh, so_dien_thoai, trang_thai FROM khach_hang")
+    @Query(nativeQuery = true, value = "SELECT id_khach_hang, ma_khach_hang, ho_ten as tenKhachHang, ngay_sinh, email, gioi_tinh, so_dien_thoai, trang_thai FROM khach_hang")
     List<KhachHangResponse> getAll();
 
-    @Query(nativeQuery = true, value = "SELECT id_khach_hang, ma_khach_hang, ho_ten, ngay_sinh, email, gioi_tinh, so_dien_thoai, trang_thai FROM khach_hang")
+    @Query(nativeQuery = true, value = "SELECT id_khach_hang, ma_khach_hang, ho_ten as tenKhachHang , ngay_sinh, email, gioi_tinh, so_dien_thoai, trang_thai FROM khach_hang")
     Page<KhachHangResponse> listPT(Pageable pageable);
 
     @Query(nativeQuery = true, value = "SELECT * FROM khach_hang WHERE " +

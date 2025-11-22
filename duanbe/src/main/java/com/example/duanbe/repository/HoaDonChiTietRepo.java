@@ -27,7 +27,7 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
                         JOIN khuyen_mai km ON ctkm.id_khuyen_mai = km.id_khuyen_mai
                         WHERE ctkm.id_chi_tiet_san_pham = ctsp2.id_chi_tiet_san_pham
                           AND km.trang_thai = N'Đang diễn ra'
-                          AND GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+                          AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
                             ), ctsp2.gia_ban) AS gia_sau_giam,
                     ctsp1.so_luong AS so_luong_con_lai, kt.gia_tri AS kich_thuoc, hd.trang_thai AS trang_thai_thanh_toan,
                     hd.loai_hoa_don, hd.ghi_chu, ms.ten_mau_sac, ctsp2.id_chi_tiet_san_pham, sp.anh_dai_dien as hinh_anh, ha.anh_chinh
@@ -171,7 +171,7 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
             		JOIN khuyen_mai km ON ctkm.id_khuyen_mai = km.id_khuyen_mai
             		WHERE ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham
             		AND km.trang_thai = N'Đang diễn ra'
-            		AND GETDATE() BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+            		AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
                 ), ctsp.gia_ban) AS gia_ban,
             	hdct.don_gia,
             	ms.ten_mau_sac,

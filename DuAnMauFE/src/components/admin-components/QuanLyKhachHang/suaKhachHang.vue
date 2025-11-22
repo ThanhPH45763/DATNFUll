@@ -16,9 +16,9 @@
           </a-form-item>
         </a-col>
         <a-col :xs="24" :sm="12" :md="8">
-          <a-form-item label="Họ tên khách hàng" :validate-status="errors.tenKhachHang ? 'error' : ''"
-            :help="errors.tenKhachHang">
-            <a-input v-model:value="formData.tenKhachHang" placeholder="Nhập tên khách hàng" class="input-field" />
+          <a-form-item label="Họ tên khách hàng" :validate-status="errors.hoTen ? 'error' : ''"
+            :help="errors.hoTen">
+            <a-input v-model:value="formData.hoTen" placeholder="Nhập tên khách hàng" class="input-field" />
           </a-form-item>
         </a-col>
         <a-col :xs="24" :sm="12" :md="8">
@@ -124,12 +124,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, h } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useGbStore } from '@/stores/gbStore';
 import { toast } from 'vue3-toastify';
 import dayjs from 'dayjs';
-import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined, SaveOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue';
+import { Modal } from 'ant-design-vue';
 
 const gbStore = useGbStore();
 const router = useRouter();
@@ -141,7 +142,7 @@ const wards = ref([]);
 const formData = reactive({
   idKhachHang: null,
   maKhachHang: '',
-  tenKhachHang: '',
+  hoTen: '',
   gioiTinh: null,
   soDienThoai: '',
   ngaySinh: null,
@@ -151,7 +152,7 @@ const formData = reactive({
 });
 
 const errors = reactive({
-  tenKhachHang: '',
+  hoTen: '',
   gioiTinh: '',
   ngaySinh: '',
   soDienThoai: '',
@@ -167,23 +168,23 @@ const validateForm = () => {
   errors.diaChiErrors = formData.diaChiList.map(() => ({}));
 
   // Chuẩn hóa các trường văn bản
-  formData.tenKhachHang = formData.tenKhachHang?.replace(/\s+/g, ' ').trim() || '';
+  formData.hoTen = formData.hoTen?.replace(/\s+/g, ' ').trim() || '';
   formData.soDienThoai = formData.soDienThoai?.replace(/\s+/g, '').trim() || '';
   formData.email = formData.email?.replace(/\s+/g, '').trim() || '';
 
   // Validate họ tên (từ backend: NotBlank, Size max 100, Pattern chỉ chữ cái)
-  if (!formData.tenKhachHang) {
-    errors.tenKhachHang = 'Tên khách hàng không được để trống';
+  if (!formData.hoTen) {
+    errors.hoTen = 'Tên khách hàng không được để trống';
     isValid = false;
-  } else if (!/^[a-zA-Z\s\u00C0-\u1EF9]+$/.test(formData.tenKhachHang)) {
-    errors.tenKhachHang = 'Họ tên chỉ được chứa chữ cái';
+  } else if (!/^[a-zA-Z\s\u00C0-\u1EF9]+$/.test(formData.hoTen)) {
+    errors.hoTen = 'Họ tên chỉ được chứa chữ cái';
     isValid = false;
-  } else if (formData.tenKhachHang.length > 100) {
-    errors.tenKhachHang = 'Tên khách hàng không được vượt quá 100 ký tự';
+  } else if (formData.hoTen.length > 100) {
+    errors.hoTen = 'Tên khách hàng không được vượt quá 100 ký tự';
     isValid = false;
   }
-  else if (formData.tenKhachHang.length < 2) {
-    errors.tenKhachHang = 'Tên khách hàng không được nhỏ hơn 2 ký tự';
+  else if (formData.hoTen.length < 2) {
+    errors.hoTen = 'Tên khách hàng không được nhỏ hơn 2 ký tự';
     isValid = false;
   }
 
@@ -393,7 +394,7 @@ const resetForm = () => {
   Object.assign(formData, {
     idKhachHang: null,
     maKhachHang: currentMaKhachHang,
-    tenKhachHang: '',
+    hoTen: '',
     gioiTinh: null,
     soDienThoai: '',
     ngaySinh: null,
@@ -411,7 +412,7 @@ const resetForm = () => {
   districts.value = [[]];
   wards.value = [[]];
   Object.assign(errors, {
-    tenKhachHang: '',
+    hoTen: '',
     gioiTinh: '',
     ngaySinh: '',
     soDienThoai: '',
@@ -434,7 +435,7 @@ const loadKhachHang = async () => {
     Object.assign(formData, {
       idKhachHang: khachHang.idKhachHang,
       maKhachHang: khachHang.maKhachHang,
-      tenKhachHang: khachHang.tenKhachHang,
+      hoTen: khachHang.hoTen,
       gioiTinh: khachHang.gioiTinh,
       soDienThoai: khachHang.soDienThoai,
       ngaySinh: khachHang.ngaySinh ? dayjs(khachHang.ngaySinh) : null,
@@ -486,34 +487,55 @@ const loadKhachHang = async () => {
 };
 
 const confirmSubmitForm = async () => {
-  if (confirm('Bạn có chắc chắn muốn cập nhật thông tin khách hàng này không?')) {
-    if (!validateForm()) {
-      toast.error('Vui lòng điền đầy đủ và chính xác thông tin!');
-      return;
-    }
-
-    const dataToSend = { ...formData };
-    if (dataToSend.ngaySinh) {
-      dataToSend.ngaySinh = dataToSend.ngaySinh.toISOString();
-    }
-
-    try {
-      const result = await gbStore.suaKhachHang(dataToSend);
-      if (result) {
-        toast.success('Cập nhật khách hàng thành công!', {
-          autoClose: 2000,
-          position: 'top-right'
-        });
-
-        setTimeout(() => {
-          router.push('/admin/quanlykhachhang');
-        }, 2000);
+  Modal.confirm({
+    title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+      h(SaveOutlined, { style: 'color: #1890ff; font-size: 22px;' }),
+      h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Cập nhật thông tin khách hàng')
+    ]),
+    content: () => h('div', { style: 'padding: 8px 0;' }, [
+      h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, 'Bạn có chắc chắn muốn cập nhật thông tin khách hàng này không?'),
+      h('div', { style: 'background: #e6f7ff; padding: 12px; border-radius: 6px; border: 1px solid #91d5ff;' }, [
+        h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #1890ff;' }, [
+          h(ExclamationCircleOutlined, { style: 'font-size: 14px;' }),
+          h('span', { style: 'font-size: 13px;' }, 'Thông tin sẽ được lưu ngay lập tức')
+        ])
+      ])
+    ]),
+    okText: 'Cập nhật',
+    cancelText: 'Hủy',
+    okButtonProps: { size: 'large', style: { height: '38px' } },
+    cancelButtonProps: { size: 'large', style: { height: '38px' } },
+    centered: true,
+    width: 450,
+    async onOk() {
+      if (!validateForm()) {
+        toast.error('Vui lòng điền đầy đủ và chính xác thông tin!');
+        return;
       }
-    } catch (error) {
-      console.error('Lỗi khi cập nhật khách hàng:', error);
-      toast.error('Có lỗi xảy ra khi cập nhật khách hàng');
+
+      const dataToSend = { ...formData };
+      if (dataToSend.ngaySinh) {
+        dataToSend.ngaySinh = dataToSend.ngaySinh.toISOString();
+      }
+
+      try {
+        const result = await gbStore.suaKhachHang(dataToSend);
+        if (result) {
+          toast.success('Cập nhật khách hàng thành công!', {
+            autoClose: 2000,
+            position: 'top-right'
+          });
+
+          setTimeout(() => {
+            router.push('/admin/quanlykhachhang');
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Lỗi khi cập nhật khách hàng:', error);
+        toast.error('Có lỗi xảy ra khi cập nhật khách hàng');
+      }
     }
-  }
+  });
 };
 
 onMounted(async () => {

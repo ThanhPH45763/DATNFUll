@@ -32,7 +32,7 @@
             <div class="col-md-6">
               <div class="info-item">
                 <label class="text-muted small">Tên khách hàng</label>
-                <p class="fw-medium mb-0">{{ khachHang.tenKhachHang }}</p>
+                <p class="fw-medium mb-0">{{ khachHang.hoTen }}</p>
               </div>
             </div>
 

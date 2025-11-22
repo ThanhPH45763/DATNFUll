@@ -30,7 +30,20 @@
                                         </div>
                                     </div>
                                     <div class="info-right">
-                                        <div class="product-price">{{ formatCurrency(product.gia_ban) }} VNĐ</div>
+                                        <div class="product-price-container">
+                                            <!-- Nếu có khuyến mãi: hiển thị giá gốc gạch ngang + giá sau giảm -->
+                                            <template v-if="product.giaGoc && product.gia_ban < product.giaGoc">
+                                                <div class="price-with-discount">
+                                                    <span class="original-price">{{ formatCurrency(product.giaGoc) }} VNĐ</span>
+                                                    <span class="discount-badge">SALE</span>
+                                                </div>
+                                                <div class="current-price">{{ formatCurrency(product.gia_ban) }} VNĐ</div>
+                                            </template>
+                                            <!-- Nếu không có khuyến mãi: chỉ hiển thị giá bình thường -->
+                                            <template v-else>
+                                                <div class="product-price">{{ formatCurrency(product.gia_ban) }} VNĐ</div>
+                                            </template>
+                                        </div>
                                         <div class="product-stock">
                                             Tồn kho: <span :class="product.so_luong > 5 ? 'in-stock' : 'low-stock'">{{
                                                 product.so_luong }}</span>
@@ -154,8 +167,8 @@
 
                                     </a-space>
                                 </td>
-                                <td>{{ formatCurrency(item.gia_ban) }}</td>
-                                <td>{{ formatCurrency(item.gia_ban * item.so_luong) }}</td>
+                                <td>{{ formatCurrency(item.gia_ban) }} đ</td>
+                                <td>{{ formatCurrency(item.gia_ban * item.so_luong) }} đ</td>
                                 <td>
                                     <a-button type="danger" shape="circle" size="small"
                                         @click="removeFromBill(item.id_chi_tiet_san_pham)">
@@ -269,14 +282,14 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Tổng tiền hàng (VNĐ):</label>
+                        <label class="form-label">Tổng tiền hàng:</label>
                         <input type="text" class="form-control"
-                            :value="formatCurrency(fe_tongTienHang)" disabled>
+                            :value="formatCurrency(fe_tongTienHang) +' '+ 'đ'" disabled>
                     </div>
                     <div class="mb-3" v-if="activeTabData.hd.phuong_thuc_nhan_hang === 'Giao hàng'">
-                        <label class="form-label">Phí vận chuyển (VNĐ):</label>
+                        <label class="form-label">Phí vận chuyển:</label>
                         <input type="text" class="form-control"
-                            :value="formatCurrency(fe_phiVanChuyen)" disabled>
+                            :value="formatCurrency(fe_phiVanChuyen) + 'đ'" disabled>
                     </div>
                     <div class="mb-3">
                         <label for="idVoucher" class="form-label">Voucher</label>
@@ -284,19 +297,19 @@
                             v-model="activeTabData.hd.id_voucher" @change="updateVoucher(true)">
                             <option :value="null">-- Không dùng voucher --</option>
                              <option v-for="voucher in availableVouchers" :key="voucher.id_voucher" :value="voucher.id_voucher">
-                                {{ voucher.ten_voucher }} (Giảm {{ formatCurrency(voucher.so_tien_giam) }})
+                                {{ voucher.ten_voucher }} (Giảm {{ formatCurrency(voucher.so_tien_giam) }} đ)
                             </option>
                         </select>
                     </div>
                     <div class="mb-3" v-if="fe_giamGia > 0">
-                        <label class="form-label">Giảm từ Voucher (VNĐ):</label>
+                        <label class="form-label">Giảm từ Voucher:</label>
                         <input type="text" class="form-control text-success fw-bold"
-                            :value="'-' + formatCurrency(fe_giamGia)" disabled>
+                            :value="'-' + formatCurrency(fe_giamGia) +' '+ 'đ'" disabled>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Tổng thanh toán (VNĐ):</label>
+                        <label class="form-label fw-bold">Tổng thanh toán:</label>
                         <input type="text" class="form-control fw-bold fs-5"
-                            :value="formatCurrency(fe_tongThanhToan)" disabled>
+                            :value="formatCurrency(fe_tongThanhToan) +' '+ 'đ'" disabled>
                     </div>
                     <div class="mb-3">
                         <label class="form-label d-block mb-2">Hình thức thanh toán</label>
@@ -2207,6 +2220,54 @@ const closeZaloPayModal = () => {
 /* Product Price and Name */
 .product-price {
     font-size: 14px;
+}
+
+/* Price container for products with discounts */
+.product-price-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.price-with-discount {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.original-price {
+    font-size: 12px;
+    color: #999;
+    text-decoration: line-through;
+    font-weight: 400;
+}
+
+.discount-badge {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
+}
+
+.current-price {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ff6600;
+    animation: priceGlow 2s ease-in-out infinite;
+}
+
+@keyframes priceGlow {
+    0%, 100% {
+        text-shadow: 0 0 5px rgba(255, 102, 0, 0.3);
+    }
+    50% {
+        text-shadow: 0 0 10px rgba(255, 102, 0, 0.5);
+    }
 }
 
 .product-name {

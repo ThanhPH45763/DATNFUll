@@ -474,7 +474,7 @@ const refreshChiTietSanPham = async () => {
   for (const sanPhamId of selectedSanPhamIds.value) {
     try {
       const response = await khuyenMaiService.getChiTietSanPhamBySanPham(sanPhamId);
-      const filteredChiTiet = (response || []).filter(ctsp => ctsp.trang_thai === 'Hoạt động');
+      const filteredChiTiet = (response || []).filter(ctsp => ctsp.trang_thai === true);
       chiTietSanPhamList.value = [...chiTietSanPhamList.value, ...filteredChiTiet];
     } catch (error) {
       console.error(`Error fetching ChiTietSanPham for SanPham ID ${sanPhamId}:`, error);

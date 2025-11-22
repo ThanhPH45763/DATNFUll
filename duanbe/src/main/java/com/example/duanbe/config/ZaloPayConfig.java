@@ -5,9 +5,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ZaloPayConfig {
     // Sandbox credentials (môi trường test)
-    public static final String APP_ID = "554";
-    public static final String KEY1 = "8NdU5pG5R2spGHGhyO99HN1OhD8IQJBn";
-    public static final String KEY2 = "uUfsWgfLkRLzq6W2uNXTCxrfxs51auny";
+    public static final String APP_ID = "2554";
+    public static final String KEY1 = "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn";
+    public static final String KEY2 = "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf";
     
     // Sandbox endpoints
     public static final String ENDPOINT_CREATE = "https://sb-openapi.zalopay.vn/v2/create";

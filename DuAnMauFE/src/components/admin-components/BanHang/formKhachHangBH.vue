@@ -112,10 +112,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, computed, watch } from 'vue';
+import { ref, onMounted, reactive, computed, watch, onUnmounted, h } from 'vue';
 import { useGbStore } from '@/stores/gbStore';
 import { toast } from 'vue3-toastify';
 import { Modal as AModal } from 'ant-design-vue';
+import { UserAddOutlined, SaveOutlined } from '@ant-design/icons-vue';
 import { calculateShippingFee, formatVND } from '@/utils/shippingFeeCalculator';
 
 const gbStore = useGbStore();
@@ -554,6 +555,18 @@ watch(() => props.triggerUpdate, async () => {
         localStorage.setItem('chonKH', 'false');
     }
 }, { immediate: true });
+
+// Cleanup scroll lock khi component unmount
+onUnmounted(() => {
+    // Remove overflow hidden from body if it exists
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    // Remove modal mask classes
+    const modalMask = document.querySelector('.ant-modal-mask');
+    if (modalMask) {
+        modalMask.remove();
+    }
+});
 
 
 

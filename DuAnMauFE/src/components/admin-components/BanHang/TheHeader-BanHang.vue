@@ -2,7 +2,7 @@
     <div class="header-container">
         <!-- Search Combo Box -->
         <div class="search-section">
-            <a-dropdown v-model:visible="dropdownVisible" :trigger="['click']" overlayClassName="product-dropdown">
+            <a-dropdown v-model:open="dropdownVisible" :trigger="['click']" overlayClassName="product-dropdown">
                 <a-input-search v-model:value="searchQuery" placeholder="Tìm kiếm sản phẩm theo tên..."
                     @search="performSearch" style="width: 300px">
                     <template #enterButton>
@@ -300,25 +300,34 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label d-block mb-2">Hình thức thanh toán</label>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
-                                :id="'tienMat_' + activeKey" value="Tiền mặt"
-                                v-model="activeTabData.hd.hinh_thuc_thanh_toan" @change="updateHinhThucThanhToan" />
-                            <label class="form-check-label" :for="'tienMat_' + activeKey">Tiền mặt</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
-                                :id="'chuyenKhoan_' + activeKey" value="Chuyển khoản"
-                                v-model="activeTabData.hd.hinh_thuc_thanh_toan" @change="updateHinhThucThanhToan" />
-                            <label class="form-check-label" :for="'chuyenKhoan_' + activeKey">Chuyển khoản (ZaloPay)</label>
-                        </div>
-                        
-                        <!-- UI hiển thị QR ZaloPay khi chọn Chuyển khoản -->
-                        <div v-if="activeTabData.hd.hinh_thuc_thanh_toan === 'Chuyển khoản'" class="mt-3">
-                            <a-button type="primary" @click="showZaloPayQR" :loading="isLoadingZaloPay" block>
-                                <template #icon><qrcode-outlined /></template>
-                                Hiển thị mã QR thanh toán
-                            </a-button>
+                        <div class="payment-methods-grid">
+                            <div class="payment-method-option" :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'Tiền mặt' }">
+                                <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
+                                    :id="'tienMat_' + activeKey" value="Tiền mặt"
+                                    v-model="activeTabData.hd.hinh_thuc_thanh_toan" @change="updateHinhThucThanhToan" />
+                                <label class="payment-label" :for="'tienMat_' + activeKey">
+                                    <div class="payment-icon">💵</div>
+                                    <div class="payment-text">Tiền mặt</div>
+                                </label>
+                            </div>
+                            <div class="payment-method-option" :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'PayOS' }">
+                                <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
+                                    :id="'payos_' + activeKey" value="PayOS"
+                                    v-model="activeTabData.hd.hinh_thuc_thanh_toan" @change="updateHinhThucThanhToan" />
+                                <label class="payment-label" :for="'payos_' + activeKey">
+                                    <div class="payment-icon">🏦</div>
+                                    <div class="payment-text">PayOS</div>
+                                </label>
+                            </div>
+                            <div class="payment-method-option" :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'ZaloPay' }">
+                                <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
+                                    :id="'zalopay_' + activeKey" value="ZaloPay"
+                                    v-model="activeTabData.hd.hinh_thuc_thanh_toan" @change="updateHinhThucThanhToan" />
+                                <label class="payment-label" :for="'zalopay_' + activeKey">
+                                    <div class="payment-icon">⚡</div>
+                                    <div class="payment-text">ZaloPay</div>
+                                </label>
+                            </div>
                         </div>
                         
                         <div v-if="activeTabData.hd.hinh_thuc_thanh_toan === 'Tiền mặt'" class="mt-2">
@@ -429,44 +438,6 @@
                             </a-button>
                         </template>
                     </a-modal>
-                    
-                    <!-- Modal hiển thị QR Code ZaloPay -->
-                    <a-modal v-model:open="showZaloPayModal" title="Quét mã QR để thanh toán ZaloPay" 
-                        :footer="null" width="450px" @cancel="closeZaloPayModal">
-                        <div class="text-center p-3">
-                            <div v-if="zaloPayQRUrl">
-                                <img :src="zaloPayQRUrl" alt="ZaloPay QR Code" 
-                                    style="width: 100%; max-width: 300px; border: 2px solid #0068FF; border-radius: 8px;" />
-                                <p class="mt-3 mb-2" style="font-size: 16px; font-weight: 500;">
-                                    Quét mã QR bằng ứng dụng ZaloPay
-                                </p>
-                                <p class="text-muted mb-3">
-                                    Tổng tiền: <span class="fw-bold">{{ formatCurrency(activeTabData.hd.tong_tien_sau_giam) }}</span>
-                                </p>
-                                
-                                <!-- Trạng thái thanh toán -->
-                                <a-alert v-if="paymentStatus === 'checking'" 
-                                    type="info" 
-                                    message="Đang chờ thanh toán..." 
-                                    show-icon 
-                                    class="mb-2" />
-                                <a-alert v-if="paymentStatus === 'success'" 
-                                    type="success" 
-                                    message="Thanh toán thành công!" 
-                                    show-icon 
-                                    class="mb-2" />
-                                <a-alert v-if="paymentStatus === 'failed'" 
-                                    type="error" 
-                                    message="Thanh toán thất bại hoặc đã hủy!" 
-                                    show-icon 
-                                    class="mb-2" />
-                            </div>
-                            <div v-else class="py-5">
-                                <a-spin size="large" />
-                                <p class="mt-3">Đang tạo mã QR...</p>
-                            </div>
-                        </div>
-                    </a-modal>
                 </form>
                 <div v-else class="text-center text-muted mt-5">
                     Vui lòng chọn hoặc tạo một hóa đơn.
@@ -478,7 +449,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch, onUnmounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch, onUnmounted, h } from 'vue';
 import {
     SearchOutlined,
     FileSearchOutlined,
@@ -509,6 +480,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 // Thêm state cho quét QR
 const qrScannerVisible = ref(false);
 const qrScanResult = ref('');
+const qrValue = ref('Quét sản phẩm'); // Giá trị mặc định cho QR code
 let html5QrCode = null;
 let isProcessing = false;
 const triggerUpdate = ref(Date.now());
@@ -1594,18 +1566,56 @@ const proceedToPayment = async () => {
             await store.trangThaiDonHang(activeTabData.value.hd.id_hoa_don);
             // Sau khi thanh toán thành công -> hiển thị modal in hóa đơn
             showPrintConfirm.value = true;
-        } else if (hinhThuc === "Chuyển khoản") {
+        } else if (hinhThuc === "PayOS") {
+            // Validate payment amount - USE computed property!
+            const paymentAmount = fe_tongThanhToan.value;
+            
+            if (paymentAmount <= 0) {
+                message.error('Số tiền thanh toán không hợp lệ. Vui lòng thêm sản phẩm vào hóa đơn!');
+                console.error('Invalid payment amount:', paymentAmount);
+                console.log('Debug - Tổng hàng:', fe_tongTienHang.value);
+                console.log('Debug - Giảm giá:', fe_giamGia.value);
+                console.log('Debug - Phí ship:', fe_phiVanChuyen.value);
+                return;
+            }
+            
+            // PayOS payment
             const payment_info = {
                 productName: "Đơn hàng " + `R-${activeTabData.value.hd.id_hoa_don}-${new Date().getTime()}`,
-                description: `R- ${allProducts.value.length} sản phẩm`,
-                returnUrl: "http://localhost:5173/admin/banhang",
-                price: Number(activeTabData.value.hd.tong_tien_sau_giam || 0),
-                cancelUrl: "http://localhost:5173/admin/banhang"
+                description: `PayOS - ${currentInvoiceItems.value.length} sản phẩm`,
+                returnUrl: window.location.origin + "/admin/banhang",
+                price: paymentAmount,
+                cancelUrl: window.location.origin + "/admin/banhang"
             };
+            
+            console.log('PayOS Payment Info:', payment_info);
+            
             localStorage.setItem('checkPaymentStatus', 'true');
             localStorage.setItem('idHDPayMent', JSON.stringify(activeTabData.value.hd.id_hoa_don));
+            localStorage.setItem('paymentMethod', 'PayOS');
             localStorage.removeItem('khachHangBH');
+            
             await thanhToanService.handlePayOSPayment(payment_info);
+            
+        } else if (hinhThuc === "ZaloPay") {
+            // Validate payment amount
+            const paymentAmount = fe_tongThanhToan.value;
+            
+            if (paymentAmount <= 0) {
+                message.error('Số tiền thanh toán không hợp lệ. Vui lòng thêm sản phẩm vào hóa đơn!');
+                console.error('Invalid payment amount:', paymentAmount);
+                return;
+            }
+            
+            console.log('ZaloPay Payment - ID Hóa đơn:', activeTabData.value.hd.id_hoa_don);
+            console.log('ZaloPay Payment - Số tiền:', paymentAmount);
+            
+            localStorage.setItem('checkPaymentStatus', 'true');
+            localStorage.setItem('idHDPayMent', JSON.stringify(activeTabData.value.hd.id_hoa_don));
+            localStorage.setItem('paymentMethod', 'ZaloPay');
+            localStorage.removeItem('khachHangBH');
+            
+            await thanhToanService.handleZaloPayPayment(activeTabData.value.hd.id_hoa_don);
         }
     } catch (error) {
         console.error('Lỗi khi thanh toán:', error);
@@ -1657,31 +1667,139 @@ onMounted(async () => {
     startChecking();
 
     const checkPaymentStatus = localStorage.getItem('checkPaymentStatus');
+    const paymentMethod = localStorage.getItem('paymentMethod'); // 'PayOS' or 'ZaloPay'
+    
     if (checkPaymentStatus === 'true') {
-        try {
-            const paymentResponse = JSON.parse(localStorage.getItem('paymentResponse'));
+        if (paymentMethod === 'ZaloPay') {
+            // ZaloPay Polling Mechanism
             const idhdpay = JSON.parse(localStorage.getItem('idHDPayMent'));
-            if (paymentResponse && paymentResponse.data && paymentResponse.data.orderCode) {
-                const paystatus = await thanhToanService.checkStatusPayment(paymentResponse.data.orderCode);
-
-                if (paystatus.status === "PAID") {
-                    await store.trangThaiDonHang(idhdpay);
-                    router.push('/admin/banhang');
-                    toast.success('Thanh toán thành công');
-                    await refreshHoaDon(idhdpay);
-                } else if (paystatus.status === "PENDING") {
-                    toast.warning('Thanh toán đang chờ xử lý');
-                } else if (paystatus.status === "CANCELLED") {
-                    toast.error('Thanh toán đã bị huỷ');
+            let pollCount = 0;
+            const maxPolls = 20; // Poll tối đa 20 lần (60 giây)
+            const pollInterval = 3000; // Poll mỗi 3 giây
+            
+            console.log('🔄 Starting ZaloPay payment status polling...');
+            
+            // Show initial notification
+            const loadingMessage = message.loading({
+                content: '⏳ Đang kiểm tra trạng thái thanh toán ZaloPay...',
+                duration: 0 // Keep showing until we close it
+            });
+            
+            const pollPaymentStatus = setInterval(async () => {
+                pollCount++;
+                console.log(`🔍 Poll #${pollCount}: Checking ZaloPay status for invoice ${idhdpay}...`);
+                
+                try {
+                    const zaloStatus = await thanhToanService.checkZaloPayStatus(idhdpay);
+                    console.log('ZaloPay Status Response:', zaloStatus);
+                    
+                    if (zaloStatus && zaloStatus.return_code === 1) {
+                        // ✅ Payment successful!
+                        clearInterval(pollPaymentStatus);
+                        loadingMessage();
+                        
+                        message.success({
+                            content: '✅ Thanh toán ZaloPay thành công!',
+                            duration: 5
+                        });
+                        
+                        await refreshHoaDon(idhdpay);
+                        showPrintConfirm.value = true;
+                        
+                        // Cleanup
+                        localStorage.removeItem('checkPaymentStatus');
+                        localStorage.removeItem('paymentMethod');
+                        localStorage.removeItem('zaloPayResponse');
+                        localStorage.removeItem('idHDPayMent');
+                        
+                    } else if (pollCount >= maxPolls) {
+                        // ⏱️ Timeout - stop polling
+                        clearInterval(pollPaymentStatus);
+                        loadingMessage();
+                        
+                        message.warning({
+                            content: '⚠️ Không thể xác nhận trạng thái thanh toán. Vui lòng kiểm tra lại hóa đơn!',
+                            duration: 6
+                        });
+                        
+                        // Cleanup
+                        localStorage.removeItem('checkPaymentStatus');
+                        localStorage.removeItem('paymentMethod');
+                        localStorage.removeItem('zaloPayResponse');
+                        localStorage.removeItem('idHDPayMent');
+                    } else {
+                        // Continue polling
+                        console.log(`⏳ Payment pending... (${pollCount}/${maxPolls})`);
+                    }
+                } catch (error) {
+                    console.error('Error checking ZaloPay status:', error);
+                    
+                    if (pollCount >= maxPolls) {
+                        clearInterval(pollPaymentStatus);
+                        loadingMessage();
+                        
+                        message.error({
+                            content: '❌ Lỗi khi kiểm tra trạng thái thanh toán ZaloPay!',
+                            duration: 5
+                        });
+                        
+                        // Cleanup
+                        localStorage.removeItem('checkPaymentStatus');
+                        localStorage.removeItem('paymentMethod');
+                        localStorage.removeItem('zaloPayResponse');
+                        localStorage.removeItem('idHDPayMent');
+                    }
                 }
+            }, pollInterval);
+            
+        } else if (paymentMethod === 'PayOS') {
+            // PayOS status check (one-time)
+            try {
+                const idhdpay = JSON.parse(localStorage.getItem('idHDPayMent'));
+                const paymentResponse = JSON.parse(localStorage.getItem('paymentResponse'));
+                
+                console.log('🔍 Checking PayOS payment status for invoice:', idhdpay);
+                
+                if (paymentResponse && paymentResponse.data && paymentResponse.data.orderCode) {
+                    const paystatus = await thanhToanService.checkStatusPayment(paymentResponse.data.orderCode);
+                    
+                    if (paystatus.status === "PAID") {
+                        await store.trangThaiDonHang(idhdpay);
+                        message.success({
+                            content: '✅ Thanh toán PayOS thành công!',
+                            duration: 3
+                        });
+                        await refreshHoaDon(idhdpay);
+                        showPrintConfirm.value = true;
+                    } else if (paystatus.status === "PENDING") {
+                        message.warning({
+                            content: '⏳ Thanh toán PayOS đang chờ xử lý...',
+                            duration: 3
+                        });
+                    } else if (paystatus.status === "CANCELLED") {
+                        message.error({
+                            content: '❌ Thanh toán PayOS đã bị hủy!',
+                            duration: 3
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Lỗi khi kiểm tra trạng thái PayOS:", error);
+                message.error({
+                    content: '⚠️ Không thể kiểm tra trạng thái thanh toán PayOS!',
+                    duration: 4
+                });
+            } finally {
+                // Cleanup
+                localStorage.removeItem('checkPaymentStatus');
+                localStorage.removeItem('paymentMethod');
+                localStorage.removeItem('paymentResponse');
+                localStorage.removeItem('idHDPayMent');
             }
-        } catch (error) {
-            console.error("Lỗi khi kiểm tra trạng thái thanh toán:", error);
-            toast.error('Không thể kiểm tra trạng thái thanh toán');
-        } finally {
-            localStorage.removeItem('checkPaymentStatus');
         }
     }
+
+
 
 });
 
@@ -2050,7 +2168,7 @@ const closeZaloPayModal = () => {
 }
 
 .product-option:hover {
-    background-color: #fff1f2;
+    background-color: #fff3e6;
 }
 
 /* Product Image */
@@ -2083,7 +2201,7 @@ const closeZaloPayModal = () => {
     min-width: 90px;
     text-align: right;
     font-weight: 600;
-    color: #f33b47;
+    color: #ff6600;
 }
 
 /* Product Price and Name */
@@ -2129,15 +2247,15 @@ const closeZaloPayModal = () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f33b47;
-    border-color: #f33b47;
+    background-color: #ff6600;
+    border-color: #ff6600;
     color: white;
     transition: all 0.3s ease;
 }
 
 .action-btn:hover {
-    background-color: #e02b37;
-    border-color: #e02b37;
+    background-color: #e55a00;
+    border-color: #e55a00;
     color: white;
 }
 
@@ -2160,7 +2278,7 @@ const closeZaloPayModal = () => {
 }
 
 .close-icon:hover {
-    color: #f33b47;
+    color: #ff6600;
 }
 
 .custom-tab:hover .close-icon {
@@ -2179,7 +2297,7 @@ const closeZaloPayModal = () => {
 
 :deep(.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active),
 :deep(.ant-tabs-card > div > .ant-tabs-nav .ant-tabs-tab-active) {
-    background-color: #f33b47;
+    background-color: #ff6600;
     color: white !important;
 }
 
@@ -2204,7 +2322,7 @@ const closeZaloPayModal = () => {
 :deep(.ant-qrcode) {
     cursor: pointer;
     transition: transform 0.2s ease;
-    border: 2px solid #f33b47;
+    border: 2px solid #ff6600;
     border-radius: 6px;
 }
 
@@ -2218,29 +2336,29 @@ const closeZaloPayModal = () => {
 }
 
 :deep(.ant-input-search .ant-btn) {
-    background-color: #f33b47;
-    border-color: #f33b47;
+    background-color: #ff6600;
+    border-color: #ff6600;
     color: white;
     border-radius: 0 6px 6px 0;
 }
 
 :deep(.ant-input-search .ant-btn:hover) {
-    background-color: #e02b37;
-    border-color: #e02b37;
+    background-color: #e55a00;
+    border-color: #e55a00;
 }
 
 :deep(.ant-btn-primary) {
-    background-color: #f33b47;
-    border-color: #f33b47;
+    background-color: #ff6600;
+    border-color: #ff6600;
 }
 
 :deep(.ant-btn-primary:hover) {
-    background-color: #e02b37;
-    border-color: #e02b37;
+    background-color: #e55a00;
+    border-color: #e55a00;
 }
 
 :deep(.ant-modal-header) {
-    background-color: #f33b47;
+    background-color: #ff6600;
     color: white;
 }
 
@@ -2249,13 +2367,13 @@ const closeZaloPayModal = () => {
 }
 
 :deep(.ant-table-thead > tr > th) {
-    background-color: #fff1f2;
+    background-color: #fff3e6;
     color: #1f1f1f;
     font-weight: 600;
 }
 
 :deep(.ant-table-row:hover > td) {
-    background-color: #fff8f8 !important;
+    background-color: #fff9f0 !important;
 }
 
 /* Switch (Toggle) Styling */
@@ -2264,11 +2382,11 @@ const closeZaloPayModal = () => {
 }
 
 :deep(.ant-switch-checked) {
-    background-color: #f33b47;
+    background-color: #ff6600;
 }
 
 :deep(.ant-switch-checked:hover:not(.ant-switch-disabled)) {
-    background-color: #e02b37;
+    background-color: #e55a00;
 }
 
 :deep(.ant-switch-handle::before) {
@@ -2277,8 +2395,8 @@ const closeZaloPayModal = () => {
 
 /* Payment Button Styling */
 :deep(.btn-primary) {
-    background-color: #f33b47 !important;
-    border-color: #f33b47 !important;
+    background-color: #ff6600 !important;
+    border-color: #ff6600 !important;
     color: white !important;
     border-radius: 6px;
     font-weight: 500;
@@ -2286,13 +2404,13 @@ const closeZaloPayModal = () => {
 }
 
 :deep(.btn-primary:hover:not(:disabled)) {
-    background-color: #e02b37 !important;
-    border-color: #e02b37 !important;
+    background-color: #e55a00 !important;
+    border-color: #e55a00 !important;
 }
 
 :deep(.btn-primary:disabled) {
-    background-color: #f4a6ac !important;
-    border-color: #f4a6ac !important;
+    background-color: #ffb380 !important;
+    border-color: #ffb380 !important;
     color: #ffffff !important;
     cursor: not-allowed;
 }
@@ -2404,7 +2522,7 @@ const closeZaloPayModal = () => {
 }
 
 .table-hover tbody tr:hover {
-    background: #fff8f8;
+    background: #fff9f0;
     transition: background 0.3s ease;
 }
 
@@ -2445,8 +2563,8 @@ form {
 }
 
 :deep(.form-control:focus) {
-    border-color: #f33b47;
-    box-shadow: 0 0 0 3px rgba(243, 59, 71, 0.2);
+    border-color: #ff6600;
+    box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.2);
 }
 
 /* Form Labels */
@@ -2495,9 +2613,9 @@ label.form-label {
 }
 
 :deep(.form-check-input:checked) {
-    background-color: #f33b47;
-    border-color: #f33b47;
-    box-shadow: 0 0 0 2px rgba(243, 59, 71, 0.2);
+    background-color: #ff6600;
+    border-color: #ff6600;
+    box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.2);
     /* Hiệu ứng khi chọn */
 }
 
@@ -2515,6 +2633,69 @@ label.form-label {
 /* Remove unnecessary margins */
 .mb-3 {
     margin-bottom: 0 !important;
+}
+
+/* ===== MODERN PAYMENT METHODS GRID ===== */
+.payment-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.payment-method-option {
+    position: relative;
+    border: 2px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #ffffff;
+}
+
+.payment-method-option:hover {
+    border-color: #ff6600;
+    background: #fff9f0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 102, 0, 0.1);
+}
+
+.payment-method-option.active {
+    border-color: #ff6600;
+    background: linear-gradient(135deg, #fff3e6 0%, #ffffff 100%);
+    box-shadow: 0 4px 16px rgba(255, 102, 0, 0.15);
+}
+
+.payment-method-option .form-check-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.payment-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+    color: #1f1f1f;
+}
+
+.payment-icon {
+    font-size: 32px;
+    margin-bottom: 4px;
+}
+
+.payment-text {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.payment-method-option.active .payment-text {
+    color: #ff6600;
 }
 
 /* Responsive Adjustments */

@@ -562,6 +562,35 @@ const getSanPhamSieuSale = async () => {
     }
   }
 }
+
+//Top 10 sản phẩm bán chạy nhất
+const getSanPhamBanChayNhat = async () => {
+  try {
+    const response = await axiosInstance.get(qlsp + 'san-pham-ban-chay-nhat')
+    return response.data
+  } catch (error) {
+    console.error('Lỗi khi lấy sản phẩm bán chạy nhất:', error)
+    return {
+      error: true,
+      message: error.message || 'Có lỗi xảy ra khi lấy sản phẩm bán chạy nhất',
+    }
+  }
+}
+
+// Top 10 sản phẩm mới nhất
+const getSanPhamMoiNhat = async () => {
+  try {
+    const response = await axiosInstance.get(qlsp + 'san-pham-moi-nhat')
+    return response.data
+  } catch (error) {
+    console.error('Lỗi khi lấy sản phẩm mới nhất:', error)
+    return {
+      error: true,
+      message: error.message || 'Có lỗi xảy ra khi lấy sản phẩm mới nhất',
+    }
+  }
+}
+
 export const sanPhamService = {
   getAllSanPham,
   getAllChiTietSanPham,
@@ -610,5 +639,8 @@ export const sanPhamService = {
   giaMax,
   getSanPhamByTenSP,
   getSanPhamByTenDM,
-  getSanPhamSieuSale
+  getSanPhamSieuSale,
+  getSanPhamBanChayNhat,
+  getSanPhamMoiNhat
 }
+

@@ -2,7 +2,7 @@
     <div class="san-pham-ban-chay" ref="sectionRef" :class="{ 'visible': isVisible }">
         <div class="container p-0">
             <div class="section-header">
-                <h4 class="section-title">Sản phẩm bán HOT nhất</h4>
+                <h4 class="section-title">SẢN PHẨM BÁN CHẠY NHẤT</h4>
                 <div class="section-divider"></div>
             </div>
 
@@ -167,24 +167,23 @@ const showArrows = ref(false);
 
 // Sử dụng Intersection Observer để theo dõi khi phần tử xuất hiện trong viewport
 onMounted(async () => {
-    await store.getSanPhamBySP('quần,áo');
+    await store.getSanPhamBanChayNhat();
     
     // Chuyển đổi dữ liệu từ API sang định dạng phù hợp với template
-    if (store.listSanPhamBanHang && store.listSanPhamBanHang.length > 0) {
-        bestSellingProducts.value = store.listSanPhamBanHang.map(item => ({
-            id: item.id_san_pham || item.id,
-            // Backend đã sửa thành hinh_anh
-            image: item.hinh_anh || 'http://res.cloudinary.com/dtwsqkqpc/image/upload/v1742823877/oionww3qsqhfwvuvxeko.jpg',
-            price: `${item.gia_khuyen_mai_cao_nhat?.toLocaleString()}₫` || '0₫',
-            oldPrice: item.gia_max > item.gia_khuyen_mai_cao_nhat ? `${item.gia_max.toLocaleString()}₫` : null,
-            discountPercent: item.gia_max && item.gia_khuyen_mai_cao_nhat ?
-                Math.round(((item.gia_max - item.gia_khuyen_mai_cao_nhat) / item.gia_max) * 100) : 0,
-            discount: item.gia_max && item.gia_khuyen_mai_cao_nhat ?
-                `-${Math.round(((item.gia_max - item.gia_khuyen_mai_cao_nhat) / item.gia_max) * 100)}%` : null,
-            name: item.ten_san_pham || 'Sản phẩm không tên',
-            brand: item.ten_thuong_hieu || 'Chưa có thương hiệu',
-            rating: item.danh_gia || 0,
-            reviews: item.so_luong_danh_gia || 0
+    if (store.listSanPhamBanChayNhat && store.listSanPhamBanChayNhat.length > 0) {
+        bestSellingProducts.value = store.listSanPhamBanChayNhat.map(item => ({
+            id: item.id,
+            image: item.image || 'http://res.cloudinary.com/dtwsqkqpc/image/upload/v1742823877/oionww3qsqhfwvuvxeko.jpg',
+            price: `${item.price?.toLocaleString()}₫` || '0₫',
+            oldPrice: item.oldPrice > item.price ? `${item.oldPrice.toLocaleString()}₫` : null,
+            discountPercent: item.oldPrice && item.price ?
+                Math.round(((item.oldPrice - item.price) / item.oldPrice) * 100) : 0,
+            discount: item.oldPrice && item.price ?
+                `-${Math.round(((item.oldPrice - item.price) / item.oldPrice) * 100)}%` : null,
+            name: item.name || 'Sản phẩm không tên',
+            brand: item.brand || 'Chưa có thương hiệu',
+            rating: item.rating || 0,
+            reviews: item.reviews || 0
         }));
     } else {
         console.log('Không có dữ liệu sản phẩm từ API');

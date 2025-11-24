@@ -106,6 +106,8 @@ export const useGbStore = defineStore('gbStore', {
     currentKhachHang: 0,
     totalItemsKhachHang: 0,
     listSanPhamBanHang: [],
+    listSanPhamBanChayNhat: [],
+    listSanPhamMoiNhat: [],
     getAllCTSPKMList: [],
     getAllKhachHangNoPageList: [],
     lastCreatedKhachHang: null, // Lưu khách hàng vừa được tạo
@@ -703,6 +705,54 @@ export const useGbStore = defineStore('gbStore', {
         return
       } else {
         this.sanPhamById = sanPhamByIds
+      }
+    },
+    //Lấy danh sách TOP 10 sản phẩm bán chạy nhất
+    async getSanPhamBanChayNhat() {
+      try {
+        const data = await sanPhamService.getSanPhamBanChayNhat()
+        if (data.error) {
+          toast.error('Không lấy được dữ liệu sản phẩm bán chạy nhất')
+          return
+        }
+        this.listSanPhamBanChayNhat = data.map(item => ({
+          id: item.id_san_pham,
+          name: item.ten_san_pham,
+          price: Number(item.gia_khuyen_mai_cao_nhat || item.gia_max || 0),
+          oldPrice: Number(item.gia_max || 0),
+          brand: item.ten_thuong_hieu,
+          image: item.hinh_anh || item.anh_dai_dien,
+          category: item.ten_danh_muc || '',
+          rating: item.danh_gia || 0,
+          reviews: item.so_luong_danh_gia || 0,
+        }))
+      } catch (error) {
+        console.error('Lỗi khi lấy sản phẩm bán chạy nhất:', error)
+        toast.error('Có lỗi xảy ra khi lấy sản phẩm bán chạy nhất')
+      }
+    },
+    //Lấy danh sách TOP 10 sản phẩm mới nhập
+    async getSanPhamMoiNhat() {
+      try {
+        const data = await sanPhamService.getSanPhamMoiNhat()
+        if (data.error) {
+          toast.error('Không lấy được dữ liệu sản phẩm mới nhất')
+          return
+        }
+        this.listSanPhamMoiNhat = data.map(item => ({
+          id: item.id_san_pham,
+          name: item.ten_san_pham,
+          price: Number(item.gia_khuyen_mai_cao_nhat || item.gia_max || 0),
+          oldPrice: Number(item.gia_max || 0),
+          brand: item.ten_thuong_hieu,
+          image: item.hinh_anh || item.anh_dai_dien,
+          category: item.ten_danh_muc || '',
+          rating: item.danh_gia || 0,
+          reviews: item.so_luong_danh_gia || 0,
+        }))
+      } catch (error) {
+        console.error('Lỗi khi lấy sản phẩm mới nhất:', error)
+        toast.error('Có lỗi xảy ra khi lấy sản phẩm mới nhất')
       }
     },
     //Lấy danh sách danh mục

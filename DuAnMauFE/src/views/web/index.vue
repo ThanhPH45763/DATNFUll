@@ -3,11 +3,11 @@
         <TheNoitification />
         <TheBaner />
         <BoSuuTapHot />
-        <DanhMucSanPham />
+        <!-- <DanhMucSanPham /> -->
         <SanPhamBanChay />
-        <SanPhamMoiChoTatCa />
+        <!-- <SanPhamMoiChoTatCa /> -->
         <AoTheThaoBanChay />
-        <QuanTheThaoBanChay />
+        <!-- <QuanTheThaoBanChay /> -->
         <ThuongHieuSanPham />
     </div>
     <!-- <ChatWidget :customerId="'1'" :staffId="'1'" senderType="CUSTOMER" :anou="false" /> -->

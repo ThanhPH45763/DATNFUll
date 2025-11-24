@@ -396,4 +396,14 @@ public class SanPhamService {
                 .map(SanPhamDisplayDTO::fromView)
                 .collect(Collectors.toList());
     }
+
+    // Top 10 sản phẩm bán chạy nhất
+    public List<SanPhamView> getSanPhamBanChayNhat() {
+        return sanPhamRepo.listSanPhamBanChayNhat();
+    }
+
+    // Top 10 sản phẩm mới nhất
+    public List<SanPhamView> getSanPhamMoiNhat() {
+        return sanPhamRepo.listSanPhamMoiNhat();
+    }
 }

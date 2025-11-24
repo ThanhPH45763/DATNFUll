@@ -12,13 +12,13 @@
                             <a class="nav-link" style="cursor: pointer;" @click.prevent="handleSidebarClick('all')">Tất cả sản phẩm</a>
                         </li>
                         <li class="nav-item me-lg-5">
-                            <a class="nav-link" style="cursor: pointer;" @click.prevent="handleSidebarClick('Sport')">Môn thể thao</a>
+                            <!-- <a class="nav-link" style="cursor: pointer;" @click.prevent="handleSidebarClick('Sport')">Môn thể thao</a> -->
                         </li>
                         <li class="nav-item me-lg-5">
-                            <a class="nav-link" style="cursor: pointer;" @click.prevent="handleSidebarClick('Nam')">Nam</a>
+                            <!-- <a class="nav-link" style="cursor: pointer;" @click.prevent="handleSidebarClick('Nam')">Nam</a> -->
                         </li>
                         <li class="nav-item me-lg-5">
-                            <a class="nav-link" style="cursor: pointer;" @click.prevent="handleSidebarClick('Nữ')">Nữ</a>
+                            <!-- <a class="nav-link" style="cursor: pointer;" @click.prevent="handleSidebarClick('Nữ')">Nữ</a> -->
                         </li>
                         <li class="nav-item me-lg-5">
                             <a class="nav-link" style="cursor: pointer;" @click.prevent="handleSieuSaleClick">Siêu sale sập sàn</a>

@@ -179,6 +179,26 @@ public class SanPhamController {
         return sanPhamService.getSanPhamSieuSaleFormatted();
     }
 
+    /**
+     * Top 10 sản phẩm bán chạy nhất (theo doanh số)
+     * 
+     * @return List sản phẩm bán chạy nhất với giá khuyến mãi đầy đủ
+     */
+    @GetMapping("/san-pham-ban-chay-nhat")
+    public List<SanPhamView> getSanPhamBanChayNhat() {
+        return sanPhamService.getSanPhamBanChayNhat();
+    }
+
+    /**
+     * Top 10 sản phẩm mới nhập (theo ngày tạo/sửa)
+     * 
+     * @return List sản phẩm mới nhất với giá khuyến mãi đầy đủ
+     */
+    @GetMapping("/san-pham-moi-nhat")
+    public List<SanPhamView> getSanPhamMoiNhat() {
+        return sanPhamService.getSanPhamMoiNhat();
+    }
+
     @Autowired
     ExcelSaveDB excelSaveDB;
 

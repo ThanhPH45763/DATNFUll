@@ -57,17 +57,21 @@
                         <div class="icon-container">
                             <User class="nav-icon" :class="{ 'icon-animated': animatedIcon === 'user' }" />
                         </div>
-                        <span class="nav-text">{{ displayName }} </span>
+                        <span class="nav-text">{{ displayName }}</span>
 
                         <!-- User dropdown menu -->
-                        <div v-if="store.isLoggedIn && showMenu" class="user-dropdown">
-                            <div class="dropdown-item" @click.stop="navigateTo('/khachhang')">
+                        <div v-if="(isCustomerLoggedIn || store.isLoggedIn) && showMenu" class="user-dropdown">
+                            <div class="dropdown-item" @click.stop="navigateTo('/profile')">
                                 <UserCircle class="dropdown-icon" />
-                                <span>Hồ sơ của tôi</span>
+                                <span>Tài khoản của tôi</span>
                             </div>
-                            <div class="dropdown-item" @click.stop="navigateTo('/khachhang?tab=orders')">
+                            <div class="dropdown-item" @click.stop="navigateTo('/profile/orders')">
                                 <ShoppingBag class="dropdown-icon" />
-                                <span>Đơn mua</span>
+                                <span>Đơn hàng</span>
+                            </div>
+                            <div class="dropdown-item" @click.stop="navigateTo('/profile/change-password')">
+                                <UserCircle class="dropdown-icon" />
+                                <span>Đổi mật khẩu</span>
                             </div>
                             <div class="dropdown-divider"></div>
                             <div class="dropdown-item logout" @click.stop="handleLogout">
@@ -96,12 +100,39 @@ const cartItemCount = ref(0); // Số lượng sản phẩm trong giỏ hàng
 const router = useRouter();
 const showMenu = ref(false);
 const searchKeyword = ref('');
+const displayName = ref('Đăng nhập'); // Use ref instead of computed for reactivity
 
-const displayName = computed(() => {
-    if (store.isLoggedIn && store.userDetails || sessionStorage.getItem('userDetails')) {
-        return store.userDetails.tenKhachHang;
+// Function to update display name from storage
+const updateDisplayName = () => {
+    // Check for customer login (khachHang)
+    const khachHangStr = localStorage.getItem('khachHang') || sessionStorage.getItem('khachHang');
+    if (khachHangStr) {
+        try {
+            const khachHang = JSON.parse(khachHangStr);
+            displayName.value = khachHang.hoTen || khachHang.email || 'Khách hàng';
+            console.log('Updated displayName from customer:', displayName.value);
+            return;
+        } catch (e) {
+            console.error('Error parsing khachHang:', e);
+        }
     }
-    return store.changeLanguage.nguoiDung || 'Đăng nhập';
+    
+    // Fallback to admin check
+    if (store.isLoggedIn && store.userDetails) {
+        displayName.value = store.userDetails.tenKhachHang;
+        console.log('Updated displayName from admin:', displayName.value);
+        return;
+    }
+    
+    // Default
+    displayName.value = store.changeLanguage.nguoiDung || 'Đăng nhập';
+    console.log('Updated displayName to default:', displayName.value);
+};
+
+// Check if customer is logged in
+const isCustomerLoggedIn = computed(() => {
+    const khachHangStr = localStorage.getItem('khachHang') || sessionStorage.getItem('khachHang');
+    return !!khachHangStr;
 });
 
 const chuyenTrang = (path) => {
@@ -117,9 +148,22 @@ const animateIcon = (iconName) => {
 
 // Sử dụng toggle menu thay vì hover
 const toggleUserMenu = () => {
-    if (!store.isLoggedIn) {
-        chuyenTrang('/login-register/login');
+    // Force fresh check from storage (không dùng computed để tránh cache)
+    const khachHangStr = localStorage.getItem('khachHang') || sessionStorage.getItem('khachHang');
+    const hasCustomerLogin = !!khachHangStr;
+    
+    console.log('=== Toggle User Menu Debug ===');
+    console.log('Customer logged in:', hasCustomerLogin);
+    console.log('Admin logged in:', store.isLoggedIn);
+    console.log('khachHangStr:', khachHangStr);
+    
+    // Check customer login OR admin login
+    if (!hasCustomerLogin && !store.isLoggedIn) {
+        console.log('→ Redirecting to login page');
+        // Use window.location for reliable redirect
+        window.location.href = '/login-register/login';
     } else {
+        console.log('→ Toggling menu');
         showMenu.value = !showMenu.value;
     }
 };
@@ -127,14 +171,34 @@ const toggleUserMenu = () => {
 // Sửa lại hàm xử lý đăng xuất
 const handleLogout = () => {
     showMenu.value = false;
-    store.logoutKH();
-
-    // Cách 1: Sử dụng window.location để làm mới hoàn toàn trang
+    
+    console.log('=== Logout Debug ===');
+    console.log('Clearing all auth data...');
+    
+    // Clear ALL customer auth data
+    localStorage.removeItem('khachHang');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userInfo');
+    localStorage.removeItem('userDetails');
+    localStorage.removeItem('id_roles');
+    localStorage.removeItem('token');
+    
+    sessionStorage.removeItem('khachHang');
+    sessionStorage.removeItem('isLoggedIn');
+    sessionStorage.removeItem('userInfo');
+    sessionStorage.removeItem('userDetails');
+    sessionStorage.removeItem('id_roles');
+    sessionStorage.removeItem('token');
+    
+    // Also clear store state
+    store.isLoggedIn = false;
+    store.userInfo = null;
+    store.userDetails = null;
+    
+    console.log('All auth data cleared. Redirecting...');
+    
+    // Force reload to ensure clean state
     window.location.href = '/home';
-
-    // HOẶC Cách 2: Sử dụng router của Vue, nhưng có thể cần reload sau đó
-    // router.push('/home');
-    // setTimeout(() => window.location.reload(), 100);
 };
 
 // Thêm hàm để đóng menu khi click bên ngoài
@@ -219,6 +283,9 @@ const handleSearch = async () => {
 
 // Cập nhật lại onMounted để thêm listener document.click
 onMounted(async () => {
+    // Update display name from storage on mount
+    updateDisplayName();
+    
     await updateCartCount();
 
     // Lắng nghe sự kiện 'cart-updated' nếu có
@@ -226,6 +293,14 @@ onMounted(async () => {
 
     // Thêm lắng nghe click bên ngoài để đóng dropdown
     document.addEventListener('click', closeMenuOnOutsideClick);
+    
+    // Listen for storage changes (e.g., login/logout in another tab)
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'khachHang' || e.key === 'isLoggedIn') {
+            console.log('Storage changed, updating display name...');
+            updateDisplayName();
+        }
+    });
 });
 
 // Làm sạch listener khi component bị hủy
@@ -240,213 +315,199 @@ const checkCartInterval = setInterval(updateCartCount, 5000);
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+/* ===================================================
+   HEADER COMPONENT - Elegant Menswear Design
+   =================================================== 
+   Philosophy: Clean, Professional, Timeless
+*/
 
 .header-container {
-    padding: 0 2rem;
-    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-    background: linear-gradient(to right, #ffffff, #f8f9fa);
-    z-index: 1030;
-    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-fixed);
+    background: var(--color-bg);
+    box-shadow: var(--shadow-sm);
+    border-bottom: 1px solid var(--color-border);
+    transition: box-shadow var(--transition-base);
+    font-family: var(--font-primary);
+}
+
+.header-container:hover {
+    box-shadow: var(--shadow-md);
 }
 
 .headers {
-    height: 5rem;
-    background-color: transparent;
-    position: relative;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+/* ========== Logo Section ========== */
+.logo-section {
+    min-width: 180px;
+    display: flex;
+    align-items: center;
 }
 
 .logo-image {
-    height: 4rem;
+    height: 3.5rem;
     width: auto;
-    transition: transform 0.3s ease;
+    transition: opacity var(--transition-base);
+    cursor: pointer;
 }
 
 .logo-image:hover {
-    transform: scale(1.05);
+    opacity: 0.85;
 }
 
-.language-selector {
-    position: relative;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 20px;
-    transition: all 0.3s ease;
-}
-
-.langue {
-    font-size: 1.1rem;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 600;
-    color: #333;
-    transition: all 0.3s ease;
-}
-
-.language-selector:hover {
-    background-color: #3a86ff;
-}
-
-.language-selector:hover .langue {
-    color: white;
+/* ========== Search Section ========== */
+.search-section {
+    flex: 1;
+    max-width: 600px;
 }
 
 .search-container {
+    display: flex;
+    align-items: center;
     height: 3rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 30px;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    background-color: #fff;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    padding: 0 1.25rem;
+    transition: all var(--transition-base);
 }
 
 .search-container:focus-within {
-    border-color: #3a86ff;
-    box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.2);
-    transform: translateY(-2px);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.08);
 }
 
 .search-icon {
-    color: #666;
-    transition: color 0.3s ease;
+    color: var(--color-text-light);
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    transition: color var(--transition-base);
 }
 
 .search-container:focus-within .search-icon {
-    color: #3a86ff;
+    color: var(--color-primary);
 }
 
 .search-input {
+    flex: 1;
     border: none;
     outline: none;
-    box-shadow: none;
-    height: 100%;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.9rem;
-    transition: background-color 0.3s ease;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    margin-left: var(--space-sm);
 }
 
-.search-input:focus {
-    background-color: transparent;
+.search-input::placeholder {
+    color: var(--color-text-muted);
 }
 
+/* ========== Navigation Icons ========== */
 .nav-icons {
     display: flex;
-    justify-content: space-around;
+    align-items: center;
+    gap: var(--space-md);
 }
 
 .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 0.25rem;
     cursor: pointer;
-    transition: transform 0.2s ease;
-    padding: 5px;
-    border-radius: 8px;
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition-base);
 }
 
 .nav-item:hover {
-    transform: translateY(-3px);
+    background-color: var(--color-bg-alt);
 }
 
 .icon-container {
     position: relative;
-    margin-bottom: 5px;
 }
 
 .nav-icon {
-    width: 24px;
-    height: 24px;
-    color: #333;
-    transition: all 0.3s ease;
+    width: 22px;
+    height: 22px;
+    color: var(--color-text);
+    transition: color var(--transition-base);
 }
 
 .nav-item:hover .nav-icon {
-    color: #3a86ff;
+    color: var(--color-primary);
 }
 
+/* Minimal icon animation - subtle scale only */
 .icon-animated {
-    animation: pulse 0.5s ease;
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.2);
-    }
-
-    100% {
-        transform: scale(1);
-    }
+    transform: scale(1.08);
+    transition: transform var(--transition-fast);
 }
 
 .nav-text {
-    font-size: 11px;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 500;
-    color: #555;
-    transition: color 0.3s ease;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    color: var(--color-text-light);
+    transition: color var(--transition-base);
+    font-family: var(--font-primary);
 }
 
 .nav-item:hover .nav-text {
-    color: #3a86ff;
+    color: var(--color-primary);
 }
 
+/* ========== Cart Badge ========== */
 .cart-badge {
     position: absolute;
-    top: -8px;
-    right: -8px;
-    background-color: #ff3a3a;
-    color: white;
-    font-size: 10px;
-    font-weight: bold;
+    top: -6px;
+    right: -6px;
+    background-color: var(--color-error);
+    color: var(--color-white);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
     width: 18px;
     height: 18px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: bounce 1s infinite;
+    font-family: var(--font-primary);
 }
 
-@keyframes bounce {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-3px);
-    }
-}
-
+/* ========== User Dropdown Menu ========== */
 .user-nav-item {
     position: relative;
 }
 
 .user-dropdown {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 0.5rem);
     right: 0;
-    width: 180px;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    margin-top: 5px;
-    z-index: 1031;
+    min-width: 200px;
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     overflow: hidden;
-    animation: dropdown-fade 0.2s ease;
+    animation: slideDown var(--transition-base);
 }
 
-@keyframes dropdown-fade {
+@keyframes slideDown {
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(-8px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -456,34 +517,84 @@ const checkCartInterval = setInterval(updateCartCount, 5000);
 .dropdown-item {
     display: flex;
     align-items: center;
-    padding: 10px 14px;
+    gap: var(--space-sm);
+    padding: 0.875rem 1.25rem;
     cursor: pointer;
-    transition: background-color 0.2s;
-    font-size: 13px;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    transition: background-color var(--transition-fast);
+    border: none;
+    background: none;
+    font-family: var(--font-primary);
 }
 
 .dropdown-item:hover {
-    background-color: #f5f5f5;
+    background-color: var(--color-bg-alt);
 }
 
 .dropdown-icon {
     width: 18px;
     height: 18px;
-    color: #555;
-    margin-right: 12px;
+    color: var(--color-text-light);
 }
 
 .dropdown-divider {
     height: 1px;
-    background-color: #eee;
-    margin: 5px 0;
+    background-color: var(--color-border);
+    margin: 0.25rem 0;
 }
 
-.logout {
-    color: #ff3a3a;
+.dropdown-item.logout {
+    color: var(--color-error);
 }
 
-.logout .dropdown-icon {
-    color: #ff3a3a;
+.dropdown-item.logout .dropdown-icon {
+    color: var(--color-error);
+}
+
+.dropdown-item.logout:hover {
+    background-color: rgba(239, 68, 68, 0.08);
+}
+
+/* ========== Responsive Design ========== */
+@media (max-width: 1024px) {
+    .nav-text {
+        display: none;
+    }
+    
+    .nav-item {
+        padding: var(--space-sm);
+    }
+}
+
+@media (max-width: 768px) {
+    .header-container {
+        padding: 0 1rem;
+    }
+    
+    .headers {
+        height: 64px;
+    }
+    
+    .logo-section {
+        min-width: 120px;
+    }
+    
+    .logo-image {
+        height: 2.5rem;
+    }
+    
+    .search-section {
+        max-width: none;
+    }
+    
+    .search-container {
+        height: 2.5rem;
+        padding: 0 1rem;
+    }
+    
+    .nav-icons {
+        gap: var(--space-xs);
+    }
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="container-fluid">
-    <h3 class="fw-bold mb-4" style="color: #f33b47;">Cập Nhật Voucher</h3>
+    <h3 class="fw-bold mb-4" style="color: #ff6600;">Cập Nhật Voucher</h3>
     <form @submit.prevent="submitForm" v-if="voucher">
       <div class="row g-3">
         <input type="hidden" v-model="voucher.id">
@@ -361,14 +361,14 @@ const submitForm = async () => {
 
 <style scoped>
 .btn-primary {
-  background-color: #d02c39;
-  border-color: #d02c39;
+  background-color: #ff6600;
+  border-color: #ff6600;
   font-weight: bold;
 }
 
 .btn-primary:hover {
-  background-color: #f33b47;
-  border-color: #f33b47;
+  background-color: #ff6600;
+  border-color: #ff6600;
 }
 
 .is-invalid {

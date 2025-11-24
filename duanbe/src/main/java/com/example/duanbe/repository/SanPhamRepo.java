@@ -123,7 +123,12 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
             SELECT
             ctkm.id_chi_tiet_san_pham,
             GiamGia = CASE
-            WHEN km.kieu_giam_gia = N'Phần trăm' THEN ctsp.gia_ban * (1 - km.gia_tri_giam / 100)
+            WHEN km.kieu_giam_gia = N'Phần trăm' THEN
+                CASE
+                    WHEN ctsp.gia_ban * km.gia_tri_giam / 100 > ISNULL(km.gia_tri_toi_da, 999999999)
+                        THEN ctsp.gia_ban - km.gia_tri_toi_da
+                    ELSE ctsp.gia_ban * (1 - km.gia_tri_giam / 100)
+                END
             WHEN km.kieu_giam_gia = N'Tiền mặt' THEN ctsp.gia_ban - km.gia_tri_giam
             ELSE ctsp.gia_ban
             END
@@ -131,6 +136,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
             JOIN khuyen_mai km
             ON ctkm.id_khuyen_mai = km.id_khuyen_mai
             AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+            AND km.trang_thai = N'Đang diễn ra'
             JOIN chi_tiet_san_pham ctsp
             ON ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham
             ),
@@ -153,7 +159,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
             dm.ten_danh_muc,
             th.ten_thuong_hieu,
             cl.ten_chat_lieu,
-            sp.anh_dai_dien,
+            sp.anh_dai_dien as hinh_anh,
             avg(bl.danh_gia) over (PARTITION BY sp.id_san_pham) as danh_gia,
             count(bl.danh_gia) over(PARTITION BY sp.id_san_pham) as so_luong_danh_gia,
             SUM(ctsp.so_luong) OVER (PARTITION BY sp.id_san_pham) AS tong_so_luong,
@@ -187,7 +193,12 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
             WITH KhuyenMaiHieuLuc AS (
             SELECT ctkm.id_chi_tiet_san_pham,
             GiamGia = CASE
-            WHEN km.kieu_giam_gia = N'Phần trăm' THEN ctsp.gia_ban * (1 - km.gia_tri_giam / 100)
+            WHEN km.kieu_giam_gia = N'Phần trăm' THEN
+                CASE
+                    WHEN ctsp.gia_ban * km.gia_tri_giam / 100 > ISNULL(km.gia_tri_toi_da, 999999999)
+                        THEN ctsp.gia_ban - km.gia_tri_toi_da
+                    ELSE ctsp.gia_ban * (1 - km.gia_tri_giam / 100)
+                END
             WHEN km.kieu_giam_gia = N'Tiền mặt' THEN ctsp.gia_ban - km.gia_tri_giam
             ELSE ctsp.gia_ban
             END
@@ -195,6 +206,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
             JOIN khuyen_mai km
             ON ctkm.id_khuyen_mai = km.id_khuyen_mai
             AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+            AND km.trang_thai = N'Đang diễn ra'
             JOIN chi_tiet_san_pham ctsp
             ON ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham
             ),
@@ -217,7 +229,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
             dm.ten_danh_muc,
             th.ten_thuong_hieu,
             cl.ten_chat_lieu,
-            sp.anh_dai_dien,
+            sp.anh_dai_dien as hinh_anh,
             avg(bl.danh_gia) over (PARTITION BY sp.id_san_pham) as danh_gia,
             count(bl.danh_gia) over(PARTITION BY sp.id_san_pham) as so_luong_danh_gia,
             SUM(ctsp.so_luong) OVER (PARTITION BY sp.id_san_pham) AS tong_so_luong,
@@ -409,7 +421,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
                     dm.ten_danh_muc,
                     th.ten_thuong_hieu,
                     cl.ten_chat_lieu,
-                    sp.anh_dai_dien,
+                    sp.anh_dai_dien as hinh_anh,
                     AVG(bl.danh_gia) OVER (PARTITION BY sp.id_san_pham) AS danh_gia,
                     COUNT(bl.danh_gia) OVER (PARTITION BY sp.id_san_pham) AS so_luong_danh_gia,
                     SUM(ctsp.so_luong) OVER (PARTITION BY sp.id_san_pham) AS tong_so_luong,

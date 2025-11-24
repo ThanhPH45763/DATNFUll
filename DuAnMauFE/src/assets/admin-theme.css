@@ -1,0 +1,559 @@
+/**
+ * Admin Theme - Design System
+ * Màu chủ đạo: #ff6600 (Orange)
+ * Được sử dụng cho tất cả admin components (trừ QuanLyNhanVien)
+ */
+
+/* ==================== COLOR PALETTE ==================== */
+:root {
+  /* Primary Orange Colors */
+  --admin-primary: #ff6600;
+  --admin-primary-hover: #e55a00;
+  --admin-primary-active: #cc4f00;
+  --admin-primary-light: #ff9947;
+  --admin-primary-lighter: #ffe0cc;
+  --admin-primary-lightest: #fff3eb;
+  
+  /* Text Colors */
+  --admin-text-primary: #333333;
+  --admin-text-secondary: #666666;
+  --admin-text-muted: #999999;
+  --admin-text-light: #cccccc;
+  
+  /* Border & Background */
+  --admin-border: #e0e0e0;
+  --admin-border-light: #f0f0f0;
+  --admin-background: #ffffff;
+  --admin-background-light: #f8f9fa;
+  --admin-background-gray: #e9ecef;
+  
+  /* Status Colors */
+  --admin-success: #28a745;
+  --admin-success-light: rgba(40, 167, 69, 0.1);
+  --admin-warning: #ffc107;
+  --admin-warning-light: rgba(255, 193, 7, 0.1);
+  --admin-danger: #dc3545;
+  --admin-danger-light: rgba(220, 53, 69, 0.1);
+  --admin-info: #17a2b8;
+  --admin-info-light: rgba(23, 162, 184, 0.1);
+  
+  /* Shadows */
+  --admin-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --admin-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --admin-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.15);
+  
+  /* Transitions */
+  --admin-transition: all 0.3s ease-in-out;
+  --admin-transition-fast: all 0.15s ease-in-out;
+}
+
+/* ==================== BUTTONS ==================== */
+
+/* Primary Button */
+.btn-admin-primary {
+  background-color: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: white;
+  font-weight: bold;
+  transition: var(--admin-transition);
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 2px solid var(--admin-primary);
+}
+
+.btn-admin-primary:hover {
+  background-color: var(--admin-primary-hover);
+  border-color: var(--admin-primary-hover);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: var(--admin-shadow);
+}
+
+.btn-admin-primary:active {
+  background-color: var(--admin-primary-active);
+  border-color: var(--admin-primary-active);
+  transform: translateY(0);
+}
+
+.btn-admin-primary:disabled {
+  background-color: var(--admin-border);
+  border-color: var(--admin-border);
+  color: var(--admin-text-muted);
+  cursor: not-allowed;
+}
+
+/* Outline Primary Button */
+.btn-admin-outline-primary {
+  background-color: transparent;
+  border: 2px solid var(--admin-primary);
+  color: var(--admin-primary);
+  font-weight: bold;
+  transition: var(--admin-transition);
+  padding: 8px 16px;
+  border-radius: 6px;
+}
+
+.btn-admin-outline-primary:hover {
+  background-color: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: white;
+}
+
+.btn-admin-outline-primary:active {
+  background-color: var(--admin-primary-active);
+  border-color: var(--admin-primary-active);
+}
+
+/* Pagination Buttons */
+.btn-admin-pagination {
+  background-color: transparent;
+  text-align: center;
+  color: var(--admin-primary);
+  border: 2px solid var(--admin-primary);
+  cursor: pointer;
+  transition: var(--admin-transition);
+  width: 80px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 6px;
+}
+
+.btn-admin-pagination:hover:not(:disabled) {
+  background-color: var(--admin-primary);
+  color: white;
+}
+
+.btn-admin-pagination:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Small Icon Buttons */
+.btn-admin-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: var(--admin-transition);
+}
+
+.btn-admin-icon-primary {
+  background-color: var(--admin-primary);
+  border: 1px solid var(--admin-primary);
+  color: white;
+}
+
+.btn-admin-icon-primary:hover {
+  background-color: var(--admin-primary-hover);
+  border-color: var(--admin-primary-hover);
+}
+
+.btn-admin-icon-outline {
+  background-color: white;
+  border: 1px solid var(--admin-primary);
+  color: var(--admin-primary);
+}
+
+.btn-admin-icon-outline:hover {
+  background-color: var(--admin-primary-lightest);
+}
+
+/* ==================== FORMS ==================== */
+
+/* Radio Buttons */
+.form-check-input-admin {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--admin-primary);
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  background-color: white;
+  cursor: pointer;
+  transition: var(--admin-transition-fast);
+}
+
+.form-check-input-admin:checked::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background-color: var(--admin-primary);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.form-check-input-admin:hover {
+  border-color: var(--admin-primary-hover);
+  box-shadow: 0 0 0 3px var(--admin-primary-lightest);
+}
+
+.form-check-input-admin:focus {
+  box-shadow: 0 0 0 3px var(--admin-primary-lightest);
+  outline: none;
+}
+
+/* Form Controls */
+.form-control-admin {
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  transition: var(--admin-transition-fast);
+  font-size: 14px;
+}
+
+.form-control-admin:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px var(--admin-primary-lightest);
+  outline: none;
+}
+
+.form-control-admin::placeholder {
+  color: var(--admin-text-muted);
+}
+
+/* ==================== TABLES ==================== */
+
+.table-admin {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+.table-admin thead th {
+  background-color: var(--admin-background-light);
+  color: var(--admin-text-primary);
+  font-weight: 600;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--admin-border);
+  text-align: left;
+}
+
+.table-admin tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--admin-border-light);
+  color: var(--admin-text-secondary);
+}
+
+.table-admin tbody tr:hover {
+  background-color: var(--admin-background-light);
+}
+
+.table-admin tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ==================== BADGES & TAGS ==================== */
+
+.badge-admin-primary {
+  background-color: var(--admin-primary);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge-admin-outline {
+  background-color: var(--admin-primary-lightest);
+  color: var(--admin-primary);
+  border: 1px solid var(--admin-primary-light);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+/* Status Badges */
+.badge-admin-success {
+  background-color: var(--admin-success-light);
+  color: var(--admin-success);
+  border: 1px solid var(--admin-success);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-admin-warning {
+  background-color: var(--admin-warning-light);
+  color: var(--admin-warning);
+  border: 1px solid var(--admin-warning);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-admin-danger {
+  background-color: var(--admin-danger-light);
+  color: var(--admin-danger);
+  border: 1px solid var(--admin-danger);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ==================== CARDS ==================== */
+
+.card-admin {
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+  box-shadow: var(--admin-shadow-sm);
+  transition: var(--admin-transition);
+}
+
+.card-admin:hover {
+  box-shadow: var(--admin-shadow);
+}
+
+.card-admin-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--admin-border-light);
+  background-color: var(--admin-background-light);
+  border-radius: 8px 8px 0 0;
+}
+
+.card-admin-body {
+  padding: 20px;
+}
+
+.card-admin-title {
+  color: var(--admin-primary);
+  font-weight: 600;
+  font-size: 18px;
+  margin: 0;
+}
+
+/* ==================== STATUS STRIP (TAB-LIKE) ==================== */
+
+.status-strip-admin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  justify-content: flex-start;
+  border-bottom: 2px solid var(--admin-border);
+  margin-bottom: 16px;
+}
+
+.status-strip-admin .btn {
+  flex: 0 1 auto;
+  min-width: 140px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  border: none;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-bottom: 3px solid transparent;
+  transition: var(--admin-transition);
+  cursor: pointer;
+  background-color: var(--admin-background-gray);
+  color: var(--admin-text-secondary);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+}
+
+.status-strip-admin .btn.active {
+  background-color: white;
+  color: var(--admin-primary);
+  border-bottom: 3px solid var(--admin-primary);
+}
+
+.status-strip-admin .btn:hover:not(.active) {
+  background-color: var(--admin-background-light);
+  color: var(--admin-primary);
+}
+
+/* ==================== SWITCHES (ANT DESIGN OVERRIDE) ==================== */
+
+.ant-switch-admin-primary.ant-switch-checked {
+  background-color: var(--admin-primary) !important;
+}
+
+.ant-switch-admin-primary.ant-switch-checked:hover {
+  background-color: var(--admin-primary-hover) !important;
+}
+
+/* ==================== MODALS & DRAWERS ==================== */
+
+.modal-admin-header {
+  background-color: var(--admin-primary-lightest);
+  border-bottom: 2px solid var(--admin-primary);
+  padding: 16px 24px;
+}
+
+.modal-admin-title {
+  color: var(--admin-primary);
+  font-weight: 600;
+  font-size: 20px;
+}
+
+/* ==================== LOADING & EMPTY STATES ==================== */
+
+.loading-admin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--admin-text-muted);
+}
+
+.empty-admin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--admin-text-muted);
+}
+
+.empty-admin-icon {
+  font-size: 48px;
+  color: var(--admin-border);
+  margin-bottom: 16px;
+}
+
+/* ==================== UTILITIES ==================== */
+
+.text-admin-primary {
+  color: var(--admin-primary) !important;
+}
+
+.bg-admin-primary {
+  background-color: var(--admin-primary) !important;
+}
+
+.bg-admin-primary-light {
+  background-color: var(--admin-primary-lightest) !important;
+}
+
+.border-admin-primary {
+  border-color: var(--admin-primary) !important;
+}
+
+/* ==================== HOVER EFFECTS ==================== */
+
+.hover-admin-primary:hover {
+  color: var(--admin-primary) !important;
+  transition: var(--admin-transition-fast);
+}
+
+.hover-admin-shadow:hover {
+  box-shadow: var(--admin-shadow);
+  transition: var(--admin-transition);
+}
+
+/* ==================== ANT DESIGN VUE OVERRIDES ==================== */
+
+/* Primary Button Override */
+.ant-btn-primary-admin {
+  background-color: var(--admin-primary) !important;
+  border-color: var(--admin-primary) !important;
+}
+
+.ant-btn-primary-admin:hover,
+.ant-btn-primary-admin:focus {
+  background-color: var(--admin-primary-hover) !important;
+  border-color: var(--admin-primary-hover) !important;
+}
+
+/* Radio Group Override */
+.ant-radio-group-admin .ant-radio-button-wrapper-checked {
+  background-color: var(--admin-primary) !important;
+  border-color: var(--admin-primary) !important;
+}
+
+.ant-radio-group-admin .ant-radio-button-wrapper:hover {
+  color: var(--admin-primary) !important;
+}
+
+/* Table Row Hover */
+.ant-table-admin .ant-table-tbody > tr:hover > td {
+  background-color: var(--admin-primary-lightest) !important;
+}
+
+/* Pagination */
+.ant-pagination-admin .ant-pagination-item-active {
+  border-color: var(--admin-primary) !important;
+}
+
+.ant-pagination-admin .ant-pagination-item-active a {
+  color: var(--admin-primary) !important;
+}
+
+/* Badge */
+.ant-badge-admin .ant-badge-count {
+  background-color: var(--admin-primary) !important;
+}
+
+/* Select Dropdown */
+.ant-select-admin:not(.ant-select-disabled):hover .ant-select-selector {
+  border-color: var(--admin-primary) !important;
+}
+
+.ant-select-admin.ant-select-focused .ant-select-selector {
+  border-color: var(--admin-primary) !important;
+  box-shadow: 0 0 0 2px var(--admin-primary-lightest) !important;
+}
+
+/* Input */
+.ant-input-admin:hover {
+  border-color: var(--admin-primary) !important;
+}
+
+.ant-input-admin:focus {
+  border-color: var(--admin-primary) !important;
+  box-shadow: 0 0 0 2px var(--admin-primary-lightest) !important;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .status-strip-admin .btn {
+    min-width: 100px;
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  
+  .btn-admin-pagination {
+    width: 70px;
+    height: 36px;
+    font-size: 13px;
+  }
+  
+  .card-admin-body {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 576px) {
+  .status-strip-admin {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .table-admin {
+    font-size: 13px;
+  }
+  
+  .table-admin thead th,
+  .table-admin tbody td {
+    padding: 8px 12px;
+  }
+}

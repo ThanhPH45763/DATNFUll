@@ -4589,7 +4589,7 @@ watch(variantTypes, (newTypes) => {
 
 /* Thêm hiệu ứng hover/focus */
 .ql-container:hover, .ql-toolbar:hover {
-  border-color: #f33b47;
+  border-color: #ff6600;
 }
 
 /* Style phù hợp với theme của ứng dụng */
@@ -4602,19 +4602,19 @@ watch(variantTypes, (newTypes) => {
 }
 
 .ql-toolbar button:hover .ql-stroke {
-  stroke: #f33b47;
+  stroke: #ff6600;
 }
 
 .ql-toolbar button:hover .ql-fill {
-  fill: #f33b47;
+  fill: #ff6600;
 }
 
 .ql-toolbar button.ql-active .ql-stroke {
-  stroke: #f33b47;
+  stroke: #ff6600;
 }
 
 .ql-toolbar button.ql-active .ql-fill {
-  fill: #f33b47;
+  fill: #ff6600;
 }
 
 /* ============ STYLES CHO UI CHỌN ẢNH CHO BIẾN THỂ ============ */
@@ -4760,7 +4760,7 @@ watch(variantTypes, (newTypes) => {
 }
 
 :deep(.ql-container:hover), :deep(.ql-toolbar:hover) {
-  border-color: #f33b47;
+  border-color: #ff6600;
 }
 
 :deep(.ql-toolbar .ql-stroke) {
@@ -4772,19 +4772,19 @@ watch(variantTypes, (newTypes) => {
 }
 
 :deep(.ql-toolbar button:hover .ql-stroke) {
-  stroke: #f33b47;
+  stroke: #ff6600;
 }
 
 :deep(.ql-toolbar button:hover .ql-fill) {
-  fill: #f33b47;
+  fill: #ff6600;
 }
 
 :deep(.ql-toolbar button.ql-active .ql-stroke) {
-  stroke: #f33b47;
+  stroke: #ff6600;
 }
 
 :deep(.ql-toolbar button.ql-active .ql-fill) {
-  fill: #f33b47;
+  fill: #ff6600;
 }
 
 /* Thêm vào phần style */

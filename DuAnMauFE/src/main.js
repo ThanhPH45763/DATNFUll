@@ -1,5 +1,7 @@
 import './assets/main.css'
 import './assets/smooth-scroll.css'  // Import CSS cho hiệu ứng cuộn mượt
+import './assets/admin-theme.css'  // Import Design System cho Admin
+import './assets/web-theme.css'  // Import Design System cho Web (Khách hàng)
 import './polyfills/global';
 
 import { createApp } from 'vue'

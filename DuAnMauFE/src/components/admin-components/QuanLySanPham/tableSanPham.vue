@@ -1664,9 +1664,9 @@ onUnmounted(() => {
 
 /* Style nút primary */
 :deep(.ant-btn-primary) {
-    background: #f33b47;
-    border-color: #f33b47;
-    box-shadow: 0 2px 5px rgba(243, 59, 71, 0.3);
+    background: #ff6600;
+    border-color: #ff6600;
+    box-shadow: 0 2px 5px rgba(255, 102, 0, 0.3);
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
@@ -1814,8 +1814,8 @@ onUnmounted(() => {
     justify-content: center;
     font-size: 18px;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    background-color: #f33b47;
-    border-color: #f33b47;
+    background-color: #ff6600;
+    border-color: #ff6600;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
     position: relative;
     overflow: hidden;
@@ -1872,7 +1872,7 @@ onUnmounted(() => {
 /* Style cho checkbox */
 :deep(.ant-checkbox) {
     .ant-checkbox-inner {
-        border-color: #f33b47;
+        border-color: #ff6600;
         border-radius: 4px;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
@@ -1883,8 +1883,8 @@ onUnmounted(() => {
     }
 
     &.ant-checkbox-checked .ant-checkbox-inner {
-        background-color: #f33b47;
-        border-color: #f33b47;
+        background-color: #ff6600;
+        border-color: #ff6600;
     }
 
     &.ant-checkbox-checked:hover .ant-checkbox-inner {
@@ -1893,7 +1893,7 @@ onUnmounted(() => {
     }
 
     &.ant-checkbox-indeterminate .ant-checkbox-inner::after {
-        background-color: #f33b47;
+        background-color: #ff6600;
     }
 }
 
@@ -1906,12 +1906,12 @@ onUnmounted(() => {
     }
 
     .ant-checkbox-checked::after {
-        border-color: #f33b47;
+        border-color: #ff6600;
     }
 
     .ant-checkbox-checked .ant-checkbox-inner {
-        background-color: #f33b47;
-        border-color: #f33b47;
+        background-color: #ff6600;
+        border-color: #ff6600;
         animation: checkboxEffect 0.36s ease-in-out;
     }
 

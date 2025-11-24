@@ -110,7 +110,7 @@
                                     <span class="ms-2">Đang tính toán...</span>
                                 </template>
                                 <template v-else>
-                                    <a-tag color="#f33b47">
+                                    <a-tag color="#ff6600">
                                         <strong>{{ previewFilterCount }}</strong> sản phẩm sẽ được hiển thị
                                     </a-tag>
                                 </template>
@@ -315,7 +315,7 @@
                 <template #footer>
                     <div class="d-flex justify-content-end align-items-center">
                         <a-button key="back" @click="importExcelModal = false">Hủy</a-button>
-                    <a-button key="submit" style="background-color: #f33b47" type="primary" :loading="uploadLoading" :disabled="countValidRows() === 0"
+                    <a-button key="submit" style="background-color: #ff6600" type="primary" :loading="uploadLoading" :disabled="countValidRows() === 0"
                             @click="saveExcelImport" class="d-flex align-items-center">
                             <save-outlined class="icon-filler" />
                             Lưu {{ countValidRows() }} sản phẩm
@@ -326,7 +326,7 @@
         </div>
         <template
             v-if="!store.checkRouter.includes('/quanlysanpham/add') && !store.checkRouter.includes('/quanlysanpham/update')">
-            <a-button v-if="store.id_roles !== 3" type="primary" style="background-color: #f33b47"
+            <a-button v-if="store.id_roles !== 3" type="primary" style="background-color: #ff6600"
                 @click="changeRouter('/admin/quanlysanpham/add')" class="d-flex align-items-center">
                 <PlusOutlined />
                 <span class="button-text">Thêm sản phẩm</span>
@@ -2068,7 +2068,7 @@ watch(() => luuBien.value, (newValue) => {
 }
 
 .upload-instructions .template-link {
-    color: #f33b47;
+    color: #ff6600;
     text-decoration: underline;
     cursor: pointer;
     font-weight: 500;
@@ -2083,8 +2083,8 @@ watch(() => luuBien.value, (newValue) => {
 }
 
 .upload-area.is-dragging {
-    border-color: #f33b47;
-    background-color: rgba(243, 59, 71, 0.05);
+    border-color: #ff6600;
+    background-color: rgba(255, 102, 0, 0.05);
 }
 
 .upload-area.has-file {
@@ -2242,8 +2242,8 @@ watch(() => luuBien.value, (newValue) => {
 
 :deep(.custom-select) {
     .ant-select-selector {
-        border-color: #f33b47 !important;
-        background-color: #f33b47 !important;
+        border-color: #ff6600 !important;
+        background-color: #ff6600 !important;
         border-radius: 6px !important;
         color: white !important;
         transition: all 0.3s ease;
@@ -2252,15 +2252,15 @@ watch(() => luuBien.value, (newValue) => {
     .ant-select-arrow,
     .ant-select-clear,
     .ant-select-selection-search-icon {
-        color: #f33b47 !important;
+        color: #ff6600 !important;
         transition: all 0.3s ease;
         color: white !important;
     }
 
     &:hover {
         .ant-select-selector {
-            border-color: #f33b47 !important;
-            background-color: #f33b47 !important;
+            border-color: #ff6600 !important;
+            background-color: #ff6600 !important;
             color: white !important;
         }
 
@@ -2273,10 +2273,10 @@ watch(() => luuBien.value, (newValue) => {
 
     &.ant-select-focused .ant-select-selector,
     &.ant-select-open .ant-select-selector {
-        border-color: #f33b47 !important;
-        background-color: #f33b47 !important;
+        border-color: #ff6600 !important;
+        background-color: #ff6600 !important;
         color: white !important;
-        box-shadow: 0 0 0 2px rgba(243, 59, 71, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.2) !important;
     }
 
     &.ant-select-focused,
@@ -2301,11 +2301,11 @@ watch(() => luuBien.value, (newValue) => {
     }
 
     .ant-select-item-option-active {
-        background-color: rgba(243, 59, 71, 0.1) !important;
+        background-color: rgba(255, 102, 0, 0.1) !important;
     }
 
     .ant-select-item-option-selected {
-        background-color: #f33b47 !important;
+        background-color: #ff6600 !important;
         color: white !important;
     }
 }

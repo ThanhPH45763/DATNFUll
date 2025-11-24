@@ -677,7 +677,7 @@ input[type="checkbox"] {
 }
 
 .action-button {
-    background-color: #d02c39;
+    background-color: #ff6600;
     color: #fff;
     padding: 10px 20px;
     border: none;
@@ -686,7 +686,7 @@ input[type="checkbox"] {
 }
 
 .action-button:hover {
-    background-color: #b02330;
+    background-color: #e55a00;
 }
 
 .action-button:disabled {

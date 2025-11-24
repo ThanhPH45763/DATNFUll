@@ -1,39 +1,50 @@
 <template>
-    <div class="banner-container mt-3" ref="sectionRef" :class="{ 'visible': isVisible }">
-        <div class="marquee-container">
-            <div class="marquee-content">
-                <div class="marquee-text">
-                    <span class="marquee-item marquee-item-star"><i class="fas fa-star"></i> Chào mừng đến với gian hàng
-                        của chúng tôi</span>
-                        <span class="marquee-separator"><i class="fas fa-circle"></i></span>
-                        <span class="marquee-item marquee-item-fire"><i class="fas fa-fire"></i> Giảm giá lên đến 30% cho
-                        nhiều sản phẩm</span>
-                    <span class="marquee-separator"><i class="fas fa-circle"></i></span>
-                    <span class="marquee-item marquee-item-truck"><i class="fas fa-shipping-fast"></i> Miễn phí vận
-                        chuyển cho đơn hàng trên 2.000.000đ</span>
-                </div>
+    <div class="banner-elegant" ref="sectionRef" :class="{ 'visible': isVisible }">
+        <!-- Elegant Promotional Banner (thay thế marquee) -->
+        <div class="promo-banner">
+            <div class="promo-content">
+                <span class="promo-item">
+                    <i class="fas fa-truck"></i>
+                    Miễn phí vận chuyển cho đơn hàng trên 2.000.000₫
+                </span>
+                <span class="promo-divider">|</span>
+                <span class="promo-item">
+                    <i class="fas fa-tag"></i>
+                    Giảm giá lên đến 30%
+                </span>
+                <span class="promo-divider">|</span>
+                <span class="promo-item">
+                    <i class="fas fa-shield-alt"></i>
+                    Đổi trả trong 30 ngày
+                </span>
             </div>
         </div>
-        <div class="carousel-wrapper" @mouseenter="showArrows = true" @mouseleave="showArrows = false">
-            <a-carousel arrows autoplay class="carousel" ref="carousel">
+
+        <!-- Hero Carousel -->
+        <div class="carousel-elegant" @mouseenter="showArrows = true" @mouseleave="showArrows = false">
+            <a-carousel arrows autoplay :autoplaySpeed="5000" class="carousel" ref="carousel">
                 <template #prevArrow>
-                    <div class="custom-slick-arrow custom-slick-prev" :class="{ 'visible': showArrows }">
-                        <left-circle-outlined />
+                    <div class="carousel-arrow carousel-prev" :class="{ 'visible': showArrows }">
+                        <left-outlined />
                     </div>
                 </template>
                 <template #nextArrow>
-                    <div class="custom-slick-arrow custom-slick-next" :class="{ 'visible': showArrows }">
-                        <right-circle-outlined />
+                    <div class="carousel-arrow carousel-next" :class="{ 'visible': showArrows }">
+                        <right-outlined />
                     </div>
                 </template>
-                <div class="borderImage">
-                    <img src="../images/banner/Banner-PC-3.png" alt="">
+                
+                <div class="carousel-slide">
+                    <img src="../images/banner/Banner-PC-3.png" alt="Banner chính">
+                    <div class="slide-overlay"></div>
                 </div>
-                <div class="borderImage">
-                    <img src="../images/banner/banner1.webp" alt="">
+                <div class="carousel-slide">
+                    <img src="../images/banner/banner1.webp" alt="Banner sản phẩm">
+                    <div class="slide-overlay"></div>
                 </div>
-                <div class="borderImage">
-                    <img src="../images/banner/slider_2.jpg" alt="">
+                <div class="carousel-slide">
+                    <img src="../images/banner/slider_2.jpg" alt="Banner khuyến mãi">
+                    <div class="slide-overlay"></div>
                 </div>
             </a-carousel>
         </div>
@@ -42,7 +53,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { LeftCircleOutlined, RightCircleOutlined } from '@ant-design/icons-vue';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons-vue';
 import { useIntersectionObserver } from '@vueuse/core';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
@@ -61,363 +72,266 @@ onMounted(() => {
                 stop(); // Dừng quan sát sau khi đã hiển thị
             }
         },
-        { threshold: 0.2 } // Hiển thị khi ít nhất 20% phần tử xuất hiện trong viewport
+        { threshold: 0.1 } // Hiển thị khi ít nhất 10% phần tử xuất hiện trong viewport
     );
 });
 </script>
 
 <style scoped>
-.banner-container {
+/* ===================================================
+   HERO BANNER - Elegant Men's Dress Shirt Design
+   =================================================== */
+
+.banner-elegant {
+    margin-top: var(--space-md);
     opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.8s ease, transform 0.8s ease;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
-.banner-container.visible {
+.banner-elegant.visible {
     opacity: 1;
     transform: translateY(0);
 }
 
-.marquee-container {
-    position: relative;
-    overflow: hidden;
-    height: 50px;
-    margin-bottom: 15px;
-    background: linear-gradient(45deg, #3a86ff, #5e60ce, #7209b7);
-    border-radius: 8px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    position: relative;
-    z-index: 1;
+/* ========== Promotional Banner (thay thế marquee) ========== */
+.promo-banner {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-lg);
+    box-shadow: var(--shadow-sm);
 }
 
-.marquee-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-    z-index: -1;
-    border-radius: 8px;
-}
-
-.marquee-content {
-    height: 100%;
+.promo-content {
     display: flex;
     align-items: center;
-    animation: marquee 15s linear infinite;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--space-lg);
+    font-family: var(--font-primary);
+    color: var(--color-white);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
 }
 
-.marquee-text {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    font-family: 'Montserrat', sans-serif;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    padding: 0 15px;
-}
-
-.marquee-item {
+.promo-item {
     display: inline-flex;
     align-items: center;
-    padding: 0 15px;
+    gap: var(--space-sm);
     white-space: nowrap;
-    transition: all 0.3s ease;
 }
 
-.marquee-item i {
-    margin-right: 10px;
-    font-size: 16px;
-    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+.promo-item i {
+    font-size: var(--text-base);
+    opacity: 0.9;
 }
 
-.marquee-item-star {
-    color: #ffdd00;
-    animation: pulse 2s infinite;
+.promo-divider {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: var(--text-lg);
 }
 
-.marquee-item-star i {
-    animation: spin 8s linear infinite;
+/* Subtle hover effect cho promo items */
+.promo-item:hover {
+    opacity: 0.85;
+    transition: opacity var(--transition-base);
 }
 
-.marquee-item-fire {
-    color: #ff9e00;
-    animation: pulse 2.2s infinite;
-}
-
-.marquee-item-fire i {
-    animation: flame 1.5s ease-in-out infinite alternate;
-}
-
-.marquee-item-truck {
-    color: #00ffcc;
-    animation: pulse 2.4s infinite;
-}
-
-.marquee-item-truck i {
-    animation: moveLeftRight 2s ease-in-out infinite;
-}
-
-.marquee-item-gift {
-    color: #ff71ce;
-    animation: pulse 2.6s infinite;
-}
-
-.marquee-item-gift i {
-    animation: bounce 1.5s ease infinite;
-}
-
-.marquee-separator {
-    display: inline-flex;
-    align-items: center;
-    margin: 0 15px;
-    opacity: 0.6;
-}
-
-.marquee-separator i {
-    font-size: 6px;
-    color: rgba(255, 255, 255, 0.8);
-    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
-}
-
-@keyframes marquee {
-    0% {
-        transform: translateX(0);
-    }
-
-    100% {
-        transform: translateX(-100%);
-    }
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-}
-
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes flame {
-    0% {
-        transform: scale(1) translateY(0);
-        opacity: 0.8;
-    }
-
-    100% {
-        transform: scale(1.2) translateY(-2px);
-        opacity: 1;
-    }
-}
-
-@keyframes moveLeftRight {
-    0% {
-        transform: translateX(-3px);
-    }
-
-    50% {
-        transform: translateX(3px);
-    }
-
-    100% {
-        transform: translateX(-3px);
-    }
-}
-
-@keyframes bounce {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-5px);
-    }
-}
-
-.carousel-wrapper {
+/* ========== Hero Carousel ========== */
+.carousel-elegant {
     position: relative;
-    margin-top: 15px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
 }
 
 .carousel {
     width: 100%;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.6s ease;
-    transition-delay: 0.3s;
 }
 
-.visible .carousel {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.borderImage {
-    height: 100%;
-    overflow: hidden;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+.carousel-slide {
     position: relative;
+    height: 500px;
+    overflow: hidden;
 }
 
-.borderImage::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0) 20%, rgba(0, 0, 0, 0) 80%, rgba(0, 0, 0, 0.1) 100%);
-    pointer-events: none;
-}
-
-.borderImage img {
+.carousel-slide img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.8s ease;
 }
 
-.borderImage:hover img {
-    transform: scale(1.03);
+/* Subtle overlay for better text readability if needed */
+.slide-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.05) 0%,
+        rgba(0, 0, 0, 0) 20%,
+        rgba(0, 0, 0, 0) 80%,
+        rgba(0, 0, 0, 0.1) 100%
+    );
+    pointer-events: none;
 }
 
-.custom-slick-arrow {
-    color: white;
-    background-color: rgba(0, 0, 0, 0.3);
-    font-size: 20px;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
+/* Subtle zoom effect on hover */
+.carousel-slide:hover img {
+    transform: scale(1.02);
+}
+
+/* ========== Carousel Navigation Arrows ========== */
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--color-primary);
+    border-radius: var(--radius-full);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 2;
+    z-index: 10;
+    font-size: var(--text-xl);
     opacity: 0;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-md);
 }
 
-.custom-slick-prev {
-    left: 15px;
-}
-
-.custom-slick-next {
-    right: 15px;
-}
-
-.custom-slick-arrow.visible {
-    opacity: 1;
-}
-
-.custom-slick-arrow:hover {
-    background-color: rgba(0, 0, 0, 0.5);
+.carousel-arrow:hover {
+    background-color: var(--color-primary);
+    color: var(--color-white);
     transform: translateY(-50%) scale(1.1);
 }
 
+.carousel-arrow.visible {
+    opacity: 1;
+}
+
+.carousel-prev {
+    left: var(--space-lg);
+}
+
+.carousel-next {
+    right: var(--space-lg);
+}
+
+/* ========== Ant Design Carousel Overrides ========== */
 :deep(.slick-slide) {
     text-align: center;
-    height: 450px;
-    line-height: 160px;
+    height: 500px;
     overflow: hidden;
 }
 
-:deep(.slick-arrow) {
-    z-index: 10;
+:deep(.slick-dots) {
+    bottom: var(--space-lg);
 }
 
-:deep(.slick-prev),
-:deep(.slick-next) {
-    font-size: 0;
-    line-height: 0;
-    position: absolute;
-    top: 50%;
-    display: block;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    transform: translate(0, -50%);
-    cursor: pointer;
-    color: transparent;
-    border: none;
-    outline: none;
-    background: transparent;
+:deep(.slick-dots li button) {
+    background: rgba(255, 255, 255, 0.5);
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-full);
+    transition: all var(--transition-base);
 }
 
+:deep(.slick-dots li.slick-active button) {
+    background: var(--color-white);
+    width: 30px;
+    border-radius: var(--radius-sm);
+}
+
+:deep(.slick-dots li button:hover) {
+    background: var(--color-white);
+}
+
+/* ========== Responsive Design ========== */
 @media (max-width: 1200px) {
+    .carousel-slide {
+        height: 450px;
+    }
+    
     :deep(.slick-slide) {
-        height: 400px;
+        height: 450px;
     }
 }
 
 @media (max-width: 992px) {
+    .carousel-slide {
+        height: 400px;
+    }
+    
     :deep(.slick-slide) {
-        height: 350px;
+        height: 400px;
+    }
+    
+    .promo-content {
+        font-size: var(--text-xs);
+        gap: var(--space-md);
     }
 }
 
 @media (max-width: 768px) {
+    .carousel-slide {
+        height: 350px;
+    }
+    
     :deep(.slick-slide) {
-        height: 300px;
+        height: 350px;
     }
-
-    .marquee-text {
-        font-size: 14px;
+    
+    .promo-banner {
+        padding: var(--space-sm) var(--space-md);
     }
-
-    .marquee-item i {
-        font-size: 14px;
+    
+    .promo-content {
+        flex-direction: column;
+        gap: var(--space-sm);
+        text-align: center;
+    }
+    
+    .promo-divider {
+        display: none;
+    }
+    
+    .carousel-arrow {
+        width: 40px;
+        height: 40px;
+        font-size: var(--text-lg);
+    }
+    
+    .carousel-prev {
+        left: var(--space-sm);
+    }
+    
+    .carousel-next {
+        right: var(--space-sm);
     }
 }
 
 @media (max-width: 576px) {
+    .carousel-slide {
+        height: 280px;
+    }
+    
     :deep(.slick-slide) {
-        height: 250px;
+        height: 280px;
     }
-
-    .marquee-text {
-        font-size: 12px;
+    
+    .banner-elegant {
+        margin-top: var(--space-sm);
     }
-
-    .marquee-item i {
-        font-size: 12px;
-    }
-
-    .marquee-separator {
-        margin: 0 10px;
-    }
-
-    .marquee-separator i {
-        font-size: 4px;
+    
+    .carousel-elegant {
+        border-radius: var(--radius-md);
     }
 }
 </style>

@@ -1623,7 +1623,7 @@ const resetForm = () => {
 }
 
 :deep(.ql-container:hover), :deep(.ql-toolbar:hover) {
-  border-color: #f33b47;
+  border-color: #ff6600;
 }
 
 :deep(.ql-toolbar .ql-stroke) {
@@ -1635,19 +1635,19 @@ const resetForm = () => {
 }
 
 :deep(.ql-toolbar button:hover .ql-stroke) {
-  stroke: #f33b47;
+  stroke: #ff6600;
 }
 
-:deep(.ql-toolbar button:hover .ql-fill) {
-  fill: #f33b47;
+.ql-toolbar button:hover .ql-fill {
+  fill: #ff6600;
 }
 
-:deep(.ql-toolbar button.ql-active .ql-stroke) {
-  stroke: #f33b47;
+.ql-toolbar button.ql-active .ql-stroke {
+  stroke: #ff6600;
 }
 
-:deep(.ql-toolbar button.ql-active .ql-fill) {
-  fill: #f33b47;
+.ql-toolbar button.ql-active .ql-fill {
+  fill: #ff6600;
 }
 
 /* ============ CUSTOM IMAGE ITEM WITH BADGE ============ */

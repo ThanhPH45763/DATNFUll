@@ -68,7 +68,7 @@
     <!-- Tiêu đề và chọn số lượng hiển thị -->
     <div class="card p-3 border-0 mt-4">
       <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
-        <h5 class="fw-bold mb-0" style="color: #f33b47;">📋 Danh sách voucher</h5>
+        <h5 class="fw-bold mb-0" style="color: #ff6600;">📋 Danh sách voucher</h5>
         <div class="d-flex align-items-center">
           <label for="limitSelect" class="me-2 fw-medium text-muted mb-0">Hiển thị:</label>
           <select id="limitSelect" class="form-select form-select-sm w-auto" v-model="pageSize">
@@ -118,14 +118,15 @@
             <td>{{ formatDate(voucher.ngayHetHan) }}</td>
             <td>{{ voucher.trangThai }}</td>
             <td>
-              <button class="btn btn-outline-danger btn-sm" 
+              <button class="btn btn-sm" 
                       v-if="voucher.trangThai !== 'Đã kết thúc'"
-                      @click="router.push(`/admin/quanlyvoucher/update/${voucher.id}`)">
+                      @click="router.push(`/admin/quanlyvoucher/update/${voucher.id}`)"
+                      style="background-color: white; border-color: #ff6600; color: #ff6600;">
                 <i class="fas fa-edit me-1"></i>Sửa
               </button>
               <a-switch v-if="voucher.trangThai === 'Đang diễn ra'"
                         :checked="true" 
-                        :style="{ backgroundColor: '#f33b47' }" 
+                        :style="{ backgroundColor: '#ff6600' }" 
                         @click="offVoucher(voucher.id)" />
             </td>
           </tr>
@@ -284,8 +285,8 @@ onUnmounted(() => {
 .buttonPT {
   background-color: transparent;
   text-align: center;
-  color: #d02c39;
-  border: 2px solid #f33b47;
+  color: #ff6600;
+  border: 2px solid #ff6600;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
   width: 70px;
@@ -295,18 +296,18 @@ onUnmounted(() => {
 }
 
 .buttonPT:hover {
-  background-color: #f33b47;
+  background-color: #ff6600;
   color: white;
 }
 
 .buttonADD {
-  background-color: #d02c39;
+  background-color: #ff6600;
   color: white;
   font-weight: bold;
 }
 
 .buttonADD:hover {
-  background-color: #f33b47;
+  background-color: #e55a00;
   color: white;
 }
 
@@ -314,7 +315,7 @@ onUnmounted(() => {
   appearance: none;
   width: 16px;
   height: 16px;
-  border: 1px solid #f33b47;
+  border: 1px solid #ff6600;
   border-radius: 50%;
   display: inline-block;
   position: relative;
@@ -325,7 +326,7 @@ onUnmounted(() => {
   content: "";
   width: 8px;
   height: 8px;
-  background-color: #f33b47;
+  background-color: #ff6600;
   border-radius: 50%;
   position: absolute;
   top: 50%;
@@ -341,5 +342,18 @@ onUnmounted(() => {
 .form-check-input:focus-visible {
   box-shadow: none;
   outline: none;
+}
+
+/* Nút edit */
+.btn-sm {
+  transition: all 0.3s ease-in-out;
+}
+
+.btn-sm:hover {
+  background-color: #ffe0cc !important;
+  border-color: #ff6600 !important;
+  color: #e55a00 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 102, 0, 0.2);
 }
 </style>

@@ -849,18 +849,39 @@ const updateProductFromVariant = (variant) => {
     product.value.danh_muc = variant.ten_danh_muc;
     product.value.chat_lieu = variant.ten_chat_lieu;
 
-    // Cập nhật giá
-    product.value.gia_goc = variant.giaGoc;
-    product.value.gia_khuyen_mai = variant.giaHienTai;
+    // DEBUG: Log giá từ backend
+    console.log('=== GIÁ TỪ VARIANT ===');
+    console.log('giaGoc:', variant.giaGoc);
+    console.log('giaHienTai:', variant.giaHienTai);
+    console.log('kieuKhuyenMai:', variant.kieuKhuyenMai);
+    console.log('giaTriKhuyenMai:', variant.giaTriKhuyenMai);
 
-    // Kiểm tra nếu có khuyến mãi
-    if (variant.kieuKhuyenMai && variant.giaTriKhuyenMai) {
+    // Cập nhật giá
+    // giaGoc = giá gốc ban đầu
+    // giaHienTai = giá HIỆN TẠI (đã áp dụng khuyến mãi nếu có)
+    product.value.gia_goc = variant.giaGoc || 0;
+    product.value.gia_khuyen_mai = variant.giaHienTai || variant.giaGoc || 0;
+
+    // Kiểm tra nếu có khuyến mãi (giaHienTai < giaGoc)
+    if (variant.giaGoc && variant.giaHienTai && variant.giaHienTai < variant.giaGoc) {
+        product.value.giam_gia = true;
+        // Tính phần trăm giảm giá từ 2 giá
+        product.value.phan_tram_giam_gia = Math.round(((variant.giaGoc - variant.giaHienTai) / variant.giaGoc) * 100);
+    } else if (variant.kieuKhuyenMai && variant.giaTriKhuyenMai) {
+        // Fallback: nếu có kieuKhuyenMai và giaTriKhuyenMai
         product.value.giam_gia = true;
         product.value.phan_tram_giam_gia = variant.giaTriKhuyenMai;
     } else {
         product.value.giam_gia = false;
         product.value.phan_tram_giam_gia = 0;
     }
+
+    console.log('=== GIÁ SAU KHI CẬP NHẬT ===');
+    console.log('gia_goc:', product.value.gia_goc);
+    console.log('gia_khuyen_mai:', product.value.gia_khuyen_mai);
+    console.log('giam_gia:', product.value.giam_gia);
+    console.log('phan_tram_giam_gia:', product.value.phan_tram_giam_gia);
+
 
     // Cập nhật đánh giá
     product.value.danh_gia = variant.danh_gia_trung_binh || 0;

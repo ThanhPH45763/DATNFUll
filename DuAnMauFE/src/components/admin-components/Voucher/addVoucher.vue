@@ -1,7 +1,7 @@
 
 <template>
   <div class="container-fluid">
-    <h3 class="fw-bold mb-4" style="color: #f33b47;">Thêm Voucher</h3>
+    <h3 class="fw-bold mb-4" style="color: #ff6600;">Thêm Voucher</h3>
     <form @submit.prevent="submitForm">
       <div class="row g-3">
         <div class="col-md-6">
@@ -337,14 +337,14 @@ const submitForm = async () => {
 
 <style scoped>
 .btn-primary {
-  background-color: #d02c39;
-  border-color: #d02c39;
+  background-color: #ff6600;
+  border-color: #ff6600;
   font-weight: bold;
 }
 
 .btn-primary:hover {
-  background-color: #f33b47;
-  border-color: #f33b47;
+  background-color: #e65c00;
+  border-color: #e65c00;
 }
 
 .is-invalid {

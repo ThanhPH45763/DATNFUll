@@ -100,7 +100,7 @@
           <div v-if="orderFound" class="order-details">
               <a-row :gutter="16">
                   <a-col :md="17">
-                      <h2 style="color: #f33b47;">Trả hàng hoàn tiền #{{ orderDetail.ma_hoa_don || 'N/A' }}</h2>
+                      <h2 style="color: #ff6600;">Trả hàng hoàn tiền #{{ orderDetail.ma_hoa_don || 'N/A' }}</h2>
                   </a-col>
                   <a-col :md="7" class="text-right">
                       <a-button type="primary" @click="resetSearch">Tìm đơn hàng khác</a-button>
@@ -269,7 +269,7 @@
                                       <p>Tổng tiền hoàn:</p>
                                   </a-col>
                                   <a-col :md="4" style="text-align: right;">
-                                      <h6 style="color: #f33b47;">{{ formatCurrency(totalRefundForDB) }} VNĐ</h6>
+                                      <h6 style="color: #ff6600;">{{ formatCurrency(totalRefundForDB) }} VNĐ</h6>
                                   </a-col>
                               </a-row>
                           </div>

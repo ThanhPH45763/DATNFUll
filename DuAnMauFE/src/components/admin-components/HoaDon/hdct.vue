@@ -8,7 +8,7 @@
             <div class="order-header">
                 <a-row :gutter="16">
                     <a-col :md="17">
-                        <h2 style="color: #f33b47;">Thông tin chi tiết đơn hàng {{ store.hoaDonDetail.loai_hoa_don }}
+                        <h2 style="color: #ff6600;">Thông tin chi tiết đơn hàng {{ store.hoaDonDetail.loai_hoa_don }}
                             #{{
                                 store.hoaDonDetail.ma_hoa_don || 'N/A' }}</h2>
                     </a-col>
@@ -444,7 +444,7 @@
                                     {{ formatCurrency(record.tien_hoan) }} VNĐ
                                 </template>
                                 <template v-if="column.key === 'trang_thai'">
-                                    <span style="color: #f33b47;">Trả hàng</span>
+                                    <span style="color: #ff6600;">Trả hàng</span>
                                 </template>
                             </template>
                         </a-table>

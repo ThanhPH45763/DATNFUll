@@ -1,173 +1,192 @@
 <template>
-    <footer class="footer-container">
+    <footer class="footer-elegant">
         <div class="footer-content">
+            <!-- Brand Section -->
             <div class="footer-brand">
                 <div class="logo-container">
                     <img src="../images/logo/logo2.png" class="footer-logo" alt="G&B Sports Logo">
                 </div>
                 <p class="brand-description">
-                    Chúng tôi luôn muốn mang đến những sản phẩm quần áo thể thao tốt nhất cho người tiêu dùng.
-                    Chỉ một khách hàng hài lòng đều là một niềm vui của chúng tôi!
+                    Chuyên cung cấp áo sơ mi nam cao cấp với chất liệu tốt nhất. 
+                    Sự hài lòng của quý khách là niềm tự hào của chúng tôi.
                 </p>
                 <div class="social-icons">
-                    <a href="#" class="social-link">
+                    <a href="#" class="social-link" aria-label="Facebook">
                         <Facebook class="icon" />
                     </a>
-                    <a href="#" class="social-link">
+                    <a href="#" class="social-link" aria-label="Instagram">
                         <Instagram class="icon" />
                     </a>
-                    <a href="#" class="social-link">
+                    <a href="#" class="social-link" aria-label="Youtube">
                         <Youtube class="icon" />
                     </a>
                 </div>
             </div>
 
+            <!-- Links Sections -->
             <div class="footer-links-container">
                 <div class="footer-section">
-                    <h3 class="footer-heading">Bạn cần hỗ trợ</h3>
+                    <h3 class="footer-heading">Hỗ trợ khách hàng</h3>
                     <div class="contact-info">
                         <p class="contact-item">
                             <span class="contact-label">Hotline:</span>
                             <span class="contact-value">0989 864 737</span>
                         </p>
                         <p class="contact-item">
-                            <span class="contact-label">Địa chỉ:</span>
-                            <span class="contact-value">Cao đẳng FPT Polytechnic, Trịnh Văn Bô, nam Từ Liêm, Hà
-                                Nội</span>
-                        </p>
-                        <p class="contact-item">
                             <span class="contact-label">Email:</span>
                             <span class="contact-value">chinhhtph46334@fpt.edu.vn</span>
+                        </p>
+                        <p class="contact-item">
+                            <span class="contact-label">Địa chỉ:</span>
+                            <span class="contact-value">Cao đẳng FPT Polytechnic, Trịnh Văn Bô, Nam Từ Liêm, Hà Nội</span>
                         </p>
                     </div>
                 </div>
 
                 <div class="footer-section">
-                    <h3 class="footer-heading">Hỗ trợ khách hàng</h3>
+                    <h3 class="footer-heading">Dịch vụ</h3>
                     <ul class="footer-links">
                         <li><a href="#" class="footer-link">Đặt hàng</a></li>
-                        <li><a href="#" class="footer-link">C/s hỗ trợ</a></li>
-                        <li><a href="#" class="footer-link">Thắc mắc</a></li>
-                        <li><a href="#" class="footer-link">Đóng góp</a></li>
+                        <li><a href="#" class="footer-link">Chính sách đổi trả</a></li>
+                        <li><a href="#" class="footer-link">Hướng dẫn chọn size</a></li>
+                        <li><a href="#" class="footer-link">Chăm sóc sản phẩm</a></li>
                     </ul>
-                    
                 </div>
+
                 <div class="footer-section">
-                    <h3 class="footer-heading">Cửa hàng</h3>
+                    <h3 class="footer-heading">Thông tin</h3>
                     <ul class="footer-links">
-                        <li @click="router.push('/home')" style="cursor: pointer;"><a class="footer-link">Trang chủ</a></li>
-                        <li @click="router.push('/cuaHang')" style="cursor: pointer;"><a class="footer-link">Giới thiệu</a></li>
-                        <li @click="router.push('/hoTro')" style="cursor: pointer;"><a class="footer-link">Liên hệ</a></li>
+                        <li @click="router.push('/home')" style="cursor: pointer;">
+                            <a class="footer-link">Trang chủ</a>
+                        </li>
+                        <li @click="router.push('/cuaHang')" style="cursor: pointer;">
+                            <a class="footer-link">Giới thiệu</a>
+                        </li>
+                        <li @click="router.push('/hoTro')" style="cursor: pointer;">
+                            <a class="footer-link">Liên hệ</a>
+                        </li>
                     </ul>
                     <div class="certification">
                         <img src="../images/logo/boCongThuong.webp" alt="Bộ Công Thương" class="certification-img">
                     </div>
                 </div>
-
             </div>
         </div>
 
         <div class="footer-bottom">
-            <p class="copyright"> Bản quyền thuộc về G&B Sports | Thiết kế 2025</p>
+            <p class="copyright">© 2025 G&B Sports. Bản quyền thuộc về công ty.</p>
         </div>
     </footer>
 </template>
 
 <script setup>
-import { useRouter, useRoute } from 'vue-router';
-const router = useRouter();
+import { useRouter } from 'vue-router';
+import { Facebook, Instagram, Youtube } from 'lucide-vue-next';
 
+const router = useRouter();
 </script>
 
 <style scoped>
-.footer-container {
-    background: linear-gradient(to right, #f5f4f5, #e9e9e9);
-    padding: 3rem 0 1rem;
-    color: #333;
-    font-family: 'Arial', sans-serif;
+/* ===================================================
+   FOOTER - Elegant Men's Dress Shirt Design
+   =================================================== */
+
+.footer-elegant {
+    background-color: var(--color-primary);
+    color: var(--color-cream);
+    padding: var(--space-3xl) 0 var(--space-lg);
+    font-family: var(--font-primary);
     width: 100%;
+    margin-top: var(--space-3xl);
 }
 
 .footer-content {
     display: flex;
     flex-wrap: wrap;
-    width: 100%;
+    max-width: var(--container-max);
     margin: 0 auto;
-    padding: 0 3rem;
+    padding: 0 var(--space-xl);
+    gap: var(--space-xl);
 }
 
+/* ========== Brand Section ========== */
 .footer-brand {
-    flex: 0 0 25%;
-    padding-right: 2rem;
-    border-right: 1px solid #ddd;
+    flex: 0 0 30%;
+    min-width: 280px;
 }
 
 .logo-container {
-    display: flex;
-    justify-content: flex-start;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--space-lg);
 }
 
 .footer-logo {
     width: 150px;
     height: auto;
+    filter: brightness(0) invert(1);
+    opacity: 0.9;
 }
 
 .brand-description {
-    font-size: 0.9rem;
-    line-height: 1.6;
-    color: #555;
-    margin-bottom: 1.5rem;
+    font-size: var(--text-sm);
+    line-height: 1.8;
+    color: var(--color-cream);
+    margin-bottom: var(--space-lg);
+    opacity: 0.9;
 }
 
+/* ========== Social Icons ========== */
 .social-icons {
     display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
+    gap: var(--space-md);
 }
 
 .social-link {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background-color: #f0f0f0;
-    transition: all 0.3s ease;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all var(--transition-base);
 }
 
 .social-link:hover {
-    background-color: #e0e0e0;
-    transform: translateY(-3px);
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
 }
 
 .icon {
     width: 20px;
     height: 20px;
-    color: #555;
+    color: var(--color-white);
 }
 
+/* ========== Links Container ========== */
 .footer-links-container {
-    flex: 0 0 75%;
+    flex: 1;
     display: flex;
     flex-wrap: wrap;
-    padding-left: 2rem;
+    gap: var(--space-xl);
 }
 
 .footer-section {
     flex: 1;
     min-width: 200px;
-    padding: 0 1rem;
 }
 
+/* ========== Footer Headings ========== */
 .footer-heading {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 1.2rem;
-    color: #333;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    margin-bottom: var(--space-lg);
+    color: var(--color-white);
     position: relative;
-    padding-bottom: 0.5rem;
+    padding-bottom: var(--space-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .footer-heading:after {
@@ -177,28 +196,33 @@ const router = useRouter();
     left: 0;
     width: 40px;
     height: 2px;
-    background-color: #003887;
+    background-color: var(--color-accent);
 }
 
+/* ========== Contact Info ========== */
 .contact-info {
-    margin-top: 1rem;
+    margin-top: var(--space-md);
 }
 
 .contact-item {
-    margin-bottom: 0.8rem;
-    font-size: 0.9rem;
-    line-height: 1.5;
+    margin-bottom: var(--space-md);
+    font-size: var(--text-sm);
+    line-height: 1.6;
 }
 
 .contact-label {
-    font-weight: 600;
-    color: #444;
+    font-weight: var(--weight-semibold);
+    color: var(--color-white);
+    display: block;
+    margin-bottom: var(--space-xs);
 }
 
 .contact-value {
-    color: #555;
+    color: var(--color-cream);
+    opacity: 0.9;
 }
 
+/* ========== Footer Links ========== */
 .footer-links {
     list-style: none;
     padding: 0;
@@ -206,77 +230,117 @@ const router = useRouter();
 }
 
 .footer-links li {
-    margin-bottom: 0.7rem;
+    margin-bottom: var(--space-sm);
 }
 
 .footer-link {
-    color: #555;
+    color: var(--color-cream);
     text-decoration: none;
-    font-size: 0.9rem;
-    transition: color 0.3s ease;
-    position: relative;
-    padding-left: 0.8rem;
-}
-
-.footer-link:before {
-    content: '›';
-    position: absolute;
-    left: 0;
-    color: #003089;
+    font-size: var(--text-sm);
+    transition: all var(--transition-base);
+    display: inline-block;
+    opacity: 0.9;
 }
 
 .footer-link:hover {
-    color: #00379c;
+    color: var(--color-accent);
+    transform: translateX(4px);
 }
 
+/* ========== Certification ========== */
 .certification {
-    margin-top: 1rem;
+    margin-top: var(--space-lg);
 }
 
 .certification-img {
     width: 120px;
     height: auto;
+    opacity: 0.8;
+    transition: opacity var(--transition-base);
 }
 
+.certification-img:hover {
+    opacity: 1;
+}
+
+/* ========== Footer Bottom ========== */
 .footer-bottom {
     text-align: center;
-    padding-top: 2rem;
-    margin-top: 2rem;
-    border-top: 1px solid #ddd;
-    width: 100%;
+    padding-top: var(--space-xl);
+    margin-top: var(--space-xl);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: var(--container-max);
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .copyright {
-    font-size: 0.9rem;
-    color: #777;
+    font-size: var(--text-sm);
+    color: var(--color-cream);
+    opacity: 0.7;
 }
 
+/* ========== Responsive Design ========== */
 @media (max-width: 992px) {
     .footer-brand {
         flex: 0 0 100%;
-        border-right: none;
-        border-bottom: 1px solid #ddd;
-        padding-bottom: 2rem;
-        margin-bottom: 2rem;
-        padding-right: 0;
+        text-align: center;
+        margin-bottom: var(--space-xl);
+        padding-bottom: var(--space-xl);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .footer-links-container {
-        flex: 0 0 100%;
-        padding-left: 0;
+    .logo-container {
+        display: flex;
+        justify-content: center;
+    }
+
+    .social-icons {
+        justify-content: center;
+    }
+
+    .footer-heading:after {
+        left: 50%;
+        transform: translateX(-50%);
     }
 }
 
 @media (max-width: 768px) {
+    .footer-content {
+        padding: 0 var(--space-lg);
+    }
+
     .footer-section {
-        flex: 0 0 50%;
-        margin-bottom: 2rem;
+        flex: 0 0 48%;
     }
 }
 
 @media (max-width: 576px) {
+    .footer-elegant {
+        padding: var(--space-2xl) 0 var(--space-md);
+    }
+
+    .footer-content {
+        padding: 0 var(--space-md);
+    }
+
     .footer-section {
         flex: 0 0 100%;
+        text-align: center;
+        margin-bottom: var(--space-xl);
+    }
+
+    .footer-heading:after {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .contact-item {
+        text-align: center;
+    }
+
+    .footer-link:hover {
+        transform: none;
     }
 }
 </style>

@@ -25,7 +25,7 @@
     <!-- Card chứa tiêu đề và select số lượng hiển thị -->
     <div class="card p-3 border-0">
       <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
-        <h5 class="fw-bold mb-0" style="color: #f33b47;">📋 Danh sách khách hàng</h5>
+        <h5 class="fw-bold mb-0" style="color: #ff6600;">📋 Danh sách khách hàng</h5>
         <div class="d-flex align-items-center">
           <label for="limitSelect" class="me-2 fw-medium text-muted mb-0">Hiển thị:</label>
           <select id="limitSelect" class="form-select form-select-sm w-auto" v-model="pageSize">
@@ -71,17 +71,19 @@
               <td>{{ diaChiMap[khachHang.idKhachHang] || 'Chưa có địa chỉ' }}</td>
               <td>
                 <a-switch :checked="khachHang.trangThai === 'Đang hoạt động'" :style="{
-                  backgroundColor: khachHang.trangThai === 'Đang hoạt động' ? '#f33b47' : '#ccc'
+                  backgroundColor: khachHang.trangThai === 'Đang hoạt động' ? '#ff6600' : '#ccc'
                 }" @change="confirmChuyenTrangThai(khachHang.idKhachHang)" />
               </td>
               <td>
                 <div class="d-flex gap-2 align-items-center">
-                  <button class="btn btn-outline-danger btn-sm"
-                    @click="router.push(`/admin/quanlykhachhang/update/${khachHang.idKhachHang}`)">
+                  <button class="btn btn-sm"
+                    @click="router.push(`/admin/quanlykhachhang/update/${khachHang.idKhachHang}`)"
+                    style="background-color: white; border-color: #ff6600; color: #ff6600;">
                     <i class="fas fa-edit"></i> Sửa
                   </button>
-                  <button class="btn btn-outline-danger btn-sm text-nowrap small-text"
-                    @click="confirmShowDetail(khachHang.idKhachHang)">
+                  <button class="btn btn-sm text-nowrap small-text"
+                    @click="confirmShowDetail(khachHang.idKhachHang)"
+                    style="background-color: white; border-color: #ff6600; color: #ff6600;">
                     <i class="fas fa-eye"></i> Xem chi tiết
                   </button>
                 </div>
@@ -268,21 +270,39 @@ onMounted(() => {
 }
 
 .buttonADD {
-  background-color: #d02c39;
+  background-color: #ff6600;
   color: white;
   font-weight: bold;
 }
 
 .buttonADD:hover {
-  background-color: #f33b47;
+  background-color: #e65c00;
   color: white;
+}
+
+.btn-primary {
+  background-color: #ff6600;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #e65c00;
+}
+
+.btn-icon {
+  padding: 5px 10px;
+  border: 1px solid #ff6600;
+}
+
+.btn-icon:hover {
+  background-color: #ff6600;
 }
 
 .form-check-input {
   appearance: none;
   width: 16px;
   height: 16px;
-  border: 1px solid #f33b47;
+  border: 1px solid #ff6600;
   border-radius: 50%;
   display: inline-block;
   position: relative;
@@ -293,12 +313,13 @@ onMounted(() => {
   content: "";
   width: 8px;
   height: 8px;
-  background-color: #f33b47;
+  background-color: #ff6600;
   border-radius: 50%;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  color: white;
 }
 
 .form-check-input:focus {
@@ -309,8 +330,8 @@ onMounted(() => {
 .buttonPT {
   background-color: transparent;
   text-align: center;
-  color: #d02c39;
-  border: 2px solid #f33b47;
+  color: #ff6600;
+  border: 2px solid #ffa500;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
   width: 70px;
@@ -320,7 +341,7 @@ onMounted(() => {
 }
 
 .buttonPT:hover {
-  background-color: #f33b47;
+  background-color: #ff6600;
   color: white;
 }
 
@@ -345,5 +366,18 @@ onMounted(() => {
   font-size: 14px;
   min-width: 200px;
   text-align: center;
+}
+
+/* Hover effects cho nút Sửa và Xem chi tiết */
+.btn-sm {
+  transition: all 0.3s ease-in-out;
+}
+
+.btn-sm:hover {
+  background-color: #ffe0cc !important;
+  border-color: #ff6600 !important;
+  color: #e55a00 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 102, 0, 0.2);
 }
 </style>

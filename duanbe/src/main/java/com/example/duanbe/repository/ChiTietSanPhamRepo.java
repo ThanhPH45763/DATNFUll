@@ -165,19 +165,42 @@ public interface ChiTietSanPhamRepo
             KhuyenMaiHieuLuc AS (
                 SELECT
                     ctkm.id_chi_tiet_san_pham,
+                    GiamGia = CASE
+                        WHEN km.kieu_giam_gia = N'Phần trăm' THEN
+                            CASE
+                                WHEN ctsp.gia_ban * km.gia_tri_giam / 100 > ISNULL(km.gia_tri_toi_da, 999999999)
+                                    THEN ctsp.gia_ban - km.gia_tri_toi_da
+                                ELSE ctsp.gia_ban * (1 - km.gia_tri_giam / 100)
+                            END
+                        WHEN km.kieu_giam_gia = N'Tiền mặt' THEN ctsp.gia_ban - km.gia_tri_giam
+                        ELSE ctsp.gia_ban
+                    END,
                     km.kieu_giam_gia,
                     km.gia_tri_giam,
                     ROW_NUMBER() OVER (
                         PARTITION BY ctkm.id_chi_tiet_san_pham
-                        ORDER BY km.ngay_bat_dau DESC
+                        ORDER BY
+                            CASE
+                                WHEN km.kieu_giam_gia = N'Phần trăm' THEN
+                                    CASE
+                                        WHEN ctsp.gia_ban * km.gia_tri_giam / 100 > ISNULL(km.gia_tri_toi_da, 999999999)
+                                            THEN ctsp.gia_ban - km.gia_tri_toi_da
+                                        ELSE ctsp.gia_ban * (1 - km.gia_tri_giam / 100)
+                                    END
+                                WHEN km.kieu_giam_gia = N'Tiền mặt' THEN ctsp.gia_ban - km.gia_tri_giam
+                                ELSE ctsp.gia_ban
+                            END ASC
                     ) AS rn
                 FROM chi_tiet_khuyen_mai ctkm
                 JOIN khuyen_mai km ON ctkm.id_khuyen_mai = km.id_khuyen_mai
+                JOIN chi_tiet_san_pham ctsp ON ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham
                 WHERE DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+                  AND km.trang_thai = N'Đang diễn ra'
             ),
             KhuyenMaiHieuLucNhat AS (
                 SELECT
                     id_chi_tiet_san_pham,
+                    GiamGia,
                     kieu_giam_gia,
                     gia_tri_giam
                 FROM KhuyenMaiHieuLuc
@@ -220,13 +243,7 @@ public interface ChiTietSanPhamRepo
                 COALESCE(dgs.danh_gia_trung_binh, 0) AS danh_gia_trung_binh,
                 COALESCE(dgs.so_luong_danh_gia, 0) AS so_luong_danh_gia,
                 ctsp.gia_ban AS GiaGoc,
-                COALESCE(
-                    CASE
-                        WHEN kh.kieu_giam_gia = 'Phần trăm' THEN ctsp.gia_ban * (1 - kh.gia_tri_giam / 100.0)
-                        WHEN kh.kieu_giam_gia = 'Tiền mặt' THEN ctsp.gia_ban - kh.gia_tri_giam
-                    END,
-                    ctsp.gia_ban
-                ) AS GiaHienTai,
+                COALESCE(kh.GiamGia, ctsp.gia_ban) AS GiaHienTai,
                 kh.gia_tri_giam AS GiaTriKhuyenMai,
                 kh.kieu_giam_gia AS KieuKhuyenMai,
                 ctsp.trang_thai

@@ -717,7 +717,7 @@ public class KhachHangController {
             LichSuDangNhap lichSuDangNhap = new LichSuDangNhap();
             lichSuDangNhap.setKhachHang(khachHang);
             lichSuDangNhap.setNgay_dang_nhap(LocalDateTime.now());
-            lichSuDangNhap.setIp_adress(ipAddress);
+            lichSuDangNhap.setIp_address(request.getRemoteAddr());
             lichSuDangNhapRepo.save(lichSuDangNhap);
 
             // Trả về thông tin đăng nhập

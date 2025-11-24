@@ -36,7 +36,7 @@
         </div>
     </div>
     <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
-        <h5 class="fw-bold mb-0" style="color: #f33b47;">📋 Danh sách đơn hàng</h5>
+        <h5 class="fw-bold mb-0" style="color: #ff6600;">📋 Danh sách đơn hàng</h5>
         <div class="search-container">
             <input type="text" class="form-control" placeholder="Tìm kiếm hóa đơn..." v-model="searchKeyword"
                 @input="handleSearch" />
@@ -104,14 +104,14 @@
                     <td>
                         <button class="btn d-flex align-items-center shadow-sm"
                             @click="router.push(`/admin/hoadon/hdct/${hoaDon.ma_hoa_don}`)">
-                            <i class="bi bi-eye" style="color: #f33b47;"></i>
+                            <i class="bi bi-eye" style="color: #ff6600;"></i>
                         </button>
                     </td>
                 </tr>
             </tbody>
             <tbody>
                 <tr v-if="!store.getAllHoaDonArr || store.getAllHoaDonArr.length === 0">
-                    <td colspan="10" class="text-center" style="color: #f33b47;">Không tìm thấy hóa đơn bạn muốn tìm!
+                    <td colspan="10" class="text-center" style="color: #ff6600;">Không tìm thấy hóa đơn bạn muốn tìm!
                     </td>
                 </tr>
                 <tr v-else v-for="(hoaDon, index) in store.getAllHoaDonArr" :key="hoaDon.id_hoa_don">
@@ -300,8 +300,8 @@ onUnmounted(() => {
 .buttonPT {
     background-color: transparent;
     text-align: center;
-    color: #d02c39;
-    border: 2px solid #f33b47;
+    color: #ff6600;
+    border: 2px solid #ff6600;
     cursor: pointer;
     transition: all 0.3s ease-in-out;
     width: 70px;
@@ -311,7 +311,7 @@ onUnmounted(() => {
 }
 
 .buttonPT:hover {
-    background-color: #f33b47;
+    background-color: #ff6600;
     color: white;
 }
 
@@ -363,10 +363,10 @@ onUnmounted(() => {
 .status-strip .btn-primary {
     background-color: #ffffff;
     /* Nền trắng */
-    color: #f33b47;
-    /* Màu xanh dương đậm */
-    border-bottom: 2px solid #f33b47;
-    /* Đường viền dưới xanh dương */
+    color: #ff6600;
+    /* Màu cam */
+    border-bottom: 2px solid #ff6600;
+    /* Đường viền dưới cam */
     font-weight: bold;
 }
 
@@ -384,18 +384,18 @@ onUnmounted(() => {
 .status-strip .btn-outline-primary:hover {
     background-color: #ffffff;
     /* Nền trắng khi hover */
-    color: #f33b47;
-    /* Màu xanh dương khi hover */
-    border-bottom: 2px solid #f33b47;
-    /* Đường viền dưới xanh dương khi hover */
+    color: #ff6600;
+    /* Màu cam khi hover */
+    border-bottom: 2px solid #ff6600;
+    /* Đường viền dưới cam khi hover */
 }
 
 /* Hover cho nút đang được chọn */
 .status-strip .btn-primary:hover {
     background-color: #ffffff;
     /* Giữ nguyên nền trắng */
-    color: #f33b47;
-    /* Màu xanh dương đậm hơn */
+    color: #ff6600;
+    /* Màu cam đậm hơn */
 }
 
 /* Badge hiển thị số lượng */
@@ -433,7 +433,7 @@ onUnmounted(() => {
     height: 32px;
     /* Đảm bảo chiều cao bằng với nút lọc */
     font-size: 14px;
-    color: #f33b47;
+    color: #ff6600;
 }
 
 /* Trạng thái Online */
@@ -468,7 +468,7 @@ onUnmounted(() => {
     appearance: none;
     width: 16px;
     height: 16px;
-    border: 1px solid #f33b47;
+    border: 1px solid #ff6600;
     border-radius: 50%;
     display: inline-block;
     position: relative;
@@ -479,7 +479,7 @@ onUnmounted(() => {
     content: "";
     width: 8px;
     height: 8px;
-    background-color: #f33b47;
+    background-color: #ff6600;
     border-radius: 50%;
     position: absolute;
     top: 50%;

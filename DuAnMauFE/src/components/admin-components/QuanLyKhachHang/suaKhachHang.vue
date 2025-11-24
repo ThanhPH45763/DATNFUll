@@ -111,7 +111,7 @@
 
       <div class="form-actions">
         <a-button type="primary" html-type="submit" size="large"
-          style="background-color: #d02c39; border-color: #d02c39; color: white;">
+          style="background-color: #ff6600; border-color: #ff6600; color: white;">
           Cập nhật
         </a-button>
 

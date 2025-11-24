@@ -175,7 +175,7 @@ export const useGbStore = defineStore('gbStore', {
             price: Number(item.gia_ban || item.gia_khuyen_mai_cao_nhat || 0),
             oldPrice: Number(item.gia_max || 0),
             brand: item.ten_thuong_hieu,
-            image: item.hinh_anh,
+            image: item.anh_chinh || item.hinh_anh || item.anh_dai_dien,
             gender: item.gioi_tinh || '',
             type: item.ten_danh_muc || '',
             colors: item.mau_sac ? item.mau_sac.split(',') : [],
@@ -226,7 +226,7 @@ export const useGbStore = defineStore('gbStore', {
         price: Number(item.gia_ban || item.gia_khuyen_mai_cao_nhat || 0),
         oldPrice: Number(item.gia_max || 0),
         brand: item.ten_thuong_hieu,
-        image: item.hinh_anh,
+        image: item.anh_chinh || item.hinh_anh || item.anh_dai_dien,
         gender: item.gioi_tinh || '',
         type: item.ten_danh_muc || '',
         colors: item.mau_sac ? item.mau_sac.split(',') : [],
@@ -250,7 +250,7 @@ export const useGbStore = defineStore('gbStore', {
         price: Number(item.gia_ban || item.gia_khuyen_mai_cao_nhat || 0),
         oldPrice: Number(item.gia_max || 0),
         brand: item.ten_thuong_hieu,
-        image: item.hinh_anh,
+        image: item.anh_chinh || item.hinh_anh || item.anh_dai_dien,
         gender: item.gioi_tinh || '',
         type: item.ten_danh_muc || '',
         colors: item.mau_sac ? item.mau_sac.split(',') : [],
@@ -867,7 +867,14 @@ export const useGbStore = defineStore('gbStore', {
         return
       } else {
         this.cTSPBySanPhamFull = cTSPBySanPhamFull
-        console.log('hehe: ', this.cTSPBySanPhamFull)
+        console.log('📦 ==> CHI TIẾT SẢN PHẨM TỪ API <== 📦');
+        console.log('Tổng số variants:', cTSPBySanPhamFull.length);
+        if (cTSPBySanPhamFull.length > 0) {
+          console.log('🔍 Variant đầu tiên:', cTSPBySanPhamFull[0]);
+          console.log('📋 Tất cả field names:', Object.keys(cTSPBySanPhamFull[0]));
+          console.log('💰 Giá gốc field:', cTSPBySanPhamFull[0].giaGoc || cTSPBySanPhamFull[0].gia_goc || cTSPBySanPhamFull[0].gia_ban);
+          console.log('💸 Giá hiện tại field:', cTSPBySanPhamFull[0].giaHienTai || cTSPBySanPhamFull[0].gia_hien_tai || cTSPBySanPhamFull[0].gia_khuyen_mai);
+        }
       }
     },
     async getAllSanPhamNgaySua() {
@@ -1422,51 +1429,39 @@ export const useGbStore = defineStore('gbStore', {
         return { error: true }
       }
 
-      // Kiểm tra dữ liệu trả về từ API đăng nhập
-      if (!result.taiKhoan || !result.taiKhoan.ten_dang_nhap) {
-        console.error('Dữ liệu tài khoản không hợp lệ:', result)
+      // Kiểm tra dữ liệu trả về từ API đăng nhập KHÁCH HÀNG
+      if (!result.khachHang || !result.khachHang.email) {
+        console.error('Dữ liệu khách hàng không hợp lệ:', result)
         toast.error('Dữ liệu tài khoản không hợp lệ!')
         return { error: true }
       }
-      // Lưu thông tin cơ bản
-      this.userInfo = result.taiKhoan
-      this.isLoggedIn = true
-      this.id_roles = result.id_roles
-      this.token = result.token
-      // In thông tin tài khoản cơ bản
-      console.log('Thông tin tài khoản (tai_khoan):', this.userInfo)
-      console.log('ID Roles:', this.id_roles)
-      console.log('Token:', this.token)
-      // Lưu vào sessionStorage
-      sessionStorage.setItem('userInfo', JSON.stringify(result.taiKhoan))
-      sessionStorage.setItem('isLoggedIn', 'true')
-      sessionStorage.setItem('id_roles', result.id_roles)
-      sessionStorage.setItem('token', result.token)
+
+      // Lưu thông tin khách hàng
+      const customerData = result.khachHang
+      console.log('Thông tin khách hàng:', customerData)
+
+      // Lưu vào localStorage hoặc sessionStorage
       if (loginData.rememberMe) {
-        localStorage.setItem('userInfo', JSON.stringify(result.taiKhoan))
+        localStorage.setItem('khachHang', JSON.stringify(customerData))
         localStorage.setItem('isLoggedIn', 'true')
-        localStorage.setItem('id_roles', result.id_roles)
-        localStorage.setItem('token', result.token)
+      } else {
+        sessionStorage.setItem('khachHang', JSON.stringify(customerData))
+        sessionStorage.setItem('isLoggedIn', 'true')
       }
-      // Lấy thông tin chi tiết
-      try {
-        const userDetails = await khachHangService.getUserDetail({
-          username: result.taiKhoan.ten_dang_nhap,
-          id_roles: result.id_roles,
-        })
-        this.userDetails = userDetails
-        // In thông tin chi tiết
-        console.log('Thông tin chi tiết (userDetails):', this.userDetails)
-        sessionStorage.setItem('userDetails', JSON.stringify(userDetails))
-        if (loginData.rememberMe) {
-          localStorage.setItem('userDetails', JSON.stringify(userDetails))
-        }
-      } catch (error) {
-        console.error('Lỗi khi lấy thông tin chi tiết:', error)
-        toast.error('Không thể lấy thông tin chi tiết tài khoản!')
-      }
+
+      // Trigger storage event for other components (like header) to update
+      window.dispatchEvent(new Event('storage'))
+
       toast.success(result.successMessage || 'Đăng nhập thành công!')
-      return { success: true, id_roles: result.id_roles }
+
+      // Redirect to home or intended page
+      if (router.currentRoute.value.query.redirect) {
+        router.push(router.currentRoute.value.query.redirect)
+      } else {
+        router.push('/home')
+      }
+
+      return { success: true, khachHang: customerData }
     },
     // Thêm action login thằng làm thêm
     async loginNV(loginData) {

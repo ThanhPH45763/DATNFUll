@@ -1,10 +1,10 @@
 <template>
   <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-3 co p-3">
-      <h3 class="m-0 fw-bold" style="color: #f33b47;">Thêm khuyến mãi</h3>
+      <h3 class="m-0 fw-bold" style="color: #ff6600;">Thêm khuyến mãi</h3>
     </div>
 
-    <div class="container mt-4">
+    <div class="container-fluid mt-4">
       <form @submit.prevent="submitForm" id="addKhuyenMaiForm">
         <div class="row">
           <!-- Form khuyến mãi -->
@@ -140,7 +140,7 @@
           <div class="col-lg-8 d-flex flex-column gap-3">
             <!-- SanPham Table -->
             <div class="bg-light p-4 rounded">
-              <h5 style="color: #f33b47;">Sản phẩm</h5>
+              <h5 style="color: #ff6600;">Sản phẩm</h5>
               <div class="d-flex gap-3 align-items-center mt-2">
                 <input
                   type="text"
@@ -186,7 +186,7 @@
 
             <!-- ChiTietSanPham Table -->
             <div class="bg-light p-4 rounded">
-              <h5 style="color: #f33b47;">Chi tiết sản phẩm</h5>
+              <h5 style="color: #ff6600;">Chi tiết sản phẩm</h5>
               <div class="table-responsive p-2 scrollable-table">
                 <table class="table table-bordered">
                   <thead class="co">
@@ -581,14 +581,14 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background-color: #d02c39;
-  border-color: #d02c39;
+  background-color: #ff6600;
+  border-color: #ff6600;
   font-weight: bold;
 }
 
 .btn-primary:hover {
-  background-color: #f33b47;
-  border-color: #f33b47;
+  background-color: #e65c00;
+  border-color: #e65c00;
 }
 
 .btn-secondary {

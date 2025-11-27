@@ -181,7 +181,16 @@ const thanhToanMomo = async (idHoaDon) => {
 
 const tinhPhiShip = async (pickProvince, pickDistrict, province, district, weight, tongTienHoaDon) => {
     try {
-        const { data } = await axiosInstance.get(`api/ghtk/fee?pickProvince=${pickProvince}&pickDistrict=${pickDistrict}&province=${province}&district=${district}&weight=${weight}&value=${tongTienHoaDon}`);
+        // Properly encode Vietnamese parameters using URLSearchParams
+        const params = new URLSearchParams({
+            pickProvince,
+            pickDistrict,
+            province,
+            district,
+            weight: weight.toString(),
+            value: tongTienHoaDon.toString()
+        });
+        const { data } = await axiosInstance.get(`api/ghtk/fee?${params.toString()}`);
         return data.fee;
     } catch (error) {
         console.error('Lỗi API tính phí ship:', error);

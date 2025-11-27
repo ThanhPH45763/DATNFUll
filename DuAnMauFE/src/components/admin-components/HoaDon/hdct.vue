@@ -584,15 +584,15 @@
                         </a-row>
                         <hr>
                         <div v-if="!isEditingCustomer">
-                            <p>Tên: {{ store.hoaDonDetail.ho_ten || 'Chưa xác định' }}</p>
+                            <p>Tên: {{ store.hoaDonDetail.ho_ten || 'Khách lẻ' }}</p>
                             <p>Email: {{ store.hoaDonDetail.email || 'Chưa xác định' }}</p>
-                            <p>Phone: {{ store.hoaDonDetail.sdt_nguoi_nhan || 'Chưa xác định' }}</p>
+                            <p>Phone: {{ store.hoaDonDetail.sdt || 'Chưa xác định' }}</p>
                             <p>Địa chỉ: {{ store.hoaDonDetail.dia_chi || 'Chưa xác định' }}</p>
                         </div>
                         <div v-else>
-                            <p>Tên: {{ store.hoaDonDetail.ho_ten || 'Chưa xác định' }}</p>
+                            <p>Tên: {{ store.hoaDonDetail.ho_ten || 'Khách lẻ' }}</p>
                             <p>Email: {{ store.hoaDonDetail.email || 'Chưa xác định' }}</p>
-                            <p>Phone: {{ store.hoaDonDetail.sdt_nguoi_nhan || 'Chưa xác định' }}</p>
+                            <p>Phone: {{ store.hoaDonDetail.sdt || 'Chưa xác định' }}</p>
                             <p>Địa chỉ: {{ store.hoaDonDetail.dia_chi || 'Chưa xác định' }}</p>
                         </div>
                         <!-- Drawer cho chỉnh sửa thông tin khách hàng -->

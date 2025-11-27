@@ -194,7 +194,8 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue';
+import { ref, computed, reactive, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import {
     SearchOutlined,
     FileSearchOutlined,
@@ -217,6 +218,9 @@ import QRCode from 'qrcode';
 // Import font từ thư mục config
 import '@/config/fonts/Roboto-normal.js';
 import '@/config/fonts/Roboto-bold.js';
+
+// Get route to check for query parameters
+const route = useRoute();
 
 // Biến lưu mã tra cứu
 const trackingCode = ref('');
@@ -356,6 +360,16 @@ const timKiemDonHang = () => {
 
     hienThiKetQuaTimKiem();
 };
+
+// Auto-fill tracking code from URL query parameter
+onMounted(() => {
+    const codeFromUrl = route.query.code;
+    if (codeFromUrl) {
+        trackingCode.value = codeFromUrl;
+        // Automatically search when code is provided
+        timKiemDonHang();
+    }
+});
 
 // Cập nhật lịch sử trạng thái đơn hàng cho demo
 const capNhatLichSuTrangThai = (maTrangThai) => {

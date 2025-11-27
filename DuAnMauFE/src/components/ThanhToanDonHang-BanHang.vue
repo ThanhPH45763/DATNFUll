@@ -487,7 +487,7 @@ const subtotal = computed(() => {
 // Calculate discount based on applied vouchers
 const calculateDiscount = () => {
     // Kiểm tra đăng nhập - nếu chưa đăng nhập thì không áp dụng voucher
-    if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('isLoggedIn') !== 'true') {
+    if (!isLoggedIn.value) {
         return 0;
     }
 
@@ -513,6 +513,13 @@ const calculateDiscount = () => {
 
         totalDiscount += discountAmount;
     });
+
+    // QUAN TRỌNG: Voucher KHÔNG được vượt quá tổng tiền hàng (chưa tính ship)
+    // Phí ship không được giảm bởi voucher!
+    if (totalDiscount > subTotal) {
+        console.log('[WARNING] Voucher vượt quá giá trị đơn hàng! Giới hạn:', subTotal);
+        totalDiscount = subTotal;
+    }
 
     return totalDiscount;
 };
@@ -569,7 +576,11 @@ const grandTotal = computed(() => {
     const subTotal = Number(subtotal.value || 0);
     const disc = Number(discount.value || 0);
     const shipping = Number(shippingFee.value || 0);
-    return subTotal - disc + shipping;
+    
+    // Tổng thanh toán = Tạm tính - Giảm giá + Phí ship
+    // Đảm bảo không bao giờ âm
+    const total = subTotal - disc + shipping;
+    return Math.max(0, total); // Không cho phép âm
 });
 
 // Fetch customer data
@@ -587,39 +598,84 @@ const fetchCustomerData = async () => {
 
 // Kiểm tra trạng thái đăng nhập
 const isLoggedIn = computed(() => {
-    return sessionStorage.getItem('isLoggedIn') === 'true';
+    return sessionStorage.getItem('isLoggedIn') === 'true' || localStorage.getItem('isLoggedIn') === 'true';
 });
+
+// Helper function để lấy thông tin khách hàng từ storage
+const getCustomerData = () => {
+    // Thử lấy từ localStorage trước (nếu user chọn remember me)
+    let customerDataStr = localStorage.getItem('khachHang');
+    
+    // Nếu không có trong localStorage, thử sessionStorage
+    if (!customerDataStr) {
+        customerDataStr = sessionStorage.getItem('khachHang');
+    }
+    
+    if (!customerDataStr) {
+        console.log('[DEBUG] Không tìm thấy khachHang trong storage');
+        return null;
+    }
+    
+    try {
+        const data = JSON.parse(customerDataStr);
+        console.log('[DEBUG] Customer data từ storage:', data);
+        return data;
+    } catch (error) {
+        console.error('[DEBUG] Lỗi parse customer data:', error);
+        return null;
+    }
+};
 
 // Lấy danh sách địa chỉ khi KH đăng nhập
 const fetchCustomerAddresses = async () => {
     try {
-        const userDetailsStr = sessionStorage.getItem('userDetails');
-        if (!userDetailsStr) return;
+        console.log('[DEBUG] Bắt đầu fetchCustomerAddresses');
+        
+        // Sử dụng helper function
+        const customerData = getCustomerData();
+        
+        if (!customerData) {
+            console.log('[DEBUG] Không có thông tin khách hàng trong storage');
+            return;
+        }
+        
+        // Lấy idKhachHang từ customerData
+        const idKhachHang = customerData.idKhachHang || customerData.id_khach_hang;
+        
+        if (!idKhachHang) {
+            console.log('[DEBUG] Không tìm thấy idKhachHang trong customerData');
+            console.log('[DEBUG] customerData:', customerData);
+            return;
+        }
 
-        const userDetails = JSON.parse(userDetailsStr);
-        if (!userDetails || !userDetails.idKhachHang) return;
+        console.log('[DEBUG] ID Khách hàng:', idKhachHang);
 
         // Điền thông tin cơ bản
-        customer.value.ho_ten = userDetails.tenKhachHang || '';
-        customer.value.so_dien_thoai = userDetails.soDienThoai || '';
-        customer.value.email = userDetails.email || '';
+        customer.value.ho_ten = customerData.hoTen || customerData.ho_ten || '';
+        customer.value.so_dien_thoai = customerData.soDienThoai || customerData.so_dien_thoai || '';
+        customer.value.email = customerData.email || '';
 
         // Gọi API lấy danh sách địa chỉ
-        await store.getDanhSachDiaChi(userDetails.idKhachHang);
-        console.log('Danh sách địa chỉ từ API:', store.danhSachDiaChi);
+        console.log('[DEBUG] Gọi API getDanhSachDiaChi với ID:', idKhachHang);
+        await store.getDanhSachDiaChi(idKhachHang);
+        console.log('[DEBUG] Danh sách địa chỉ từ API:', store.danhSachDiaChi);
+        console.log('[DEBUG] Số lượng địa chỉ:', store.danhSachDiaChi ? store.danhSachDiaChi.length : 0);
 
         if (store.danhSachDiaChi && store.danhSachDiaChi.length > 0) {
             // Tìm index của địa chỉ mặc định
             const defaultAddressIndex = store.danhSachDiaChi.findIndex(addr => addr.dia_chi_mac_dinh === 'true');
+            console.log('[DEBUG] Index địa chỉ mặc định:', defaultAddressIndex);
 
             // Nếu có địa chỉ mặc định, chọn nó. Nếu không, chọn địa chỉ đầu tiên
             const selectedIndex = defaultAddressIndex !== -1 ? defaultAddressIndex : 0;
+            console.log('[DEBUG] Selected index:', selectedIndex);
 
             // Set selectedAddressId để chọn radio button
             selectedAddressId.value = selectedIndex;
 
             // Lấy địa chỉ được chọn
             const selectedAddr = store.danhSachDiaChi[selectedIndex];
+            console.log('[DEBUG] Địa chỉ được chọn:', selectedAddr);
 
             // Cập nhật thông tin địa chỉ vào form
             if (selectedAddr) {
@@ -630,14 +686,38 @@ const fetchCustomerAddresses = async () => {
                     xa_phuong: selectedAddr.xa_phuong,
                     so_nha: selectedAddr.so_nha
                 };
-                console.log('Đã set địa chỉ mặc định:', selectedAddr);
+                console.log('[DEBUG] Đã set địa chỉ mặc định:', selectedAddr);
             }
+        } else {
+            console.log('[DEBUG] KHÔNG CÓ ĐỊA CHỈ NÀO!');
         }
     } catch (error) {
-        console.error('Lỗi khi lấy danh sách địa chỉ:', error);
+        console.error('[DEBUG] Lỗi khi lấy danh sách địa chỉ:', error);
         message.error('Không thể tải địa chỉ khách hàng');
     }
 };
+
+// Watch selectedAddressId để update form khi user chọn địa chỉ khác
+watch(selectedAddressId, (newIndex) => {
+    if (newIndex !== null && store.danhSachDiaChi && store.danhSachDiaChi.length > 0) {
+        const selectedAddr = store.danhSachDiaChi[newIndex];
+        console.log('[DEBUG] User chọn địa chỉ index:', newIndex);
+        console.log('[DEBUG] Địa chỉ được chọn:', selectedAddr);
+        
+        if (selectedAddr) {
+            // Cập nhật form với địa chỉ được chọn
+            customer.value.tinh_thanh_pho = selectedAddr.tinh_thanh_pho;
+            customer.value.quan_huyen = selectedAddr.quan_huyen;
+            customer.value.xa_phuong = selectedAddr.xa_phuong;
+            customer.value.so_nha = selectedAddr.so_nha;
+            
+            console.log('[DEBUG] Đã update form với địa chỉ:', selectedAddr);
+            
+            // Trigger tính phí ship mới
+            calculateShippingFee();
+        }
+    }
+});
 // Fetch order items from cart
 
 // Fetch provinces from Vietnam location API
@@ -758,14 +838,19 @@ const calculateOrderTotals = () => {
         hoaDon: {
             trang_thai: 'Hoàn thành',
             voucher: {
-                id: sessionStorage.getItem('userDetails') ?
-                    appliedCoupons.value.length > 0 ? appliedCoupons.value[0].id : 0 : 0
+                id: isLoggedIn.value && appliedCoupons.value.length > 0 ? appliedCoupons.value[0].id : 0
             },
             isChuyen: false,
             khachHang: {
-                idKhachHang: sessionStorage.getItem('userDetails') ? JSON.parse(sessionStorage.getItem('userDetails')).idKhachHang : 0,
+                idKhachHang: (() => {
+                    const customerData = getCustomerData();
+                    return customerData ? (customerData.idKhachHang || customerData.id_khach_hang || 0) : 0;
+                })(),
             },
-            id_khach_hang: sessionStorage.getItem('userDetails') ? JSON.parse(sessionStorage.getItem('userDetails')).idKhachHang : 0,
+            id_khach_hang: (() => {
+                const customerData = getCustomerData();
+                return customerData ? (customerData.idKhachHang || customerData.id_khach_hang || 0) : 0;
+            })(),
             sdt_nguoi_nhan: customer.value.so_dien_thoai,
             dia_chi: customer.value.so_nha + ', ' + customer.value.xa_phuong + ', ' + customer.value.quan_huyen + ', ' + customer.value.tinh_thanh_pho,
             email: customer.value.email,
@@ -1272,6 +1357,11 @@ const sortedVouchers = computed(() => {
 const voucherModalVisible = ref(false);
 const availableVouchers = ref([]);
 const allVouchers = ref([]);
+
+// Function to show voucher modal
+const showVoucherModal = () => {
+    voucherModalVisible.value = true;
+};
 
 // Filter valid vouchers based on current order and date
 const filterValidVouchers = () => {

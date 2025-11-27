@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Map;
 
@@ -49,16 +50,28 @@ public class GhtkService {
     }
 
     // 4. Tính phí vận chuyển
-    public ResponseEntity<String> calculateFee(String pickProvince, String pickDistrict, String province, String district, int weight, int value) {
-        String url = BASE_URL + "/services/shipment/fee?" +
-                "pick_province=" + pickProvince +
-                "&pick_district=" + pickDistrict +
-                "&province=" + province +
-                "&district=" + district +
-                "&weight=" + weight +
-                "&value=" + value;
+    public ResponseEntity<String> calculateFee(String pickProvince, String pickDistrict, String province,
+            String district, int weight, int value) {
+        try {
+            String url = BASE_URL + "/services/shipment/fee";
 
-        HttpEntity<Void> request = new HttpEntity<>(buildHeaders());
-        return restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+            // Build URL with proper encoding for Vietnamese characters
+            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
+                    .queryParam("pick_province", pickProvince)
+                    .queryParam("pick_district", pickDistrict)
+                    .queryParam("province", province)
+                    .queryParam("district", district)
+                    .queryParam("weight", weight)
+                    .queryParam("value", value);
+
+            HttpEntity<Void> request = new HttpEntity<>(buildHeaders());
+            // Use build().encode().toUri() to properly encode Vietnamese characters
+            return restTemplate.exchange(builder.build().encode().toUri(), HttpMethod.GET, request, String.class);
+        } catch (Exception e) {
+            // Return error details for debugging
+            String errorMessage = String.format("{\"success\":false,\"message\":\"%s\",\"error\":\"GHTK_API_ERROR\"}",
+                    e.getMessage());
+            return ResponseEntity.status(400).body(errorMessage);
+        }
     }
 }

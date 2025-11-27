@@ -108,7 +108,7 @@
 
         <!-- Action Buttons -->
         <div class="action-buttons">
-            <a-tooltip title="Tra cứu đơn hàng">
+            <!-- <a-tooltip title="Tra cứu đơn hàng">
                 <a-button type="primary" shape="circle" class="action-btn" @click="changeRoute('/admin/quanlyhoadon')">
                     <template #icon> <file-search-outlined /></template>
                 </a-button>
@@ -122,7 +122,7 @@
                 <a-button type="primary" shape="circle" class="action-btn" @click="changeRoute('/admin/')">
                     <template #icon><bar-chart-outlined /></template>
                 </a-button>
-            </a-tooltip>
+            </a-tooltip> -->
         </div>
 
     </div>
@@ -668,7 +668,9 @@ const activeKey = ref('');
 const newTabIndex = ref(0); // Chỉ dùng để tạo key duy nhất nếu cần, không dùng cho tiêu đề
 
 // ==================== INVOICE QUEUE MANAGEMENT ====================
-const MAX_ACTIVE_INVOICES = 5;
+const MAX_ACTIVE_INVOICES = 5; // Số hóa đơn hiển thị trên tabs
+const MAX_SUSPENDED_INVOICES = 15; // Số hóa đơn treo tối đa
+const MAX_TOTAL_INVOICES = MAX_ACTIVE_INVOICES + MAX_SUSPENDED_INVOICES; // Tổng: 20 hóa đơn
 const EXPIRY_WARNING_TIME = 5 * 60 * 1000; // 5 phút
 const EXPIRY_TIME = 10 * 60 * 1000; // 10 phút
 
@@ -1212,6 +1214,22 @@ const removeFromBill = (productId) => {
 
 // Hàm tạo mới một tab hóa đơn
 const add = async () => {
+    // Kiểm tra giới hạn tổng số hóa đơn (5 active + 15 suspended = 20)
+    if (panes.value.length >= MAX_TOTAL_INVOICES) {
+        const activeCount = Math.min(panes.value.length, MAX_ACTIVE_INVOICES);
+        const suspendedCount = panes.value.length - activeCount;
+        
+        message.warning({
+            content: `Đã đạt giới hạn ${MAX_TOTAL_INVOICES} hóa đơn! (${activeCount} đang hiển thị + ${suspendedCount} hóa đơn treo). Vui lòng thanh toán hoặc xóa hóa đơn cũ trước khi tạo mới.`,
+            duration: 6,
+            style: {
+                marginTop: '20vh',
+                fontSize: '16px'
+            }
+        });
+        return;
+    }
+    
     try {
         const response = await store.createHoaDon();
         if (!response || response.error) {

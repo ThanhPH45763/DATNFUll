@@ -91,7 +91,7 @@
             <span class="total-amount">{{ formatCurrency(order.tongTienSauGiam) }}</span>
           </div>
           <div class="order-actions">
-            <router-link :to="`/profile/orders/${order.idHoaDon}`">
+            <router-link :to="`/tracuudonhang-banhang?code=${order.maHoaDon}`">
               <a-button size="large">Xem chi tiết</a-button>
             </router-link>
             <a-button 
@@ -125,6 +125,7 @@
 import { ref, onMounted } from 'vue';
 import { toast } from 'vue3-toastify';
 import dayjs from 'dayjs';
+import { hoaDonService } from '@/services/hoaDonService';
 
 const loading = ref(false);
 const orders = ref([]);
@@ -147,16 +148,53 @@ const loadOrders = async () => {
       return;
     }
 
-    // TODO: Call API to load orders
-    // const response = await hoaDonService.getByKhachHang(khachHang.idKhachHang, currentPage.value, pageSize.value, activeStatus.value);
+    // Call API to load orders
+    const response = await hoaDonService.getOrdersByCustomer(khachHang.idKhachHang);
     
-    // Mock data for demonstration
-    orders.value = [];
-    totalOrders.value = 0;
+    if (response.error) {
+      toast.error(response.message || 'Không thể tải danh sách đơn hàng');
+      orders.value = [];
+      totalOrders.value = 0;
+      return;
+    }
+
+    // Map response to orders format
+    if (Array.isArray(response)) {
+      let filteredOrders = response;
+      
+      // Filter by status if not "all"
+      if (activeStatus.value !== 'all') {
+        const statusMap = {
+          'pending': 'Chờ xác nhận',
+          'processing': 'Đã xác nhận',
+          'shipping': 'Đang giao',
+          'completed': 'Hoàn thành',
+          'cancelled': 'Đã hủy'
+        };
+        const targetStatus = statusMap[activeStatus.value];
+        filteredOrders = response.filter(order => order.trang_thai === targetStatus);
+      }
+
+      orders.value = filteredOrders.map(order => ({
+        idHoaDon: order.id_hoa_don,
+        maHoaDon: order.ma_hoa_don,
+        ngayTao: order.ngay_tao,
+        trangThai: order.trang_thai,
+        tongTienSauGiam: order.tong_tien_sau_giam,
+        items: [] // Will be populated if needed
+      }));
+      
+      totalOrders.value = filteredOrders.length;
+    } else {
+      orders.value = [];
+      totalOrders.value = 0;
+    }
     
   } catch (error) {
     console.error('Error loading orders:', error);
     toast.error('Không thể tải danh sách đơn hàng');
+    orders.value = [];
+    totalOrders.value = 0;
   } finally {
     loading.value = false;
   }

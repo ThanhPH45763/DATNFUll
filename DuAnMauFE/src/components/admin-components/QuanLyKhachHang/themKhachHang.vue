@@ -472,33 +472,36 @@ onMounted(async () => {
 
 <style scoped>
 :root {
-  --primary-color: #1890ff;
+  --primary-color: #ff6600;
+  --secondary-color: #1890ff;
   --text-color: #1f2a44;
   --border-color: #d9d9d9;
   --background-color: #ffffff;
   --danger-color: #ff4d4f;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --border-radius: 6px;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --border-radius: 8px;
 }
 
 .container {
-  max-width: 1200px;
-  margin: 24px auto;
-  padding: 24px;
-  background: var(--background-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 32px;
+  background: #f5f5f5;
+  min-height: calc(100vh - 64px);
 }
 
 .header-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e8e8e8;
 }
 
 .header-section h2 {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 600;
   color: var(--text-color);
   margin: 0;
@@ -507,28 +510,63 @@ onMounted(async () => {
 .btn-back {
   color: var(--text-color);
   font-weight: 500;
+  font-size: 15px;
+  padding: 8px 16px;
+  border-radius: var(--border-radius);
 }
 
 .btn-back:hover {
   color: var(--primary-color);
+  background: #fff5f0;
 }
 
 .form-container {
-  padding: 24px;
-  background: #fafafa;
+  padding: 32px;
+  background: var(--background-color);
   border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid #e8e8e8;
 }
 
+/* Input và Select fields đồng bộ */
 .input-field,
-.select-field {
-  border-radius: var(--border-radius);
-  transition: border-color 0.3s, box-shadow 0.3s;
+.select-field,
+:deep(.ant-input),
+:deep(.ant-select-selector),
+:deep(.ant-picker) {
+  height: 40px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--border-color) !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+}
+
+:deep(.ant-input):hover,
+:deep(.ant-select-selector):hover,
+:deep(.ant-picker):hover {
+  border-color: var(--primary-color) !important;
 }
 
 .input-field:focus,
-.select-field:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+.select-field:focus,
+:deep(.ant-input):focus,
+:deep(.ant-select-focused .ant-select-selector),
+:deep(.ant-picker-focused) {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1) !important;
+  outline: none !important;
+}
+
+/* Label styling */
+:deep(.ant-form-item-label > label) {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+/* Date picker full width */
+:deep(.ant-picker) {
+  width: 100%;
 }
 
 .radio-group {
@@ -537,53 +575,79 @@ onMounted(async () => {
   padding: 8px 0;
 }
 
+:deep(.ant-radio-wrapper) {
+  font-size: 14px;
+}
+
 .address-section {
-  background: var(--background-color);
-  padding: 16px;
-  margin-bottom: 16px;
+  background: #fafafa;
+  padding: 24px;
+  margin-bottom: 24px;
   border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8e8e8;
 }
 
 .address-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e8e8e8;
 }
 
 .address-header h3 {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 600;
   color: var(--text-color);
   margin: 0;
 }
 
 .btn-add-address {
-  margin: 16px 0;
+  margin: 24px 0;
+  height: 48px;
   color: var(--primary-color);
   border-color: var(--primary-color);
-  background: #e6f7ff;
+  background: #fff5f0;
+  font-weight: 500;
+  font-size: 15px;
+  border-radius: var(--border-radius);
 }
 
 .btn-add-address:hover {
-  background: #bae7ff;
+  background: #ffe0cc;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 .form-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: flex-end;
-  margin-top: 24px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 2px solid #e8e8e8;
 }
 
 .form-actions .ant-btn {
+  height: 44px;
   border-radius: var(--border-radius);
-  padding: 8px 24px;
+  padding: 0 32px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.form-actions .ant-btn-primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .form-actions .ant-btn-primary:hover {
-  background: #40a9ff;
+  background: #ff7f29;
+  border-color: #ff7f29;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);
 }
 
 .form-actions .ant-btn-default {
@@ -594,5 +658,32 @@ onMounted(async () => {
 .form-actions .ant-btn-default:hover {
   border-color: var(--primary-color);
   color: var(--primary-color);
+}
+
+/* Checkbox styling */
+:deep(.ant-checkbox-wrapper) {
+  font-size: 14px;
+}
+
+:deep(.ant-checkbox-checked .ant-checkbox-inner) {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+:deep(.ant-checkbox:hover .ant-checkbox-inner) {
+  border-color: var(--primary-color);
+}
+
+/* Error state */
+:deep(.ant-form-item-has-error .ant-input),
+:deep(.ant-form-item-has-error .ant-select-selector),
+:deep(.ant-form-item-has-error .ant-picker) {
+  border-color: var(--danger-color) !important;
+}
+
+:deep(.ant-form-item-has-error .ant-input:focus),
+:deep(.ant-form-item-has-error .ant-select-focused .ant-select-selector),
+:deep(.ant-form-item-has-error .ant-picker-focused) {
+  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.1) !important;
 }
 </style>

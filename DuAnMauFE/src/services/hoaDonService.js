@@ -231,23 +231,23 @@ const updateHinhThucTTHoaDon = async (idHD, hinhThucThanhToan) => {
 // Lấy chi tiết hóa đơn và thông tin trả hàng
 const getHoaDonDetails = async (maHoaDon) => {
     try {
-      const { data } = await axiosInstance.get(qlhd + `${maHoaDon}/chi-tiet-tra-hang`);
-  
-      // Nếu backend trả về `thanh_cong: false` thì ném lỗi để xử lý nhất quán
-      if (!data.thanh_cong) {
-        throw new Error(data.thong_bao || 'Không tìm thấy đơn hàng');
-      }
-  
-      return data;
+        const { data } = await axiosInstance.get(qlhd + `${maHoaDon}/chi-tiet-tra-hang`);
+
+        // Nếu backend trả về `thanh_cong: false` thì ném lỗi để xử lý nhất quán
+        if (!data.thanh_cong) {
+            throw new Error(data.thong_bao || 'Không tìm thấy đơn hàng');
+        }
+
+        return data;
     } catch (error) {
-      console.error('Lỗi API lấy chi tiết hóa đơn và trả hàng:', error);
-  
-      // Ưu tiên lấy message từ backend
-      const thongBao = error.response?.data?.thong_bao || error.message || 'Lỗi không xác định';
-      throw new Error(thongBao);  // để đồng nhất với catch phía trên
+        console.error('Lỗi API lấy chi tiết hóa đơn và trả hàng:', error);
+
+        // Ưu tiên lấy message từ backend
+        const thongBao = error.response?.data?.thong_bao || error.message || 'Lỗi không xác định';
+        throw new Error(thongBao);  // để đồng nhất với catch phía trên
     }
-  };
-  
+};
+
 
 // Xử lý trả hàng
 const processReturn = async (returnData) => {
@@ -272,6 +272,17 @@ const processReturn = async (returnData) => {
     }
 };
 
+// Lấy danh sách đơn hàng của khách hàng
+const getOrdersByCustomer = async (idKhachHang) => {
+    try {
+        const { data } = await axiosInstance.get(qlhd + `khach-hang/${idKhachHang}`);
+        return data;
+    } catch (error) {
+        console.error('Lỗi API lấy đơn hàng của khách hàng:', error);
+        return { error: true, message: error.response?.data?.message || 'Không thể lấy danh sách đơn hàng' };
+    }
+};
+
 export const hoaDonService = {
     getAllHoaDon,
     getListHoaDon,
@@ -292,6 +303,7 @@ export const hoaDonService = {
     quayLaiTrangThai,
     updateHinhThucTTHoaDon,
     getHoaDonDetails, // Thêm hàm mới
-    processReturn ,// Thêm hàm mới
-    getCTTH
+    processReturn,// Thêm hàm mới
+    getCTTH,
+    getOrdersByCustomer
 };

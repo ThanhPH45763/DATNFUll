@@ -113,11 +113,12 @@
             <td>{{ formatDate(khuyenMai.ngayHetHan) }}</td>    
             <td>{{ khuyenMai.trangThai }}</td>
             <td>
-              <button class="btn btn-sm" 
+              <button class="btn btn-edit d-inline-flex align-items-center" 
                       v-if="khuyenMai.trangThai !== 'Đã kết thúc'"
                       @click="router.push(`/admin/quanlykhuyenmai/update/${khuyenMai.id}`)"
-                      style="background-color: white; border-color: #ff6600; color: #ff6600;">
-                <i class="fas fa-edit me-1"></i>Sửa
+                      style="background-color: white !important; border-color: #ff6600 !important; color: #ff6600 !important;">
+                <i class="fas fa-edit"></i>
+                <span class="btn-text">Sửa</span>
               </button>
               <a-switch v-if="khuyenMai.trangThai === 'Đang diễn ra'" :checked="true"
                         :style="{ backgroundColor: '#ff6600' }" @click="offKhuyenMai(khuyenMai.id)" />
@@ -129,11 +130,15 @@
 
     <!-- Phân trang -->
     <div class="d-flex justify-content-center align-items-center mt-4">
-      <button class="btn buttonPT p-0" @click="fetchData(store.khuyenMaiCurrentPage - 1)"
-              :disabled="store.khuyenMaiCurrentPage === 0">Previous</button>
-      <span class="mx-3">Trang {{ store.khuyenMaiCurrentPage + 1 }} / {{ store.khuyenMaiTotalPages }}</span>
+      <button class="btn buttonPT" @click="fetchData(store.khuyenMaiCurrentPage - 1)"
+              :disabled="store.khuyenMaiCurrentPage === 0">
+        <i class="fas fa-chevron-left me-1"></i>Previous
+      </button>
+      <span class="mx-3 fw-bold">Trang {{ store.khuyenMaiCurrentPage + 1 }} / {{ store.khuyenMaiTotalPages }}</span>
       <button class="btn buttonPT" @click="fetchData(store.khuyenMaiCurrentPage + 1)"
-              :disabled="store.khuyenMaiCurrentPage >= store.khuyenMaiTotalPages - 1">Next</button>
+              :disabled="store.khuyenMaiCurrentPage >= store.khuyenMaiTotalPages - 1">
+        Next<i class="fas fa-chevron-right ms-1"></i>
+      </button>
     </div>
   </div>
 </template>
@@ -292,32 +297,52 @@ onUnmounted(() => {
 }
 
 .buttonPT {
-  background-color: transparent;
+  background-color: white;
   text-align: center;
   color: #ff6600;
   border: 2px solid #ff6600;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
-  width: 70px;
+  min-width: 110px;
   height: 40px;
   font-size: 14px;
-  font-weight: bold;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.buttonPT:hover {
+.buttonPT:hover:not(:disabled) {
   background-color: #ff6600;
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 102, 0, 0.3);
+}
+
+.buttonPT:disabled {
+  background-color: #f5f5f5;
+  border-color: #d9d9d9;
+  color: #bfbfbf;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .buttonADD {
   background-color: #ff6600;
   color: white;
   font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  transition: all 0.3s ease;
 }
 
 .buttonADD:hover {
   background-color: #e55a00;
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 102, 0, 0.3);
 }
 
 .form-check-input {
@@ -354,15 +379,24 @@ onUnmounted(() => {
 }
 
 /* Nút edit */
-.btn-sm {
+.btn-edit {
   transition: all 0.3s ease-in-out;
+  gap: 6px;
+  font-size: 14px;
+  padding: 5px 12px;
+  white-space: nowrap;
+  border-radius: 4px;
 }
 
-.btn-sm:hover {
+.btn-edit:hover {
   background-color: #ffe0cc !important;
   border-color: #ff6600 !important;
   color: #e55a00 !important;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(255, 102, 0, 0.2);
+}
+
+.btn-edit .btn-text {
+  margin: 0;
 }
 </style>

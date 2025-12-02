@@ -165,6 +165,7 @@
                                     <a-space direction="vertical">
                                         <a-input-number v-model:value="item.so_luong" :min="1"
                                             :max="getMaxQuantity(item)"
+                                            @change="validateAndCorrectQuantity(item)"
                                             style="width: 80px;" />
 
                                     </a-space>
@@ -805,6 +806,32 @@ const getMaxQuantity = (item) => {
     return maxQty > 0 ? maxQty : 1; // Tối thiểu là 1
 };
 
+// ✅ Validate và auto-correct quantity khi user thay đổi
+const validateAndCorrectQuantity = (item) => {
+    console.log(`🔍 Validating quantity for ${item.ten_san_pham}:`, item.so_luong);
+    
+    const maxQty = getMaxQuantity(item);
+    console.log(`📊 Max allowed: ${maxQty}, Current: ${item.so_luong}`);
+    
+    // Nếu số lượng vượt quá max, tự động chuyển về max
+    if (item.so_luong > maxQty) {
+        const oldQuantity = item.so_luong;
+        item.so_luong = maxQty;
+        
+        console.log(`⚠️ EXCEEDED! Auto-correcting ${oldQuantity} → ${maxQty}`);
+        
+        message.warning(
+            `Không thể tăng quá ${maxQty} sản phẩm! Kho còn ${maxQty} sp. Đã tự động điều chỉnh về ${maxQty}.`,
+            4
+        );
+    } else {
+        console.log(`✅ Quantity OK: ${item.so_luong} <= ${maxQty}`);
+    }
+    
+    // Cập nhật tổng tiền
+    updateItemTotal(item);
+};
+
 // --- Methods ---
 // Định dang tiền tệ
 const formatCurrency = (value) => {
@@ -1269,28 +1296,11 @@ watch(fe_tongTienHang, async (newTotal) => {
 
 // Cập nhật tổng tiền khi số lượng thay đổi trong bảng hóa đơn
 const updateItemTotal = (item) => {
-    let soLuongMoi = item.so_luong;
-    const gioiHanToiDa = item.so_luong_ton_goc;
-
-    // Validate số lượng
-    if (!soLuongMoi || soLuongMoi <= 0) {
-        soLuongMoi = 1;
-        message.warning('Số lượng phải lớn hơn 0. Đã đặt lại thành 1.');
-    }
-    if (soLuongMoi > gioiHanToiDa) {
-        message.warning(`Số lượng vượt quá tồn kho (${gioiHanToiDa}). Đã đặt lại về số lượng tối đa.`);
-        soLuongMoi = gioiHanToiDa;
-    }
-    
-    // Cập nhật lại số lượng trên giao diện. Giao diện sẽ tự tính toán lại tổng tiền.
-    item.so_luong = soLuongMoi;
-
     // Gửi yêu cầu cập nhật lên backend ở chế độ nền
-    store.setSPHD(item.id_hoa_don, item.id_chi_tiet_san_pham, soLuongMoi)
+    store.setSPHD(item.id_hoa_don, item.id_chi_tiet_san_pham, item.so_luong)
         .then(() => {
-            console.log(`Updated quantity for ${item.ten_san_pham} on backend.`);
-            // Sau khi backend cập nhật thành công, làm mới lại dữ liệu của hóa đơn trong nền
-            // để đảm bảo trạng thái cuối cùng được đồng bộ.
+            console.log(`✅ Updated quantity for ${item.ten_san_pham} to ${item.so_luong} on backend.`);
+            // Sau khi backend cập nhật thành công, làm mới lại dữ liệu của hóa đơn
             refreshHoaDon(item.id_hoa_don);
         })
         .catch(err => {

@@ -18,11 +18,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
             sp.ma_san_pham,
             sp.ten_san_pham,
             sp.mo_ta,
-            CAST(CASE
-                WHEN SUM(ctsp.so_luong) <= 0 THEN 0
-                WHEN sp.trang_thai = 1 OR sp.trang_thai = N'Hoạt động' THEN 1
-                ELSE 0
-            END AS BIT) AS trang_thai,
+            sp.trang_thai,
             dm.ten_danh_muc AS ten_danh_muc,
             th.ten_thuong_hieu AS ten_thuong_hieu,
             cl.ten_chat_lieu,
@@ -52,11 +48,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
                         sp.ma_san_pham,
                         sp.ten_san_pham,
                         sp.mo_ta,
-                        CAST(CASE
-                            WHEN SUM(ctsp.so_luong) <= 0 THEN 0
-                            WHEN sp.trang_thai = 1 OR sp.trang_thai = N'Hoạt động' THEN 1
-                            ELSE 0
-                        END AS BIT) AS trang_thai,
+                        sp.trang_thai,
                         dm.ten_danh_muc AS ten_danh_muc,
                         th.ten_thuong_hieu AS ten_thuong_hieu,
                         cl.ten_chat_lieu,
@@ -84,7 +76,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
 
     @Query(nativeQuery = true, value = "select sp.id_san_pham as id_san_pham, sp.ma_san_pham, sp.ten_san_pham, sp.mo_ta, "
             +
-            "CAST(CASE WHEN sp.trang_thai = 1 OR sp.trang_thai = N'Hoạt động' THEN 1 ELSE 0 END AS BIT) as trang_thai, "
+            "sp.trang_thai, "
             +
             "dm.ten_danh_muc as ten_danh_muc, \n" +
             "th.ten_thuong_hieu as ten_thuong_hieu, cl.ten_chat_lieu, sp.anh_dai_dien, sum(ctsp.so_luong) as tong_so_luong\n"
@@ -100,7 +92,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
 
     @Query(nativeQuery = true, value = "select sp.id_san_pham as id_san_pham, sp.ma_san_pham, sp.ten_san_pham, sp.mo_ta, "
             +
-            "CAST(CASE WHEN sp.trang_thai = 1 OR sp.trang_thai = N'Hoạt động' THEN 1 ELSE 0 END AS BIT) as trang_thai, "
+            "sp.trang_thai, "
             +
             "dm.ten_danh_muc as ten_danh_muc, \n" +
             "th.ten_thuong_hieu as ten_thuong_hieu, cl.ten_chat_lieu, sp.anh_dai_dien, sum(ctsp.so_luong) as tong_so_luong\n"
@@ -348,11 +340,7 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
                         sp.ma_san_pham,
                         sp.ten_san_pham,
                         sp.mo_ta,
-                        CAST(CASE
-                            WHEN SUM(ctsp.so_luong) <= 0 THEN 0
-                            WHEN sp.trang_thai = 1 OR sp.trang_thai = N'Hoạt động' THEN 1
-                            ELSE 0
-                        END AS BIT) AS trang_thai,
+                        sp.trang_thai,
                         dm.ten_danh_muc AS ten_danh_muc,
                         th.ten_thuong_hieu AS ten_thuong_hieu,
                         cl.ten_chat_lieu,

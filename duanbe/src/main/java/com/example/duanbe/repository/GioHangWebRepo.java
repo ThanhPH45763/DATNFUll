@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import com.example.duanbe.entity.ChiTietGioHangId;
 import org.springframework.data.repository.query.Param;
+
 //sưa ngay 20/10
 public interface GioHangWebRepo extends JpaRepository<ChiTietGioHang, ChiTietGioHangId> {
         @Query(nativeQuery = true, value = """
@@ -28,4 +29,12 @@ public interface GioHangWebRepo extends JpaRepository<ChiTietGioHang, ChiTietGio
                         where kh.id_khach_hang = :idKhachHang
                         """)
         List<GioHangWebResponse> listDiaChiByKH(@Param("idKhachHang") Integer idKhachHang);
+
+        // ✅ NEW: Check if CTSP exists in any cart (for deletion validation)
+        @Query("SELECT COUNT(c) FROM ChiTietGioHang c WHERE c.chiTietSanPham.id_chi_tiet_san_pham = :idCTSP")
+        Long countByCTSPId(@Param("idCTSP") Integer idCTSP);
+
+        // ✅ NEW: Check if any CTSP of a product exists in carts
+        @Query("SELECT COUNT(c) FROM ChiTietGioHang c WHERE c.chiTietSanPham.sanPham.id_san_pham = :idSanPham")
+        Long countBySanPhamId(@Param("idSanPham") Integer idSanPham);
 }

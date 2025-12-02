@@ -536,8 +536,32 @@ public class BanHangController {
                         .body(Map.of("success", false, "message", "Không thể xóa sản phẩm từ hóa đơn đã thanh toán!"));
             }
 
-            // Xóa sản phẩm
-            hoaDonChiTietRepo.xoaSPKhoiHD(idHoaDon, idChiTietSanPham);
+            // ✅ NEW: Get quantity before deleting to restore stock
+            Optional<HoaDonChiTiet> hdctOpt = hoaDonChiTietRepo.findByHoaDonAndChiTietSanPham(idHoaDon,
+                    idChiTietSanPham);
+            if (hdctOpt.isPresent()) {
+                HoaDonChiTiet hdct = hdctOpt.get();
+                int soLuongXoa = hdct.getSo_luong();
+
+                // Xóa sản phẩm khỏi hóa đơn
+                hoaDonChiTietRepo.xoaSPKhoiHD(idHoaDon, idChiTietSanPham);
+
+                // ✅ Restore stock to CTSP
+                ChiTietSanPham ctsp = chiTietSanPhamRepo.findById(idChiTietSanPham)
+                        .orElseThrow(() -> new RuntimeException("CTSP không tồn tại!"));
+
+                ctsp.setSo_luong(ctsp.getSo_luong() + soLuongXoa);
+
+                // ✅ Restore status if stock > 0
+                if (ctsp.getSo_luong() > 0 && (ctsp.getTrang_thai() == null || !ctsp.getTrang_thai())) {
+                    ctsp.setTrang_thai(true); // Reactivate CTSP
+                }
+
+                chiTietSanPhamRepo.save(ctsp);
+            } else {
+                // Fallback: just delete if not found
+                hoaDonChiTietRepo.xoaSPKhoiHD(idHoaDon, idChiTietSanPham);
+            }
 
             // Cập nhật tổng tiền
             try {

@@ -41,6 +41,12 @@ public class SanPhamService {
     ThuongHieuRepo thuongHieuRepo;
     @Autowired
     ChatLieuRepo chatLieuRepo;
+    @Autowired
+    HoaDonChiTietRepo hoaDonChiTietRepo;
+    @Autowired
+    GioHangWebRepo gioHangWebRepo;
+    @Autowired
+    HinhAnhSanPhamRepo hinhAnhSanPhamRepo;
 
     @Cacheable(value = "products", key = "'allSanPham'")
     public ArrayList<SanPhamView> getAll() {
@@ -199,6 +205,20 @@ public class SanPhamService {
             sanPham.setDanhMuc(danhMuc);
             sanPham.setThuongHieu(thuongHieu);
             // sanPham.setNgay_sua(LocalDateTime.now());
+
+            // ✅ FIX: Automatically sync product status based on CTSP
+            // Get all CTSP for this product
+            List<ChiTietSanPham> ctspList = chiTietSanPhamRepo.findBySanPhamIdSanPham(sanPham.getId_san_pham());
+
+            // Check if at least one CTSP is active
+            boolean hasActiveCTSP = ctspList.stream()
+                    .anyMatch(ctsp -> ctsp.getTrang_thai() != null && ctsp.getTrang_thai());
+
+            // Update product status based on CTSP
+            sanPham.setTrang_thai(hasActiveCTSP);
+
+            System.out
+                    .println("Updating product status: " + hasActiveCTSP + " (based on " + ctspList.size() + " CTSP)");
 
             SanPham updatedSanPham = sanPhamRepo.save(sanPham);
 
@@ -400,6 +420,67 @@ public class SanPhamService {
     // Top 10 sản phẩm bán chạy nhất
     public List<SanPhamView> getSanPhamBanChayNhat() {
         return sanPhamRepo.listSanPhamBanChayNhat();
+    }
+
+    /**
+     * ✅ NEW: Permanently delete product with validation
+     * Only allows deletion if product and all its CTSPs are not in any orders or
+     * carts
+     */
+    @CacheEvict(value = "products", allEntries = true)
+    public ResponseEntity<?> deleteSanPhamPermanent(@RequestParam("id") Integer id) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // 1. Check if product exists
+            Optional<SanPham> sanPhamOpt = sanPhamRepo.findById(id);
+            if (!sanPhamOpt.isPresent()) {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy sản phẩm với ID: " + id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            // 2. Check if product or any of its CTSPs exists in orders
+            Long orderCount = hoaDonChiTietRepo.countBySanPhamId(id);
+            if (orderCount > 0) {
+                response.put("success", false);
+                response.put("message", "Không thể xóa sản phẩm vì đã tồn tại trong " + orderCount + " hóa đơn");
+                response.put("orderCount", orderCount);
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 3. Check if product or any of its CTSPs exists in shopping carts
+            Long cartCount = gioHangWebRepo.countBySanPhamId(id);
+            if (cartCount > 0) {
+                response.put("success", false);
+                response.put("message", "Không thể xóa sản phẩm vì đang có trong " + cartCount + " giỏ hàng");
+                response.put("cartCount", cartCount);
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 4. Delete all CTSPs and their images first
+            List<ChiTietSanPham> ctspList = chiTietSanPhamRepo.findBySanPhamIdSanPham(id);
+            for (ChiTietSanPham ctsp : ctspList) {
+                // Delete images for this CTSP
+                hinhAnhSanPhamRepo.deleteByChiTietSanPham(ctsp);
+                // Delete CTSP
+                chiTietSanPhamRepo.delete(ctsp);
+            }
+
+            // 5. Delete the product
+            sanPhamRepo.deleteById(id);
+
+            response.put("success", true);
+            response.put("message", "Xóa sản phẩm và " + ctspList.size() + " biến thể thành công");
+            response.put("deletedCTSPCount", ctspList.size());
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Lỗi khi xóa sản phẩm: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     // Top 10 sản phẩm mới nhất

@@ -53,6 +53,14 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
     List<HoaDonChiTietResponse> findHoaDonChiTietById(
             @Param("idHoaDon") Integer idHoaDon);
 
+    // ✅ NEW: Check if CTSP exists in any order (for deletion validation)
+    @Query("SELECT COUNT(h) FROM HoaDonChiTiet h WHERE h.chiTietSanPham.id_chi_tiet_san_pham = :idCTSP")
+    Long countByCTSPId(@Param("idCTSP") Integer idCTSP);
+
+    // ✅ NEW: Check if any CTSP of a product exists in orders
+    @Query("SELECT COUNT(h) FROM HoaDonChiTiet h WHERE h.chiTietSanPham.sanPham.id_san_pham = :idSanPham")
+    Long countBySanPhamId(@Param("idSanPham") Integer idSanPham);
+
     @Modifying
     @Transactional
     @Query(value = """
@@ -90,7 +98,7 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
             COMMIT;
             """, nativeQuery = true)
     void addSLGH(@Param("idCTSP") Integer idCTSP, @Param("idHoaDon") Integer idHoaDon,
-                 @Param("soLuong") Integer soLuong);
+            @Param("soLuong") Integer soLuong);
 
     @Modifying
     @Transactional
@@ -140,8 +148,7 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
             COMMIT;
             """, nativeQuery = true)
     void removeSPGH(@Param("idCTSP") Integer idCTSP, @Param("idHoaDon") Integer idHoaDon,
-                    @Param("soLuong") Integer soLuong);
-
+            @Param("soLuong") Integer soLuong);
 
     @Query(value = """
             select top 1 sum(don_gia) from hoa_don_chi_tiet hdct where hdct.id_hoa_don = :idHD
@@ -150,32 +157,35 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
 
     @Query("SELECT h FROM HoaDonChiTiet h WHERE h.chiTietSanPham.id_chi_tiet_san_pham = :idChiTietSanPham AND h.hoaDon.id_hoa_don = :idHoaDon")
     Optional<HoaDonChiTiet> findByChiTietSanPhamIdAndHoaDonId(@Param("idChiTietSanPham") Integer idChiTietSanPham,
-                                                              @Param("idHoaDon") Integer idHoaDon);
+            @Param("idHoaDon") Integer idHoaDon);
 
     @Query("SELECT COALESCE(SUM(hdct.don_gia), 0) FROM HoaDonChiTiet hdct WHERE hdct.hoaDon.id_hoa_don = :idHoaDon")
     BigDecimal sumDonGiaByHoaDonId(@Param("idHoaDon") Integer idHoaDon);
 
     @Query(value = """
             SELECT
-            	hdct.id_hoa_don_chi_tiet,
-            	hdct.id_hoa_don,
-            	ctsp.id_chi_tiet_san_pham,
-            	sp.ma_san_pham,
-            	sp.ten_san_pham,
-            	sp.anh_dai_dien as hinh_anh,
-            	hdct.so_luong,
-            	ctsp.so_luong AS so_luong_ton,
-            	COALESCE((
-            		SELECT MIN(ctkm.gia_sau_giam)
-            		FROM chi_tiet_khuyen_mai ctkm
-            		JOIN khuyen_mai km ON ctkm.id_khuyen_mai = km.id_khuyen_mai
-            		WHERE ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham
-            		AND km.trang_thai = N'Đang diễn ra'
-            		AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
+            \thdct.id_hoa_don_chi_tiet,
+            \thdct.id_hoa_don,
+            \tctsp.id_chi_tiet_san_pham,
+            \tsp.ma_san_pham,
+            \tsp.ten_san_pham,
+            \tsp.anh_dai_dien as hinh_anh,
+            \thdct.so_luong,
+            \tctsp.so_luong AS so_luong_ton,
+            \tCOALESCE((
+            \t\tSELECT MIN(ctkm.gia_sau_giam)
+            \t\tFROM chi_tiet_khuyen_mai ctkm
+            \t\tJOIN khuyen_mai km ON ctkm.id_khuyen_mai = km.id_khuyen_mai
+            \t\tWHERE ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham
+            \t\t\tAND km.trang_thai = N'Đang diễn ra'
+            \t\t\tAND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
                 ), ctsp.gia_ban) AS gia_ban,
-            	hdct.don_gia,
-            	ms.ten_mau_sac,
-            	kt.gia_tri
+            \thdct.don_gia,
+            \tms.ten_mau_sac,
+            \tkt.gia_tri,
+            \tctsp.trang_thai AS trang_thai_ctsp,
+            \tsp.trang_thai AS trang_thai_san_pham,
+            \tctsp.so_luong AS so_luong_ton_kho
             FROM hoa_don_chi_tiet hdct
             JOIN chi_tiet_san_pham ctsp ON ctsp.id_chi_tiet_san_pham = hdct.id_chi_tiet_san_pham
             JOIN san_pham sp ON sp.id_san_pham = ctsp.id_san_pham
@@ -190,7 +200,7 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
     @Query(value = """
             BEGIN TRY
                 BEGIN TRANSACTION;
-                
+
                 DECLARE @SOLUONG INT = :soLuong;
                 DECLARE @IDCTSP INT = :idCTSP;
                 DECLARE @IDHD INT = :idHD;
@@ -263,35 +273,35 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
             END CATCH;
             """, nativeQuery = true)
     void addSPHD(@RequestParam("idHoaDon") Integer idHD,
-                 @RequestParam("idCTSP") Integer idCTSP,
-                 @RequestParam("soLuong") Integer soLuong,
-                 @RequestParam("giaBan") BigDecimal giaBan);
+            @RequestParam("idCTSP") Integer idCTSP,
+            @RequestParam("soLuong") Integer soLuong,
+            @RequestParam("giaBan") BigDecimal giaBan);
 
     @Modifying
     @Transactional
     @Query(value = """
             BEGIN TRANSACTION;
-                
+
             -- Khai báo các biến
             DECLARE @SOLUONG INT = :soLuong; -- Số lượng sản phẩm cần giảm
             DECLARE @IDCTSP INT = :idCTSP;  -- ID chi tiết sản phẩm
             DECLARE @IDHD INT = :idHD;   -- ID hóa đơn
-                
+
             -- Khai báo biến để tìm voucher tốt nhất và tổng tiền trước giảm
             DECLARE @TongTienTruocGiam DECIMAL(18,2);
             DECLARE @GiaTriGiamVoucher DECIMAL(18,2); -- Biến để lưu giá trị giảm từ voucher
             DECLARE @PHIVANCHUYEN DECIMAL(18,2);
-                
+
             IF NOT EXISTS (SELECT 1 FROM hoa_don WHERE id_hoa_don = @IDHD)
             BEGIN
                 PRINT N'Hóa đơn không tồn tại!';
                 ROLLBACK;
                 RETURN;
             END;
-                
+
             -- Tính giá sau khi áp dụng khuyến mãi cho sản phẩm
             DECLARE @GiaSauGiam DECIMAL(18,2);
-                
+
             SELECT @GiaSauGiam = ( select
                 CASE\s
                     WHEN km.kieu_giam_gia = N'Phần trăm' AND km.trang_thai = N'Đang diễn ra' THEN\s
@@ -317,10 +327,10 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
             FULL OUTER JOIN chi_tiet_khuyen_mai ctkm ON ctkm.id_chi_tiet_san_pham = ctsp.id_chi_tiet_san_pham
             FULL OUTER JOIN khuyen_mai km ON km.id_khuyen_mai = ctkm.id_khuyen_mai
             WHERE ctsp.trang_thai = 1 AND ctsp.id_chi_tiet_san_pham = @IDCTSP)
-                
+
             -- Lấy phí vận chuyển từ hoa_don
             SELECT @PHIVANCHUYEN = phi_van_chuyen FROM hoa_don WHERE id_hoa_don = @IDHD;
-                
+
             -- Kiểm tra xem sản phẩm đã tồn tại trong chi tiết hóa đơn chưa
             IF EXISTS (
                 SELECT 1\s
@@ -335,14 +345,14 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
                 FROM hoa_don_chi_tiet\s
                 WHERE id_hoa_don = @IDHD\s
                 AND id_chi_tiet_san_pham = @IDCTSP;
-                
+
                 IF @SoLuongHienTai < @SOLUONG
                 BEGIN
                     PRINT N'Số lượng trong hóa đơn không đủ để giảm!';
                     ROLLBACK;
                     RETURN;
                 END;
-                
+
                 -- Cập nhật số lượng và đơn giá trong hoa_don_chi_tiet
                 UPDATE hoa_don_chi_tiet
                 SET
@@ -350,7 +360,7 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
                     don_gia = (so_luong - @SOLUONG) * @GiaSauGiam
                 WHERE id_hoa_don = @IDHD\s
                 AND id_chi_tiet_san_pham = @IDCTSP;
-                
+
                 -- Nếu số lượng sau khi giảm bằng 0, xóa bản ghi
                 DELETE FROM hoa_don_chi_tiet
                 WHERE id_hoa_don = @IDHD\s
@@ -363,34 +373,34 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
                 ROLLBACK;
                 RETURN;
             END;
-                
+
             -- Tính tổng tiền trước giảm sau khi giảm sản phẩm
             SELECT @TongTienTruocGiam = @PHIVANCHUYEN + ISNULL(SUM(don_gia), 0)
             FROM hoa_don hd
             LEFT JOIN hoa_don_chi_tiet hdct ON hdct.id_hoa_don = hd.id_hoa_don
             WHERE hd.id_hoa_don = @IDHD
             GROUP BY hd.id_hoa_don, hd.phi_van_chuyen;
-                
+
             -- Cập nhật tổng tiền trong hoa_don
             UPDATE hoa_don
             SET
                 tong_tien_truoc_giam = @TongTienTruocGiam,
                 tong_tien_sau_giam = @TongTienTruocGiam
             WHERE id_hoa_don = @IDHD;
-                
+
             -- Cập nhật số lượng trong chi_tiet_san_pham
             UPDATE chi_tiet_san_pham
             SET
                 so_luong = so_luong + @SOLUONG
             WHERE id_chi_tiet_san_pham = @IDCTSP;
-                
-                
+
+
             COMMIT;
             """, nativeQuery = true)
     void giamSPHD(@RequestParam(value = "idHoaDon") Integer idHD,
-                  @RequestParam(value = "idCTSP") Integer idCTSP,
-                  @RequestParam(value = "soLuong") Integer soLuong,
-                  @RequestParam(value = "giaBan") BigDecimal giaBan);
+            @RequestParam(value = "idCTSP") Integer idCTSP,
+            @RequestParam(value = "soLuong") Integer soLuong,
+            @RequestParam(value = "giaBan") BigDecimal giaBan);
 
     @Modifying
     @Transactional
@@ -451,7 +461,6 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
             """, nativeQuery = true)
     void xoaSPKhoiHD(@Param("idHD") Integer idHoaDon, @Param("idCTSP") Integer idChiTietSanPham);
 
-
     @Modifying
     @Transactional
     @Query(value = """
@@ -462,5 +471,14 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
 
     @Query("SELECT h FROM HoaDonChiTiet h WHERE h.hoaDon.id_hoa_don = :idHoaDon")
     List<HoaDonChiTiet> findByIdHoaDon(@Param("idHoaDon") Integer idHoaDon);
+
+    @Query(value = """
+            SELECT * FROM hoa_don_chi_tiet
+            WHERE id_hoa_don = :idHoaDon
+            AND id_chi_tiet_san_pham = :idChiTietSanPham
+            """, nativeQuery = true)
+    Optional<HoaDonChiTiet> findByHoaDonAndChiTietSanPham(
+            @Param("idHoaDon") Integer idHoaDon,
+            @Param("idChiTietSanPham") Integer idChiTietSanPham);
 
 }

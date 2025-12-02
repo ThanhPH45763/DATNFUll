@@ -304,7 +304,9 @@ public interface ChiTietSanPhamRepo
             	AND DATEADD(HOUR, 7, GETDATE()) BETWEEN km.ngay_bat_dau AND km.ngay_het_han
             	GROUP BY ctkm.id_chi_tiet_san_pham
             	) km_max ON ctsp.id_chi_tiet_san_pham = km_max.id_chi_tiet_san_pham
-            WHERE ctsp.trang_thai = 1
+            WHERE sp.trang_thai = 1
+              AND ctsp.trang_thai = 1
+              AND ctsp.so_luong > 0
             ORDER BY ctsp.id_chi_tiet_san_pham
             """, nativeQuery = true)
     List<ChiTietSanPhamView> getAllCTSPKM();

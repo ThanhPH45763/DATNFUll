@@ -18,10 +18,11 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
             sp.ma_san_pham,
             sp.ten_san_pham,
             sp.mo_ta,
-            CASE
-            WHEN SUM(ctsp.so_luong) <= 0 THEN 'Không hoạt động'
-            ELSE sp.trang_thai
-            END AS trang_thai,
+            CAST(CASE
+                WHEN SUM(ctsp.so_luong) <= 0 THEN 0
+                WHEN sp.trang_thai = 1 OR sp.trang_thai = N'Hoạt động' THEN 1
+                ELSE 0
+            END AS BIT) AS trang_thai,
             dm.ten_danh_muc AS ten_danh_muc,
             th.ten_thuong_hieu AS ten_thuong_hieu,
             cl.ten_chat_lieu,
@@ -51,10 +52,11 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
                         sp.ma_san_pham,
                         sp.ten_san_pham,
                         sp.mo_ta,
-                        CASE
-                        WHEN SUM(ctsp.so_luong) <= 0 THEN 'Không hoạt động'
-                        ELSE sp.trang_thai
-                        END AS trang_thai,
+                        CAST(CASE
+                            WHEN SUM(ctsp.so_luong) <= 0 THEN 0
+                            WHEN sp.trang_thai = 1 OR sp.trang_thai = N'Hoạt động' THEN 1
+                            ELSE 0
+                        END AS BIT) AS trang_thai,
                         dm.ten_danh_muc AS ten_danh_muc,
                         th.ten_thuong_hieu AS ten_thuong_hieu,
                         cl.ten_chat_lieu,
@@ -80,32 +82,36 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
             """)
     ArrayList<SanPhamView> getAllSanPhamSapXepTheoNgaySua();
 
-    @Query(nativeQuery = true, value = "select sp.id_san_pham as id_san_pham, sp.ma_san_pham, sp.ten_san_pham, sp.mo_ta, sp.trang_thai as trang_thai, dm.ten_danh_muc as ten_danh_muc, \n"
+    @Query(nativeQuery = true, value = "select sp.id_san_pham as id_san_pham, sp.ma_san_pham, sp.ten_san_pham, sp.mo_ta, "
             +
-            "            th.ten_thuong_hieu as ten_thuong_hieu, cl.ten_chat_lieu, sp.anh_dai_dien, sum(ctsp.so_luong) as tong_so_luong\n"
+            "CAST(CASE WHEN sp.trang_thai = 1 OR sp.trang_thai = N'Hoạt động' THEN 1 ELSE 0 END AS BIT) as trang_thai, "
             +
-            "            from san_pham sp\n" +
-            "           full outer join danh_muc_san_pham dm on dm.id_danh_muc = sp.id_danh_muc\n" +
-            "           full outer join thuong_hieu th on th.id_thuong_hieu = sp.id_thuong_hieu\n" +
-            "            full outer join chat_lieu cl on cl.id_chat_lieu = sp.id_chat_lieu\n" +
-            "\t\t\tfull outer join chi_tiet_san_pham ctsp on ctsp.id_san_pham = sp.id_san_pham\n" +
-            "\t\t\tgroup by sp.id_san_pham, sp.ma_san_pham, sp.ten_san_pham, sp.mo_ta, sp.trang_thai, dm.ten_danh_muc, \n"
+            "dm.ten_danh_muc as ten_danh_muc, \n" +
+            "th.ten_thuong_hieu as ten_thuong_hieu, cl.ten_chat_lieu, sp.anh_dai_dien, sum(ctsp.so_luong) as tong_so_luong\n"
             +
-            "            th.ten_thuong_hieu, cl.ten_chat_lieu,sp.anh_dai_dien")
+            "from san_pham sp\n" +
+            "full outer join danh_muc_san_pham dm on dm.id_danh_muc = sp.id_danh_muc\n" +
+            "full outer join thuong_hieu th on th.id_thuong_hieu = sp.id_thuong_hieu\n" +
+            "full outer join chat_lieu cl on cl.id_chat_lieu = sp.id_chat_lieu\n" +
+            "full outer join chi_tiet_san_pham ctsp on ctsp.id_san_pham = sp.id_san_pham\n" +
+            "group by sp.id_san_pham, sp.ma_san_pham, sp.ten_san_pham, sp.mo_ta, sp.trang_thai, dm.ten_danh_muc, \n" +
+            "th.ten_thuong_hieu, cl.ten_chat_lieu,sp.anh_dai_dien")
     Page<SanPhamView> getAllSanPhamPhanTrang(Pageable pageable);
 
-    @Query(nativeQuery = true, value = "select sp.id_san_pham as id_san_pham, sp.ma_san_pham, sp.ten_san_pham, sp.mo_ta, sp.trang_thai as trang_thai, dm.ten_danh_muc as ten_danh_muc, \n"
+    @Query(nativeQuery = true, value = "select sp.id_san_pham as id_san_pham, sp.ma_san_pham, sp.ten_san_pham, sp.mo_ta, "
             +
-            "            th.ten_thuong_hieu as ten_thuong_hieu, cl.ten_chat_lieu, sp.anh_dai_dien, sum(ctsp.so_luong) as tong_so_luong\n"
+            "CAST(CASE WHEN sp.trang_thai = 1 OR sp.trang_thai = N'Hoạt động' THEN 1 ELSE 0 END AS BIT) as trang_thai, "
             +
-            "            from san_pham sp\n" +
-            "          full outer  join danh_muc_san_pham dm on dm.id_danh_muc = sp.id_danh_muc\n" +
-            "           full outer join thuong_hieu th on th.id_thuong_hieu = sp.id_thuong_hieu\n" +
-            "           full outer join chat_lieu cl on cl.id_chat_lieu = sp.id_chat_lieu\n" +
-            "\t\t\tfull outer join chi_tiet_san_pham ctsp on ctsp.id_san_pham = sp.id_san_pham\n" +
-            "\t\t\tgroup by sp.id_san_pham, sp.ma_san_pham, sp.ten_san_pham, sp.mo_ta, sp.trang_thai, dm.ten_danh_muc, \n"
+            "dm.ten_danh_muc as ten_danh_muc, \n" +
+            "th.ten_thuong_hieu as ten_thuong_hieu, cl.ten_chat_lieu, sp.anh_dai_dien, sum(ctsp.so_luong) as tong_so_luong\n"
             +
-            "            th.ten_thuong_hieu, cl.ten_chat_lieu,sp.anh_dai_dien" +
+            "from san_pham sp\n" +
+            "full outer join danh_muc_san_pham dm on dm.id_danh_muc = sp.id_danh_muc\n" +
+            "full outer join thuong_hieu th on th.id_thuong_hieu = sp.id_thuong_hieu\n" +
+            "full outer join chat_lieu cl on cl.id_chat_lieu = sp.id_chat_lieu\n" +
+            "full outer join chi_tiet_san_pham ctsp on ctsp.id_san_pham = sp.id_san_pham\n" +
+            "group by sp.id_san_pham, sp.ma_san_pham, sp.ten_san_pham, sp.mo_ta, sp.trang_thai, dm.ten_danh_muc, \n" +
+            "th.ten_thuong_hieu, cl.ten_chat_lieu,sp.anh_dai_dien " +
             "where dm.ten_danh_muc like CONCAT('%', :tenDanhMuc, '%') and th.ten_thuong_hieu like CONCAT('%', :tenThuongHieu, '%') and cl.ten_chat_lieu like CONCAT('%', :tenChatLieu, '%')")
     ArrayList<SanPhamView> locSanPham(@Param("tenDanhMuc") String tenDanhMuc,
             @Param("tenThuongHieu") String tenThuongHieu, @Param("tenChatLieu") String tenChatLieu);
@@ -342,10 +348,11 @@ public interface SanPhamRepo extends JpaRepository<SanPham, Integer> {
                         sp.ma_san_pham,
                         sp.ten_san_pham,
                         sp.mo_ta,
-                        CASE
-                            WHEN SUM(ctsp.so_luong) <= 0 THEN 'Không hoạt động'
-                            ELSE sp.trang_thai
-                        END AS trang_thai,
+                        CAST(CASE
+                            WHEN SUM(ctsp.so_luong) <= 0 THEN 0
+                            WHEN sp.trang_thai = 1 OR sp.trang_thai = N'Hoạt động' THEN 1
+                            ELSE 0
+                        END AS BIT) AS trang_thai,
                         dm.ten_danh_muc AS ten_danh_muc,
                         th.ten_thuong_hieu AS ten_thuong_hieu,
                         cl.ten_chat_lieu,

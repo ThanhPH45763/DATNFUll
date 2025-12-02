@@ -77,6 +77,15 @@
                                 <EditOutlined />
                                 <span class="btn-text">Sửa</span>
                             </a-button>
+                            
+                            <!-- ✅ DELETE BUTTON -->
+                            <a-button v-if="store.id_roles !== 3" danger 
+                                @click="confirmDeleteSanPham(record)"
+                                class="d-flex align-items-center delete-btn"
+                                title="Xóa sản phẩm" size="small">
+                                <DeleteOutlined />
+                                <span class="btn-text">Xóa</span>
+                            </a-button>
                         </div>
                     </template>
                 </template>
@@ -174,10 +183,23 @@
                                     </a-tooltip>
                                 </template>
                                 <template v-if="column.key === 'action'">
-                                    <a-button @click="showDrawer" type="" style="color: white;"
-                                        class="d-flex align-items-center btn btn-warning">
-                                        <EditOutlined />Sửa
-                                    </a-button>
+                                    <div class="d-flex flex-column gap-2">
+                                        <!-- <a-button @click="showDrawer" type="" style="color: white; width: 100%;"
+                                            class="d-flex align-items-center justify-content-center btn btn-warning"
+                                            size="small">
+                                            <EditOutlined />Sửa
+                                        </a-button> -->
+                                        
+                                        <!-- ✅ DELETE BUTTON FOR CTSP -->
+                                        <a-button v-if="store.id_roles !== 3" danger 
+                                            @click="confirmDeleteCTSP(ctspRecord)"
+                                            class="d-flex align-items-center justify-content-center"
+                                            style="width: 100%;"
+                                            size="small">
+                                            <DeleteOutlined />
+                                            Xóa
+                                        </a-button>
+                                    </div>
                                 </template>
                             </template>
                         </a-table>
@@ -234,6 +256,7 @@ import '../../../config/fonts/Roboto-bold'
 import '../../../config/fonts/Roboto-normal';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
+import axiosInstance from '@/config/axiosConfig';
 
 // Khai báo các key cache và thời gian cache
 const PRODUCTS_CACHE_KEY = 'products_data';
@@ -572,6 +595,12 @@ const columnsCTSP = [
         title: 'QR Code',
         key: 'qrcode',
     },
+    {
+        title: 'Action',
+        key: 'action',
+        fixed: 'right',
+        width: 180,
+    }
 ];
 const showConfirmDownload = (ctspRecord) => {
     console.log('Record:', ctspRecord);
@@ -1290,6 +1319,207 @@ const handleMenuActionRefresh = async () => {
     }
 };
 
+// ✅ NEW: DELETE SANPHAM - Confirmation Modal with 5s countdown
+const confirmDeleteSanPham = (product) => {
+    let countdown = 5;
+    let countdownInterval = null;
+    
+    const modal = AModal.confirm({
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(DeleteOutlined, { style: 'color: #ff4d4f; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Xác nhận xóa sản phẩm')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, `Bạn có chắc muốn xóa sản phẩm "${product.ten_san_pham}"?`),
+            h('div', { style: 'background: #fff2e8; padding: 12px; borderRadius: 6px; border: 1px solid #ffbb96;' }, [
+                h('div', { style: 'color: #d4380d; fontSize: 13px;' }, [
+                    h('div', { style: 'fontWeight: 500; marginBottom: 6px;' }, '⚠️ Cảnh báo:'),
+                    h('div', null, '• Tất cả các biến thể của sản phẩm sẽ bị xóa'),
+                    h('div', null, '• Hành động này không thể hoàn tác'),
+                    h('div', null, '• Chỉ có thể xóa nếu sản phẩm không tồn tại trong hóa đơn/giỏ hàng')
+                ])
+            ])
+        ]),
+        okText: `Xóa (${countdown}s)`,
+        cancelText: 'Hủy',
+        okButtonProps: { 
+            danger: true, 
+            size: 'large', 
+            style: { height: '38px' },
+            disabled: true  // Disabled initially
+        },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 500,
+        onOk: async () => {
+            clearInterval(countdownInterval);
+            await deleteSanPham(product.id_san_pham);
+        },
+        onCancel: () => {
+            clearInterval(countdownInterval);
+        }
+    });
+    
+    // Start countdown
+    countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            modal.update({
+                okText: `Xóa (${countdown}s)`,
+                okButtonProps: { 
+                    danger: true, 
+                    size: 'large', 
+                    style: { height: '38px' },
+                    disabled: true 
+                }
+            });
+        } else {
+            // Enable button after 5s
+            modal.update({
+                okText: 'Xóa',
+                okButtonProps: { 
+                    danger: true, 
+                    size: 'large', 
+                    style: { height: '38px' },
+                    disabled: false 
+                }
+            });
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
+};
+
+// ✅ NEW: DELETE SANPHAM - Handler
+const deleteSanPham = async (idSanPham) => {
+    try {
+        const loadingKey = 'deleteSanPham';
+        message.loading({ content: 'Đang xóa sản phẩm...', key: loadingKey });
+        
+        const response = await axiosInstance.delete('/admin/quan_ly_san_pham/deleteSanPhamPermanent', {
+            params: { id: idSanPham }
+        });
+        
+        if (response.data.success) {
+            message.success({ content: response.data.message, key: loadingKey, duration: 2 });
+            await refreshData();
+        } else {
+            message.error({ content: response.data.message, key: loadingKey, duration: 3 });
+        }
+    } catch (error) {
+        console.error('Lỗi khi xóa sản phẩm:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Lỗi không xác định';
+        message.error('Không thể xóa sản phẩm: ' + errorMessage);
+    }
+};
+
+// ✅ NEW: DELETE CTSP - Confirmation Modal with 5s countdown
+const confirmDeleteCTSP = (ctsp) => {
+    let countdown = 5;
+    let countdownInterval = null;
+    
+    const modal = AModal.confirm({
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(DeleteOutlined, { style: 'color: #ff4d4f; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Xác nhận xóa biến thể')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0 0 12px 0; font-size: 14px;' }, `Bạn có chắc muốn xóa biến thể này?`),
+            h('div', { style: 'background: #e6f7ff; padding: 12px; borderRadius: 6px; border: 1px solid #91d5ff; marginBottom: 8px;' }, [
+                h('div', { style: 'color: #096dd9; fontSize: 13px;' }, [
+                    h('div', { style: 'fontWeight: 500; marginBottom: 6px;' }, 'Thông tin biến thể:'),
+                    h('div', null, `• Màu sắc: ${ctsp.mau_sac}`),
+                    h('div', null, `• Kích thước: ${ctsp.size}`),
+                    h('div', null, `• Số lượng: ${ctsp.so_luong}`)
+                ])
+            ]),
+            h('div', { style: 'background: #fff2e8; padding: 12px; borderRadius: 6px; border: 1px solid #ffbb96;' }, [
+                h('div', { style: 'color: #d4380d; fontSize: 13px;' }, [
+                    h('div', { style: 'fontWeight: 500; marginBottom: 6px;' }, '⚠️ Lưu ý:'),
+                    h('div', null, '• Hành động này không thể hoàn tác'),
+                    h('div', null, '• Chỉ có thể xóa nếu không tồn tại trong hóa đơn/giỏ hàng')
+                ])
+            ])
+        ]),
+        okText: `Xóa (${countdown}s)`,
+        cancelText: 'Hủy',
+        okButtonProps: { 
+            danger: true, 
+            size: 'large', 
+            style: { height: '38px' },
+            disabled: true  // Disabled initially
+        },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 500,
+        onOk: async () => {
+            clearInterval(countdownInterval);
+            await deleteCTSP(ctsp.id_chi_tiet_san_pham);
+        },
+        onCancel: () => {
+            clearInterval(countdownInterval);
+        }
+    });
+    
+    // Start countdown
+    countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            modal.update({
+                okText: `Xóa (${countdown}s)`,
+                okButtonProps: { 
+                    danger: true, 
+                    size: 'large', 
+                    style: { height: '38px' },
+                    disabled: true 
+                }
+            });
+        } else {
+            // Enable button after 5s
+            modal.update({
+                okText: 'Xóa',
+                okButtonProps: { 
+                    danger: true, 
+                    size: 'large', 
+                    style: { height: '38px' },
+                    disabled: false 
+                }
+            });
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
+};
+
+// ✅ NEW: DELETE CTSP - Handler  
+const deleteCTSP = async (idCTSP) => {
+    try {
+        const loadingKey = 'deleteCTSP';
+        message.loading({ content: 'Đang xóa biến thể...', key: loadingKey });
+        
+        const response = await axiosInstance.delete('/admin/quan_ly_san_pham/deleteCTSPPermanent', {
+            params: { id: idCTSP }
+        });
+        
+        if (response.data.success) {
+            message.success({ content: response.data.message, key: loadingKey, duration: 2 });
+            
+            // Refresh danh sách CTSP trong drawer
+            if (currentProduct.value) {
+                await getCTSPForProduct(currentProduct.value);
+            }
+            
+            // Refresh danh sách sản phẩm
+            await refreshData();
+        } else {
+            message.error({ content: response.data.message, key: loadingKey, duration: 3 });
+        }
+    } catch (error) {
+        console.error('Lỗi khi xóa CTSP:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Lỗi không xác định';
+        message.error('Không thể xóa biến thể: ' + errorMessage);
+    }
+};
+
+
 // Handle table change events (sorting, pagination, etc.)
 const handleTableChange = (pagination, filters, sorter) => {
     console.log('Table params changed:', { pagination, filters, sorter });
@@ -2006,7 +2236,7 @@ onUnmounted(() => {
 /* Desktop specific enhancements */
 @media (min-width: 993px) {
     .action-buttons .ant-btn {
-        min-width: 70px !important; /* Ensure minimum width on desktop */
+        min-width: 80px !important; /* Ensure minimum width on desktop */
     }
 
     .btn-text {

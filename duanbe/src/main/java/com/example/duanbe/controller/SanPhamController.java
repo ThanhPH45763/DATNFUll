@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -97,6 +99,15 @@ public class SanPhamController {
     @PutMapping("/chuyenTrangThaiSanPham")
     public ResponseEntity<?> chuyenTrangThaiSanPham(@RequestParam("id") Integer id) {
         return sanPhamService.chuyenTrangThai(id);
+    }
+
+    /**
+     * ✅ NEW: API endpoint to permanently delete product
+     * DELETE /admin/quan_ly_san_pham/deleteSanPhamPermanent?id={id}
+     */
+    @DeleteMapping("/deleteSanPhamPermanent")
+    public ResponseEntity<?> deleteSanPhamPermanent(@RequestParam("id") Integer id) {
+        return sanPhamService.deleteSanPhamPermanent(id);
     }
 
     @GetMapping("/locSanPham")

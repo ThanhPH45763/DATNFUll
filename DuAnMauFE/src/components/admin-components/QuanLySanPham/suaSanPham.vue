@@ -106,7 +106,8 @@
             </div>
 
             <template v-if="isProductValidated">
-                <div v-for="(variant, index) in variants" :key="index" class="variant-item mb-3 p-3 border rounded">
+                <div v-for="(variant, index) in variants" :key="index" 
+                     :class="['variant-item', 'mb-3', 'p-3', 'border', 'rounded', { 'variant-disabled': !variant.trang_thai_boolean }]">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6>Biến thể #{{ index + 1 }} <span v-if="variant.isExisting" class="badge badge-info">Đã tồn
                                 tại</span></h6>
@@ -149,7 +150,9 @@
                                     :help="variant.soLuongHelp">
                                     <a-input-number v-model:value="variant.so_luong" class="w-full" :controls="false"
                                         :formatter="formatSoLuong" :parser="parseSoLuong"
-                                        placeholder="Nhập số lượng sản phẩm" @blur="validateSoLuong(variant, index)"
+                                        placeholder="Nhập số lượng sản phẩm" 
+                                        :disabled="!variant.trang_thai_boolean"
+                                        @blur="validateSoLuong(variant, index)"
                                         @change="validateSoLuong(variant, index)" />
                                 </a-form-item>
                             </div>
@@ -160,16 +163,32 @@
                                     <a-input-number :readonly="variant.isExisting" v-model:value="variant.gia_ban"
                                         class="w-full" :controls="false" :formatter="formatGiaBan" :parser="parseGiaBan"
                                         placeholder="Nhập giá bán sản phẩm"
-                                        :disabled="useCommonPrice || variant.isExisting"
+                                        :disabled="useCommonPrice || variant.isExisting || !variant.trang_thai_boolean"
                                         @blur="validateGiaBan(variant, index)"
                                         @change="validateGiaBan(variant, index)" />
                                 </a-form-item>
                             </div>
                         </div>
 
-                        <a-form-item hidden label="Trạng thái">
-                            <a-switch v-model:checked="variant.trang_thai" :checked-children="'Hoạt động'"
-                                :un-checked-children="'Không hoạt động'" />
+                        <!-- ✅ THÊM: Nút gạt trạng thái CTSP -->
+                        <a-form-item label="Trạng thái">
+                            <div class="d-flex align-items-center gap-2">
+                                <a-switch 
+                                    v-model:checked="variant.trang_thai_boolean"
+                                    @change="() => handleCTSPStatusChange(variant, index)"
+                                    :style="{ backgroundColor: variant.trang_thai_boolean ? '#ff6600' : '#ccc' }"
+                                    class="custom-orange-switch"
+                                    :checked-children="'Hoạt động'"
+                                    :un-checked-children="'Không hoạt động'"
+                                    :disabled="!variant.isExisting"
+                                />
+                                <span class="ms-2" :style="{ color: variant.trang_thai_boolean ? '#52c41a' : '#ff4d4f' }">
+                                    {{ variant.trang_thai_boolean ? 'Hoạt động' : 'Không hoạt động' }}
+                                </span>
+                            </div>
+                            <div class="text-muted small mt-1" v-if="!variant.isExisting">
+                                * Chỉ có thể thay đổi tr\u1ea1ng th\u00e1i sau khi lưu biến thể
+                            </div>
                         </a-form-item>
 
                         <a-form-item label="Hình ảnh biến thể"
@@ -180,6 +199,7 @@
                                 list-type="picture-card" 
                                 :max-count="2"
                                 :multiple="true"
+                                :disabled="!variant.trang_thai_boolean"
                                 :before-upload="(file) => beforeUpload(file, variant.fileList ? variant.fileList.length : 0)"
                                 :customRequest="(options) => handleVariantCustomRequest(options, index)"
                                 @change="(info) => handleVariantImageChange(info, index)" 
@@ -192,7 +212,7 @@
                                 
                                 <!-- Custom render cho mỗi ảnh -->
                                 <template #itemRender="{ file, actions }">
-                                    <div class="custom-image-item" @click="() => setPrimaryImage(index, file)">
+                                    <div class="custom-image-item" @click="() => variant.trang_thai_boolean ? setPrimaryImage(index, file) : null">
                                         <img :src="file.url || file.thumbUrl" alt="variant image" />
                                         
                                         <!-- Badge ảnh chính -->
@@ -201,8 +221,8 @@
                                             <star-filled /> Ảnh chính
                                         </div>
                                         
-                                        <!-- Action buttons -->
-                                        <div class="image-actions-overlay">
+                                        <!-- Action buttons - DISABLED khi variant không hoạt động -->
+                                        <div class="image-actions-overlay" v-if="variant.trang_thai_boolean">
                                             <a-button 
                                                 type="text" 
                                                 size="small" 
@@ -216,6 +236,11 @@
                                                 @click.stop="() => handleRemoveImage(file, index)">
                                                 <delete-outlined style="color: white;" />
                                             </a-button>
+                                        </div>
+                                        
+                                        <!-- Hiển thị thông báo khi disabled -->
+                                        <div v-else class="image-disabled-overlay">
+                                            <lock-outlined style="font-size: 24px; color: white;" />
                                         </div>
                                     </div>
                                 </template>
@@ -251,7 +276,7 @@
 
 <script setup>
 import { h, ref, reactive, onMounted, watch, readonly } from 'vue';
-import { PlusOutlined, DeleteOutlined, ExclamationCircleOutlined, StarFilled, EyeOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, DeleteOutlined, ExclamationCircleOutlined, StarFilled, EyeOutlined, LockOutlined } from '@ant-design/icons-vue';
 import { message, Modal, notification } from 'ant-design-vue';
 import { useGbStore } from '@/stores/gbStore';
 import { useRouter } from 'vue-router';
@@ -433,6 +458,8 @@ const addVariant = async () => {
         so_luong: 1,
         gia_ban: giaBan,
         trang_thai: 'Hoạt động',
+        // ✅ FIX: Thêm trang_thai_boolean = true cho biến thể mới
+        trang_thai_boolean: true,
         fileList: [],
         hinh_anh: [],
         ngay_sua: new Date().toISOString(),
@@ -444,6 +471,76 @@ const addVariant = async () => {
         giaBanValidateStatus: '',
         giaBanHelp: ''
     });
+};
+
+// ✅ Handler cho toggle trạng thái CTSP
+const handleCTSPStatusChange = async (variant, index) => {
+    try {
+        const newStatus = variant.trang_thai_boolean;
+        
+        if (!newStatus) {
+            // Khi chuyển sang không hoạt động - cần confirm
+            Modal.confirm({
+                title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+                    h(ExclamationCircleOutlined, { style: 'color: #faad14; font-size: 22px;' }),
+                    h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Xác nhận')
+                ]),
+                content: 'Bạn có chắc muốn vô hiệu hóa biến thể này?',
+                okText: 'Xác nhận',
+                cancelText: 'Hủy',
+                okButtonProps: { danger: true },
+                onOk: async () => {
+                    variant.trang_thai = 'Không hoạt động';
+                    variant.trang_thai_boolean = false;
+                    
+                    // Nếu là biến thể đã tồn tại, call API
+                    if (variant.id_chi_tiet_san_pham) {
+                        try {
+                            await axiosInstance.put('/admin/quan_ly_san_pham/changeStatusCTSP', null, {
+                                params: { id: variant.id_chi_tiet_san_pham }
+                            });
+                            message.success('Đã vô hiệu hóa biến thể');
+                        } catch (error) {
+                            console.error('Lỗi API changeStatusCTSP:', error);
+                            message.error('Lỗi khi vô hiệu hóa: ' + (error.response?.data?.message || error.message));
+                            // Revert
+                            variant.trang_thai_boolean = true;
+                            variant.trang_thai = 'Hoạt động';
+                        }
+                    }
+                },
+                onCancel: () => {
+                    // Revert lại
+                    variant.trang_thai_boolean = true;
+                }
+            });
+        } else {
+            // Khi chuyển sang hoạt động - không cần confirm
+            variant.trang_thai = 'Hoạt động';
+            variant.trang_thai_boolean = true;
+            
+            // Nếu là biến thể đã tồn tại, call API
+            if (variant.id_chi_tiet_san_pham) {
+                try {
+                    await axiosInstance.put('/admin/quan_ly_san_pham/changeStatusCTSP', null, {
+                        params: { id: variant.id_chi_tiet_san_pham }
+                    });
+                    message.success('Đã kích hoạt biến thể');
+                } catch (error) {
+                    console.error('Lỗi API changeStatusCTSP:', error);
+                    message.error('Lỗi khi kích hoạt: ' + (error.response?.data?.message || error.message));
+                    // Revert
+                    variant.trang_thai_boolean = false;
+                    variant.trang_thai = 'Không hoạt động';
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi khi chuyển trạng thái CTSP:', error);
+        message.error('Lỗi khi chuyển trạng thái');
+        // Revert lại
+        variant.trang_thai_boolean = !variant.trang_thai_boolean;
+    }
 };
 
 const removeVariant = (index) => {
@@ -1049,11 +1146,18 @@ onMounted(async () => {
                     so_luong: ctsp.so_luong || 1,
                     gia_ban: ctsp.gia_ban || 1100,
                     trang_thai: ctsp.trang_thai || 'Hoạt động',
+                    // ✅ THÊM: Boolean field cho toggle switch
+                    trang_thai_boolean: ctsp.trang_thai === 'Hoạt động' || ctsp.trang_thai === true || ctsp.trang_thai === 1,
                     fileList: variantFileList,
                     hinh_anh: variantFileList.map(file => file.url),
                     ngay_tao: ctsp.ngay_tao,
                     ngay_sua: ctsp.ngay_sua,
-                    isExisting: true // Đánh dấu đây là biến thể đã tồn tại
+                    isExisting: true, // Đánh dấu đây là biến thể đã tồn tại
+                    // Thêm validate status fields
+                    soLuongValidateStatus: '',
+                    soLuongHelp: '',
+                    giaBanValidateStatus: '',
+                    giaBanHelp: ''
                 };
             });
 
@@ -1237,13 +1341,15 @@ const parseGiaBan = (value) => {
 };
 
 // Thêm hàm validate số lượng với đầy đủ điều kiện
-const validateSoLuong = (variant, index) => {
+const validateSoLuong = async (variant, index) => {
     // Reset trạng thái validate
     variant.soLuongValidateStatus = '';
     variant.soLuongHelp = '';
+    
+    const soLuong = variant.so_luong;
 
     // Kiểm tra trống
-    if (variant.so_luong === undefined || variant.so_luong === null || variant.so_luong === '') {
+    if (soLuong === undefined || soLuong === null || soLuong === '') {
         variant.soLuongValidateStatus = 'error';
         variant.soLuongHelp = 'Vui lòng nhập số lượng!';
         return false;
@@ -1252,36 +1358,45 @@ const validateSoLuong = (variant, index) => {
     // Hiển thị thông báo nếu đã phát hiện ký tự không hợp lệ
     if (invalidInputs.value.soLuong[index]) {
         variant.soLuongValidateStatus = 'error';
-        variant.soLuongHelp = 'Số lượng chỉ được nhập số nguyên dương!';
+        variant.soLuongHelp = 'Chỉ được nhập số nguyên dương!';
+        invalidInputs.value.soLuong[index] = false; // Reset
+        return false;
+    }
 
-        // Giữ thông báo lỗi hiển thị trong 3 giây
-        setTimeout(() => {
-            if (variant.soLuongHelp === 'Số lượng chỉ được nhập số nguyên dương!') {
-                invalidInputs.value.soLuong[index] = false;
-                // Kiểm tra lại sau khi xóa cờ lỗi
-                validateSoLuong(variant, index);
+    // Chuyển đổi sang số
+    let numericValue = Number(soLuong);
+
+    // ✅ FIX: Cho phép >= 0 thay vì > 0
+    if (numericValue < 0) {
+        variant.soLuongValidateStatus = 'error';
+        variant.soLuongHelp = 'Số lượng không được âm!';
+        return false;
+    }
+
+    // ✅ FIX: Tự động chuyển trạng thái khi số lượng = 0
+    if (numericValue === 0) {
+        variant.trang_thai = 'Không hoạt động';
+        variant.trang_thai_boolean = false;
+        
+        // Nếu là CTSP đã tồn tại, call API ngay
+        if (variant.id_chi_tiet_san_pham) {
+            try {
+                await axiosInstance.put('/admin/quan_ly_san_pham/changeStatusCTSP', null, {
+                    params: { id: variant.id_chi_tiet_san_pham }
+                });
+                message.warning('Số lượng = 0. Đã tự động chuyển biến thể sang không hoạt động.');
+            } catch (error) {
+                console.error('Lỗi khi chuyển trạng thái CTSP:', error);
+                // Vẫn set trạng thái local nhưng báo warning
+                message.warning('Số lượng = 0. Biến thể sẽ được lưu với trạng thái không hoạt động.');
             }
-        }, 3000);
-
-        return false;
-    }
-
-    // Các kiểm tra khác vẫn giữ nguyên...
-    const numValue = Number(variant.so_luong);
-
-    if (numValue <= 0) {
-        variant.soLuongValidateStatus = 'error';
-        variant.soLuongHelp = 'Số lượng phải lớn hơn 0!';
-        return false;
-    }
-
-    if (numValue > 100000) {
-        variant.soLuongValidateStatus = 'error';
-        variant.soLuongHelp = 'Số lượng không được vượt quá 100.000!';
-        return false;
+        } else {
+            message.warning('Số lượng = 0. Biến thể sẽ được lưu với trạng thái không hoạt động.');
+        }
     }
 
     variant.soLuongValidateStatus = 'success';
+    variant.soLuongHelp = '';
     return true;
 };
 
@@ -1385,7 +1500,9 @@ const onFinish = async () => {
             break;
         }
         
-        if (!validateSoLuong(variant, i)) {
+        // ✅ FIX: Await async validation
+        const soLuongValid = await validateSoLuong(variant, i);
+        if (!soLuongValid) {
             message.error(`Biến thể ${i + 1}: Số lượng không hợp lệ!`);
             hasError = true;
             break;
@@ -1406,6 +1523,7 @@ const onFinish = async () => {
     }
 
     if (hasError) {
+        loading.value = false;
         return;
     }
 
@@ -1428,9 +1546,11 @@ const onFinish = async () => {
 
         // ✅ Update sản phẩm chính
         await axiosInstance.put('/admin/quan_ly_san_pham/updateSanPham', sanPhamData);
+        
+        console.log(`💾 Bắt đầu lưu ${variants.value.length} biến thể...`);
 
         // Lưu từng biến thể
-        const savePromises = variants.value.map(async (variant) => {
+        const savePromises = variants.value.map(async (variant, idx) => {
             const sortedFileList = [...(variant.fileList || [])].sort((a, b) => {
                 const aIsPrimary = a.anh_chinh === '1' || a.anh_chinh === 1 || a.anh_chinh === true;
                 const bIsPrimary = b.anh_chinh === '1' || b.anh_chinh === 1 || b.anh_chinh === true;
@@ -1450,12 +1570,15 @@ const onFinish = async () => {
                 id_kich_thuoc: variant.id_kich_thuoc,
                 so_luong: parseInt(variant.so_luong),
                 gia_ban: convertPriceToNumber(variant.gia_ban),
-                trang_thai: variant.trang_thai === 'Hoạt động' || variant.trang_thai === true,
+                // ✅ FIX: Ưu tiên trang_thai_boolean (source of truth cho switch)
+                trang_thai: variant.trang_thai_boolean === true ? 'Hoạt động' : 'Không hoạt động',
                 qr_code: variant.qr_code || '',
                 hinh_anh: hinhAnhUrls
             };
 
+            console.log(`💾 Lưu biến thể ${idx + 1}/${variants.value.length}:`, variantData);
             const response = await axiosInstance.post('/admin/quan_ly_san_pham/saveCTSP', variantData);
+            console.log(`✅ Đã lưu biến thể ${idx + 1}:`, response.data);
             return response.data;
         });
 
@@ -1897,6 +2020,30 @@ const resetForm = () => {
     color: inherit !important;
 }
 
+/* image-actions-overlay button hover */
+.image-actions-overlay button:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Overlay khi ảnh bị disabled */
+.image-disabled-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+/* Primary image badge */
+.primary-image-badge {
+    /* Add properties here if needed */
+}
+
 /* Loading spinners orange */
 :deep(.ant-spin-nested-loading .ant-spin-container .ant-spin-spinning) {
     color: #ff6b35 !important;
@@ -1904,6 +2051,55 @@ const resetForm = () => {
 
 :deep(.ant-spin-dot-item) {
     background-color: #ff6b35 !important;
+}
+
+/* ✅ CSS cho variant disabled */
+.variant-disabled {
+    background-color: #f5f5f5 !important;
+    opacity: 0.65;
+    position: relative;
+    cursor: not-allowed;
+}
+
+.variant-disabled::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.12);
+    pointer-events: none;
+    border-radius: 4px;
+    z-index: 1;
+}
+
+.variant-disabled h6,
+.variant-disabled label,
+.variant-disabled .ant-form-item {
+    position: relative;
+    z-index: 2;
+}
+
+/* Disabled inputs trong variant disabled */
+.variant-disabled :deep(.ant-input-number-disabled),
+.variant-disabled :deep(.ant-upload-disabled),
+.variant-disabled :deep(.ant-select-disabled) {
+    cursor: not-allowed !important;
+    opacity: 0.8;
+}
+
+.variant-disabled :deep(.ant-upload-list-item) {
+    cursor: default !important;
+}
+
+/* Custom orange switch */
+.custom-orange-switch.ant-switch-checked {
+    background-color: #ff6600 !important;
+}
+
+.custom-orange-switch.ant-switch-checked:hover:not(.ant-switch-disabled) {
+    background-color: #e55a00 !important;
 }
 
 </style>

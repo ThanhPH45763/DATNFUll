@@ -148,7 +148,9 @@
                                     {{ !activeTabData ? 'Vui lòng chọn hoặc tạo hóa đơn.' : 'Chưa có sản phẩm nào.' }}
                                 </td>
                             </tr>
-                            <tr v-for="(item, index) in currentInvoiceItems" :key="item.id_chi_tiet_san_pham">
+                            <tr v-for="(item, index) in currentInvoiceItems" 
+                                :key="item.id_chi_tiet_san_pham"
+                                :class="{ 'inactive-product-row': isProductInactive(item) }">
                                 <td>{{ index + 1 }}</td>
                                 <td>
                                     <img style="width: 50px; height: 50px;"
@@ -162,7 +164,7 @@
                                 <td>
                                     <a-space direction="vertical">
                                         <a-input-number v-model:value="item.so_luong" :min="1"
-                                            :max="item.so_luong_ton_goc" @change="updateItemTotal(item)"
+                                            :max="getMaxQuantity(item)"
                                             style="width: 80px;" />
 
                                     </a-space>
@@ -353,6 +355,16 @@
                             <input type="text" class="form-control" :value="formatCurrency(calculatedChange)" disabled>
                         </div>
                     </div>
+
+                    <!-- ✅ NEW: Warning for inactive products -->
+                    <a-alert v-if="hasInactiveProducts" type="error" show-icon style="margin-bottom: 16px;">
+                        <template #message>
+                            Có sản phẩm đã ngừng hoạt động trong giỏ hàng
+                        </template>
+                        <template #description>
+                            Vui lòng xóa các sản phẩm không hoạt động để thanh toán
+                        </template>
+                    </a-alert>
 
                     <!-- Nút thanh toán với điều kiện vô hiệu hóa -->
                     <button type="submit" class="btn btn-primary w-100" :disabled="isPaymentDisabled">
@@ -744,13 +756,18 @@ const filteredProducts = computed(() => {
         console.log('⚠️ allProducts is empty!');
         return [];
     }
+    
+    // ✅ Filter out zero-stock products FIRST
+    let availableProducts = allProducts.value.filter(product => product.so_luong > 0);
+    console.log('📦 Available products (stock > 0):', availableProducts.length);
+    
     if (!searchQuery.value) {
-        console.log('✅ Returning all products:', allProducts.value.length);
-        return allProducts.value;
+        console.log('✅ Returning all available products:', availableProducts.length);
+        return availableProducts;
     }
 
     const normalizedQuery = normalizeString(searchQuery.value);
-    const filtered = allProducts.value.filter(product => {
+    const filtered = availableProducts.filter(product => {
         const normalizedProductName = normalizeString(product.ten_san_pham);
         return normalizedProductName.includes(normalizedQuery);
     });
@@ -767,6 +784,26 @@ const activeTabData = computed(() => {
 const currentInvoiceItems = computed(() => {
     return activeTabData.value?.items?.value || [];
 });
+
+// ✅ Computed: Tính max quantity cho mỗi item trong giỏ
+const getMaxQuantity = (item) => {
+    // Tìm product trong allProducts để lấy stock hiện tại
+    const productInList = allProducts.value.find(p => p.id_chi_tiet_san_pham === item.id_chi_tiet_san_pham);
+    
+    if (!productInList) {
+        // Fallback: nếu không tìm thấy, dùng so_luong_ton_goc
+        return item.so_luong_ton_goc || item.so_luong;
+    }
+    
+    // Max = stock hiện tại + số lượng đang có trong giỏ
+    // Ví dụ: stock = 5, cart = 3 => max = 5 + 3 = 8
+    const currentStock = productInList.so_luong || 0;
+    const cartQuantity = item.so_luong || 0;
+    const maxQty = currentStock + cartQuantity;
+    
+    console.log(`📊 Max for ${item.ten_san_pham}: stock=${currentStock}, cart=${cartQuantity}, max=${maxQty}`);
+    return maxQty > 0 ? maxQty : 1; // Tối thiểu là 1
+};
 
 // --- Methods ---
 // Định dang tiền tệ
@@ -922,6 +959,44 @@ const refreshHoaDon = async (idHoaDon) => {
     }
 };
 
+// ✅ Helper function to check if product is inactive (FIXED)
+const isProductInactive = (item) => {
+    const isInactive = (status) => {
+        // null/undefined = không có data, coi như active (không block)
+        if (status === null || status === undefined) return false;
+        
+        // Boolean: false = inactive, true = active
+        if (typeof status === 'boolean') return status === false;
+        
+        // String: "false" hoặc "0" = inactive
+        if (typeof status === 'string') {
+            const lower = status.toLowerCase();
+            return lower === 'false' || lower === '0';
+        }
+        
+        // Number: 0 = inactive
+        if (typeof status === 'number') return status === 0;
+        
+        return false; // default: active
+    };
+    
+    // Product inactive nếu CTSP HOẶC Product inactive
+    const ctspInactive = isInactive(item.trang_thai_ctsp);
+    const productInactive = isInactive(item.trang_thai_san_pham);
+    
+    // Debug log
+    if (ctspInactive || productInactive) {
+        console.log('🔴 Inactive product detected:', {
+            ten_san_pham: item.ten_san_pham,
+            trang_thai_ctsp: item.trang_thai_ctsp,
+            trang_thai_san_pham: item.trang_thai_san_pham,
+            ctspInactive,
+            productInactive
+        });
+    }
+    
+    return ctspInactive || productInactive;
+};
 
 
 // Thêm sản phẩm vào hóa đơn chi tiết của tab hiện tại
@@ -950,8 +1025,35 @@ const addToBill = (product) => {
         return;
     }
 
+    // ✅ NEW: Check product status before adding
+    const isActiveProduct = (status) => {
+        if (status === true || status === 1 || status === '1') return true;
+        if (status === false || status === 0 || status === '0' || status === 'false') return false;
+        return true; // Default: assume active if status is undefined
+    };
+
+    if (!isActiveProduct(product.trang_thai)) {
+        message.error(`Sản phẩm "${product.ten_san_pham}" không còn hoạt động. Đang tải lại danh sách...`);
+        
+        // Reload products to get updated data
+        store.getAllCTSPKM().then(p => {
+            allProducts.value = p;
+            message.info('Đã cập nhật danh sách sản phẩm');
+        });
+        
+        isAdding = false;
+        return;
+    }
+
     if (product.so_luong <= 0) {
         message.warning(`Sản phẩm "${product.ten_san_pham}" đã hết hàng!`);
+        isAdding = false;
+        return;
+    }
+
+    // ✅ Safety check
+    if (!currentTab.items || !currentTab.items.value) {
+        message.error('Lỗi: Không thể truy cập giỏ hàng!');
         isAdding = false;
         return;
     }
@@ -988,7 +1090,8 @@ const addToBill = (product) => {
             if (!result) { throw new Error("Thêm sản phẩm thất bại"); }
             // Cập nhật lại toàn bộ hóa đơn từ backend để đảm bảo đồng bộ 100%
             refreshHoaDon(currentTab.hd.id_hoa_don); 
-            store.getAllCTSPKM().then(p => allProducts.value = p); // Tải lại danh sách sản phẩm
+            // ✅ RELOAD products để cập nhật stock và getMaxQuantity chính xác
+            store.getAllCTSPKM().then(p => allProducts.value = p);
         })
         .catch(error => {
             console.error('Lỗi khi thêm sản phẩm (backend):', error);
@@ -1018,15 +1121,38 @@ const calculatedChange = computed(() => {
     return cash >= total ? cash - total : 0;
 });
 
+// ✅ NEW: Check for inactive products (handles both string and boolean)
+const hasInactiveProducts = computed(() => {
+    return currentInvoiceItems.value.some(item => {
+        // Helper to check if status is inactive
+        const isInactive = (status) => {
+            if (status === null || status === undefined) return false; // No data = active
+            if (typeof status === 'boolean') return status === false;  // false = inactive
+            if (typeof status === 'string') {
+                const lower = status.toLowerCase();
+                return lower === 'false' || lower === '0';
+            }
+            if (typeof status === 'number') return status === 0;
+            return false;
+        };
+        
+        return isInactive(item.trang_thai_ctsp) || isInactive(item.trang_thai_san_pham);
+    });
+});
+
 const isPaymentDisabled = computed(() => {
-    if (currentInvoiceItems.value.length === 0) {
-        return true; 
-    }
+    if (!activeTabData.value?.hd?.id_hoa_don) return true;
+    if (currentInvoiceItems.value.length === 0) return true;
+    
+    // ✅ NEW: Block payment if has inactive products
+    if (hasInactiveProducts.value) return true;
+    
+    // Nếu là tiền mặt, kiểm tra tiền khách đưa
     if (activeTabData.value?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt') {
-        const total = fe_tongThanhToan.value || 0;
-        const cash = tienKhachDua.value || 0;
-        return cash < total;
+        if (!tienKhachDua.value) return true;
+        if (calculatedChange.value < 0) return true;
     }
+    
     return false;
 });
 
@@ -1189,6 +1315,7 @@ const removeFromBill = (productId) => {
     // --- Optimistic UI Update ---
     const removedItem = { ...itemsArray[itemIndex] }; // Sao chép item để có thể hoàn tác
     itemsArray.splice(itemIndex, 1);
+    
     message.info(`Đã xóa "${removedItem.ten_san_pham}" khỏi hóa đơn.`);
     // --- Kết thúc Optimistic UI Update ---
 
@@ -1199,8 +1326,9 @@ const removeFromBill = (productId) => {
                 throw new Error(result.message || "Xóa sản phẩm thất bại");
             }
             console.log('Backend updated successfully for remove.');
-            // Đồng bộ lại hóa đơn và tồn kho trong nền
+            // Đồng bộ lại hóa đơn
             refreshHoaDon(currentTab.hd.id_hoa_don);
+            // ✅ RELOAD products để cập nhật stock và getMaxQuantity chính xác
             store.getAllCTSPKM().then(p => allProducts.value = p);
         })
         .catch(error => {
@@ -2775,6 +2903,13 @@ label.form-label {
 
 .payment-method-option.active .payment-text {
     color: #ff6600;
+}
+
+/* ✅ NEW: Inactive product row styling */
+.inactive-product-row {
+    background-color: #f5f5f5 !important;
+    opacity: 0.65;
+    text-decoration: line-through;
 }
 
 /* Responsive Adjustments */

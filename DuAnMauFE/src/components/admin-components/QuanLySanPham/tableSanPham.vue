@@ -79,13 +79,13 @@
                             </a-button>
                             
                             <!-- ✅ DELETE BUTTON -->
-                            <a-button v-if="store.id_roles !== 3" danger 
+                            <!-- <a-button v-if="store.id_roles !== 3" danger 
                                 @click="confirmDeleteSanPham(record)"
                                 class="d-flex align-items-center delete-btn"
                                 title="Xóa sản phẩm" size="small">
                                 <DeleteOutlined />
                                 <span class="btn-text">Xóa</span>
-                            </a-button>
+                            </a-button> -->
                         </div>
                     </template>
                 </template>
@@ -191,14 +191,14 @@
                                         </a-button> -->
                                         
                                         <!-- ✅ DELETE BUTTON FOR CTSP -->
-                                        <a-button v-if="store.id_roles !== 3" danger 
+                                        <!-- <a-button v-if="store.id_roles !== 3" danger 
                                             @click="confirmDeleteCTSP(ctspRecord)"
                                             class="d-flex align-items-center justify-content-center"
                                             style="width: 100%;"
                                             size="small">
                                             <DeleteOutlined />
                                             Xóa
-                                        </a-button>
+                                        </a-button> -->
                                     </div>
                                 </template>
                             </template>

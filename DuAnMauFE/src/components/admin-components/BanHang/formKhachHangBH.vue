@@ -582,7 +582,7 @@ const loadKhachHangTuLocalStorage = async () => {
 
     try {
         const khachHang = JSON.parse(khachHangData);
-        formData.tenKhachHang = khachHang.tenKhachHang || '';
+        formData.tenKhachHang = khachHang.hoTen || '';
         formData.soDienThoai = khachHang.soDienThoai || '';
         formData.email = khachHang.email || '';
 

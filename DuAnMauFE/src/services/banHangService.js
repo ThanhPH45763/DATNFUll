@@ -49,7 +49,18 @@ const getAllSPHD = async (idHoaDon) => {
         const { data } = await axiosInstance.get(banHang + `getSPHD?idHoaDon=` + idHoaDon);
         return data;
     } catch (error) {
-        console.error('Lỗi API lấy danh sách hóa đơn chưa thanh toán:', error);
+        console.error('Lỗi API lấy danh sách sản phẩm hóa đơn:', error);
+        return { error: true };
+    }
+}
+
+// ✅ API mới: Get realtime stock của CTSP
+const getCTSPRealtime = async (idCTSP) => {
+    try {
+        const { data } = await axiosInstance.get(banHang + `getCTSPRealtime/${idCTSP}`);
+        return data;
+    } catch (error) {
+        console.error('Lỗi API lấy realtime CTSP:', error);
         return { error: true };
     }
 }
@@ -223,12 +234,28 @@ const applyVoucher = async (idHoaDon, idVoucher) => {
     }
 }
 
+/**
+ * Kiểm tra stock realtime cho tất cả items trong giỏ hàng
+ * @param {number} idHoaDon - ID hóa đơn cần kiểm tra
+ * @returns {Object} { has_invalid_items, items, invalid_item_names }
+ */
+const checkCartStock = async (idHoaDon) => {
+    try {
+        const { data } = await axiosInstance.get(banHang + `checkCartStock/${idHoaDon}`);
+        return data;
+    } catch (error) {
+        console.error('Lỗi API kiểm tra stock:', error);
+        return { has_invalid_items: false, items: [], invalid_item_names: [] };
+    }
+}
+
 export const banHangService = {
     getAllHoaDonCTT,
     createHoaDon,
     updateHoaDon,
     deleteHoaDon,
     getAllSPHD,
+    getCTSPRealtime,
     addSPHD,
     giamSPHD,
     themSPHDMoi,
@@ -242,5 +269,6 @@ export const banHangService = {
     setSPHD,
     tinhPhiShip,
     getSuitableVouchers,
-    applyVoucher
+    applyVoucher,
+    checkCartStock
 }

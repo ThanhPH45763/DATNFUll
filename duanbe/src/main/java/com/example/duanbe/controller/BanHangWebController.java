@@ -35,18 +35,19 @@ import com.example.duanbe.service.VoucherService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
 @RestController
-@CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
+@CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*", methods = { RequestMethod.GET, RequestMethod.POST,
+        RequestMethod.PUT, RequestMethod.DELETE })
 @RequestMapping("/banhangweb")
 public class BanHangWebController {
-     @Autowired
+    @Autowired
     HoaDonRepo hoaDonRepo;
     @Autowired
     VoucherRepository voucherRepository;
@@ -94,7 +95,7 @@ public class BanHangWebController {
     Integer idKhachHang = 0;
     Boolean xacNhan = false;
 
-    //    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_QL', 'ROLE_NV')") public
+    // @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_QL', 'ROLE_NV')") public
     @PostMapping("/taoHoaDonWeb")
     public ResponseEntity<?> taoHoaDonWeb(@RequestBody HoaDonRequest hoaDon) {
         HoaDon hoaDonAdd = new HoaDon();
@@ -104,11 +105,15 @@ public class BanHangWebController {
         hoaDonAdd.setNgay_tao(LocalDateTime.now());
         hoaDonAdd.setNgay_sua(LocalDateTime.now());
         hoaDonAdd.setPhuong_thuc_nhan_hang("Giao hàng");
-        hoaDonAdd.setVoucher(hoaDon.getVoucher().getId() != 0 ? voucherRepository.findById(hoaDon.getVoucher().getId()).get() : null);
-        hoaDonAdd.setKhachHang(hoaDon.getId_khach_hang() == 0 ? null : khachHangRepo.findById(hoaDon.getId_khach_hang()).get());
+        hoaDonAdd.setVoucher(
+                hoaDon.getVoucher().getId() != 0 ? voucherRepository.findById(hoaDon.getVoucher().getId()).get()
+                        : null);
+        hoaDonAdd.setKhachHang(
+                hoaDon.getId_khach_hang() == 0 ? null : khachHangRepo.findById(hoaDon.getId_khach_hang()).get());
         hoaDonRepo.save(hoaDonAdd);
         idHoaDon = hoaDonAdd.getId_hoa_don();
-        idKhachHang = hoaDonAdd.getKhachHang() == null || hoaDonAdd.getKhachHang().getIdKhachHang() == null ? 0 : hoaDonAdd.getKhachHang().getIdKhachHang();
+        idKhachHang = hoaDonAdd.getKhachHang() == null || hoaDonAdd.getKhachHang().getIdKhachHang() == null ? 0
+                : hoaDonAdd.getKhachHang().getIdKhachHang();
         xacNhan = hoaDon.getIsChuyen();
         TheoDoiDonHang theoDoiDonHang = new TheoDoiDonHang();
         theoDoiDonHang.setHoaDon(hoaDonAdd);
@@ -140,7 +145,8 @@ public class BanHangWebController {
             ChiTietSanPham ctsp = chiTietSanPhamRepo.findById(hdct.getChiTietSanPham().getId_chi_tiet_san_pham()).get();
             if (ctsp.getSo_luong() <= hdct.getSo_luong()) {
                 ctsp.setSo_luong(0);
-                ctsp.setTrang_thai(false);
+                // ⛔ KHÔNG tự động tắt trạng thái khi hết hàng - để admin quản lý thủ công
+                // ctsp.setTrang_thai(false);
                 chiTietSanPhamRepo.save(ctsp);
             } else {
                 ctsp.setSo_luong(ctsp.getSo_luong() - hdct.getSo_luong());
@@ -159,8 +165,11 @@ public class BanHangWebController {
         hoaDonAdd.setNgay_tao(LocalDateTime.now());
         hoaDonAdd.setNgay_sua(LocalDateTime.now());
         hoaDonAdd.setPhuong_thuc_nhan_hang("Giao hàng");
-        hoaDonAdd.setVoucher(hoaDon.getVoucher().getId() != null ? voucherRepository.findById(hoaDon.getVoucher().getId()).get() : null);
-        hoaDonAdd.setKhachHang(hoaDon.getKhachHang().getIdKhachHang() == 0 ? null : khachHangRepo.findById(hoaDon.getKhachHang().getIdKhachHang()).get());
+        hoaDonAdd.setVoucher(
+                hoaDon.getVoucher().getId() != null ? voucherRepository.findById(hoaDon.getVoucher().getId()).get()
+                        : null);
+        hoaDonAdd.setKhachHang(hoaDon.getKhachHang().getIdKhachHang() == 0 ? null
+                : khachHangRepo.findById(hoaDon.getKhachHang().getIdKhachHang()).get());
         hoaDonRepo.save(hoaDonAdd);
         idHoaDon = hoaDonAdd.getId_hoa_don();
         TheoDoiDonHang theoDoiDonHang = new TheoDoiDonHang();
@@ -172,7 +181,6 @@ public class BanHangWebController {
         return ResponseEntity.ok(hoaDonAdd);
     }
 
-
     @PostMapping("/taoHoaDonChiTiet")
     public ResponseEntity<?> taoHoaDonChiTiet(@RequestBody List<HoaDonChiTiet> hoaDonChiTiets) {
         ArrayList<HoaDonChiTiet> listHdct = new ArrayList<>();
@@ -181,8 +189,7 @@ public class BanHangWebController {
             hoaDonChiTietAdd.setHoaDon(hoaDonRepo.findById(idHoaDon).get());
             System.out.println("id Hoá đơn: fdfdfd: " + idHoaDon);
             hoaDonChiTietAdd.setChiTietSanPham(
-                    chiTietSanPhamRepo.findById(hdct.getChiTietSanPham().getId_chi_tiet_san_pham()).orElseThrow()
-            );
+                    chiTietSanPhamRepo.findById(hdct.getChiTietSanPham().getId_chi_tiet_san_pham()).orElseThrow());
             hoaDonChiTietAdd.setSo_luong(hdct.getSo_luong());
             hoaDonChiTietAdd.setDon_gia(hdct.getDon_gia());
 
@@ -199,6 +206,7 @@ public class BanHangWebController {
         }
         return ResponseEntity.ok(listHdct);
     }
+
     @PostMapping("/taoHoaDonChiTietMuaNgay")
     public ResponseEntity<?> taoHoaDonChiTietMuaNgay(@RequestBody List<HoaDonChiTiet> hoaDonChiTiets) {
         ArrayList<HoaDonChiTiet> listHdct = new ArrayList<>();
@@ -207,8 +215,7 @@ public class BanHangWebController {
             hoaDonChiTietAdd.setHoaDon(hoaDonRepo.findById(idHoaDon).get());
             System.out.println("id Hoá đơn: fdfdfd: " + idHoaDon);
             hoaDonChiTietAdd.setChiTietSanPham(
-                    chiTietSanPhamRepo.findById(hdct.getChiTietSanPham().getId_chi_tiet_san_pham()).orElseThrow()
-            );
+                    chiTietSanPhamRepo.findById(hdct.getChiTietSanPham().getId_chi_tiet_san_pham()).orElseThrow());
             hoaDonChiTietAdd.setSo_luong(hdct.getSo_luong());
             hoaDonChiTietAdd.setDon_gia(hdct.getDon_gia());
 
@@ -220,6 +227,7 @@ public class BanHangWebController {
         }
         return ResponseEntity.ok(listHdct);
     }
+
     //
     @PostMapping("/suaHoaDon")
     public ResponseEntity<?> suaHoaDon(@RequestBody HoaDon hoaDon) {
@@ -230,7 +238,9 @@ public class BanHangWebController {
         hoaDonAdd.setLoai_hoa_don("Online");
         hoaDonAdd.setNgay_sua(LocalDateTime.now());
         hoaDonAdd.setPhuong_thuc_nhan_hang("Giao hàng");
-        hoaDonAdd.setVoucher(hoaDon.getVoucher().getId() != null ? voucherRepository.findById(hoaDon.getVoucher().getId()).get() : null);
+        hoaDonAdd.setVoucher(
+                hoaDon.getVoucher().getId() != null ? voucherRepository.findById(hoaDon.getVoucher().getId()).get()
+                        : null);
         hoaDonRepo.save(hoaDonAdd);
         idHoaDon = hoaDonAdd.getId_hoa_don();
         TheoDoiDonHang theoDoiDonHang = new TheoDoiDonHang();

@@ -77,7 +77,7 @@ public class ChiTietSanPhamService {
      */
     public ResponseEntity<?> saveChiTietSanPham(@Valid @RequestBody ChiTietSanPhamRequest chiTietSanPhamRequest,
             BindingResult result) {
-        
+
         // Kiểm tra lỗi validation
         if (result.hasErrors()) {
             List<String> errors = result.getAllErrors().stream()
@@ -110,14 +110,15 @@ public class ChiTietSanPhamService {
 
                 chiTietSanPham = chiTietSanPhamRepo.findById(chiTietSanPhamRequest.getId_chi_tiet_san_pham()).get();
                 message = "Cập nhật chi tiết sản phẩm thành công";
-                
+
                 // Cập nhật các thuộc tính
                 chiTietSanPham.setGia_ban(chiTietSanPhamRequest.getGia_ban());
                 chiTietSanPham.setSo_luong(chiTietSanPhamRequest.getSo_luong());
                 chiTietSanPham.setQr_code(chiTietSanPhamRequest.getQr_code());
 
             } else {
-                // CASE 2: Nếu không có ID, kiểm tra trùng lặp thuộc tính (màu và size) để cập nhật số lượng
+                // CASE 2: Nếu không có ID, kiểm tra trùng lặp thuộc tính (màu và size) để cập
+                // nhật số lượng
                 Optional<ChiTietSanPham> existingByAttributes = chiTietSanPhamRepo
                         .findByIdSanPhamIdMauSacIdKichThuoc(
                                 chiTietSanPhamRequest.getId_san_pham(),
@@ -146,9 +147,13 @@ public class ChiTietSanPhamService {
             chiTietSanPham.setKichThuoc(kichThuoc);
             chiTietSanPham.setSanPham(sanPham);
             chiTietSanPham.setNgay_sua(new Date());
-            
-            // Tự động cập nhật trạng thái dựa trên số lượng
-            chiTietSanPham.setTrang_thai(chiTietSanPham.getSo_luong() > 0);
+
+            // ⛔ KHÔNG tự động thay đổi trạng thái dựa trên số lượng
+            // Trạng thái (trang_thai) phải được admin quản lý thủ công
+            // Nếu là sản phẩm mới và chưa có trạng thái, mặc định là true
+            if (chiTietSanPham.getTrang_thai() == null) {
+                chiTietSanPham.setTrang_thai(true);
+            }
 
             // Lưu chi tiết sản phẩm để có ID
             ChiTietSanPham savedProduct = chiTietSanPhamRepo.save(chiTietSanPham);
@@ -174,7 +179,8 @@ public class ChiTietSanPhamService {
     }
 
     /**
-     * Phương thức duy nhất để xử lý ảnh: Xóa tất cả ảnh cũ và thêm lại từ danh sách mới.
+     * Phương thức duy nhất để xử lý ảnh: Xóa tất cả ảnh cũ và thêm lại từ danh sách
+     * mới.
      * Cách tiếp cận "Source of Truth", đảm bảo trạng thái DB khớp với FE.
      */
     private void updateAndSaveImages(ChiTietSanPham product, List<String> newImagePaths) {
@@ -208,8 +214,6 @@ public class ChiTietSanPhamService {
         }
     }
 
-
-
     public String deleteChiTietSanPham(@PathVariable Integer id) {
         ChiTietSanPham ctspDelete = new ChiTietSanPham();
         for (ChiTietSanPham ctsp : chiTietSanPhamRepo.findAll()) {
@@ -234,7 +238,7 @@ public class ChiTietSanPhamService {
         }
         SanPham sanPham = sanPhamRepo.findById(ctspDelete.getSanPham().getId_san_pham()).get();
         Boolean sanPhamTrangThaiCu = sanPham.getTrang_thai(); // Lưu trạng thái cũ
-        
+
         if (sanPham.getTrang_thai()) {
             if (ctspDelete.getTrang_thai()) {
                 ctspDelete.setTrang_thai(false);
@@ -267,7 +271,8 @@ public class ChiTietSanPhamService {
                 sanPham.setTrang_thai(true);
                 sanPhamRepo.save(sanPham);
             }
-            // Nếu người dùng đang cố gắng vô hiệu hóa CTSP, giữ nguyên trạng thái sản phẩm cha
+            // Nếu người dùng đang cố gắng vô hiệu hóa CTSP, giữ nguyên trạng thái sản phẩm
+            // cha
             else {
                 ctspDelete.setTrang_thai(false);
                 chiTietSanPhamRepo.save(ctspDelete);
@@ -278,7 +283,7 @@ public class ChiTietSanPhamService {
         // Tạo response object chứa cả CTSP và thông tin sản phẩm cha
         Map<String, Object> response = new HashMap<>();
         response.put("chiTietSanPham", ctspDelete);
-        
+
         // Thêm thông tin sản phẩm cha nếu trạng thái đã thay đổi
         if (!sanPhamTrangThaiCu.equals(sanPham.getTrang_thai())) {
             Map<String, Object> sanPhamInfo = new HashMap<>();
@@ -286,7 +291,7 @@ public class ChiTietSanPhamService {
             sanPhamInfo.put("trang_thai", sanPham.getTrang_thai());
             response.put("sanPham", sanPhamInfo);
         }
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -349,13 +354,13 @@ public class ChiTietSanPhamService {
         System.out.println("idTatCaCTSPKhongHoatDOng" + ctsp.getId_chi_tiet_san_pham());
         ctsp.setTrang_thai(false);
         chiTietSanPhamRepo.save(ctsp);
-        if(chiTietSanPhamRepo.findById(id).get().getTrang_thai() == true){
+        if (chiTietSanPhamRepo.findById(id).get().getTrang_thai() == true) {
             return ResponseEntity.badRequest().body("Chuyển trạng thái không thành công");
 
         } else {
             SanPham sanPham = sanPhamRepo.findById(ctsp.getSanPham().getId_san_pham()).get();
             Boolean sanPhamTrangThaiCu = sanPham.getTrang_thai();
-            
+
             for (ChiTietSanPham ctspXet : chiTietSanPhamRepo.findAll()) {
                 if (ctspXet.getSanPham().getId_san_pham().equals(sanPham.getId_san_pham())) {
                     listTam.add(ctspXet);
@@ -370,20 +375,20 @@ public class ChiTietSanPhamService {
                 sanPham.setTrang_thai(false);
                 sanPhamRepo.save(sanPham);
             }
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("chiTietSanPham", ctsp);
-            
+
             if (!sanPhamTrangThaiCu.equals(sanPham.getTrang_thai())) {
                 Map<String, Object> sanPhamInfo = new HashMap<>();
                 sanPhamInfo.put("id_san_pham", sanPham.getId_san_pham());
                 sanPhamInfo.put("trang_thai", sanPham.getTrang_thai());
                 response.put("sanPham", sanPhamInfo);
             }
-            
+
             return ResponseEntity.ok(response);
         }
-        
+
     }
 
     // @Caching(evict = {
@@ -405,7 +410,7 @@ public class ChiTietSanPhamService {
         } else {
             SanPham sanPham = sanPhamRepo.findById(ctsp.getSanPham().getId_san_pham()).get();
             Boolean sanPhamTrangThaiCu = sanPham.getTrang_thai();
-            
+
             for (ChiTietSanPham ctspXet : chiTietSanPhamRepo.findAll()) {
                 if (ctspXet.getSanPham().getId_san_pham().equals(sanPham.getId_san_pham())) {
                     listTam.add(ctspXet);
@@ -420,17 +425,17 @@ public class ChiTietSanPhamService {
                 sanPham.setTrang_thai(true);
                 sanPhamRepo.save(sanPham);
             }
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("chiTietSanPham", ctsp);
-            
+
             if (!sanPhamTrangThaiCu.equals(sanPham.getTrang_thai())) {
                 Map<String, Object> sanPhamInfo = new HashMap<>();
                 sanPhamInfo.put("id_san_pham", sanPham.getId_san_pham());
                 sanPhamInfo.put("trang_thai", sanPham.getTrang_thai());
                 response.put("sanPham", sanPhamInfo);
             }
-            
+
             return ResponseEntity.ok(response);
         }
     }

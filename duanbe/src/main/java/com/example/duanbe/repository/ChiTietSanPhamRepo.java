@@ -27,6 +27,10 @@ public interface ChiTietSanPhamRepo
 
     Optional<ChiTietSanPham> findById(Integer id);
 
+    // ✅ Check xem có CTSP nào còn active của SP này không
+    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM ChiTietSanPham c WHERE c.sanPham.id_san_pham = :idSanPham AND c.trang_thai = true")
+    boolean existsBySanPhamIdAndTrangThaiTrue(@Param("idSanPham") Integer idSanPham);
+
     @Query(nativeQuery = true, value = "select id_chi_tiet_san_pham, ma_san_pham, ten_san_pham, qr_code, gia_ban, so_luong, ctsp.trang_thai as trang_thai,\n"
             +
             "ctsp.ngay_tao, ctsp.ngay_sua, gia_tri, don_vi, ten_mau_sac as ten_mau_sac, ten_danh_muc, ten_thuong_hieu, ten_chat_lieu, ctsp.id_mau_sac,ctsp.id_kich_thuoc, sp.id_san_pham, sp.id_danh_muc, sp.id_thuong_hieu, sp.id_chat_lieu\n"
@@ -306,7 +310,6 @@ public interface ChiTietSanPhamRepo
             	) km_max ON ctsp.id_chi_tiet_san_pham = km_max.id_chi_tiet_san_pham
             WHERE sp.trang_thai = 1
               AND ctsp.trang_thai = 1
-              AND ctsp.so_luong > 0
             ORDER BY ctsp.id_chi_tiet_san_pham
             """, nativeQuery = true)
     List<ChiTietSanPhamView> getAllCTSPKM();

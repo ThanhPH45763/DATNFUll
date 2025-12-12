@@ -158,6 +158,11 @@ export const useGbStore = defineStore('gbStore', {
     isProductLoading: false, // Thêm state để quản lý trạng thái loading sản phẩm
     //Biến check có phải thanh toán mua ngay không
     isThanhToanMuaNgay: false,
+
+    // ✅ NEW: Stock validation cache
+    stockValidationCache: new Map(),
+    lastStockCheck: null,
+    debouncedSearchTimer: null,
   }),
 
   ///Đầu mút2
@@ -210,6 +215,185 @@ export const useGbStore = defineStore('gbStore', {
     //Lấy biến thanh toán mua ngay
     getIsThanhToanMuaNgay() {
       return this.isThanhToanMuaNgay;
+    },
+
+    // ✅ NEW: Comprehensive stock validation
+    async validateStockBeforeOperation(productId, currentQty, newQty, operation) {
+      try {
+        // Check cache first
+        const cacheKey = `${productId}-${newQty}-${operation}`;
+        if (this.stockValidationCache.has(cacheKey)) {
+          const cached = this.stockValidationCache.get(cacheKey);
+          if (Date.now() - cached.timestamp < 5000) { // 5s cache
+            return cached.result;
+          }
+        }
+
+        const response = await banHangService.validateStockOperation(
+          productId, currentQty, newQty, operation
+        );
+
+        // Cache result
+        this.stockValidationCache.set(cacheKey, {
+          result: response,
+          timestamp: Date.now()
+        });
+
+        return response;
+      } catch (error) {
+        console.error('Stock validation error:', error);
+        return { valid: false, errorMessage: 'Không thể kiểm tra tồn kho' };
+      }
+    },
+
+    // ✅ NEW: Batch stock check with debouncing
+    async checkStockBatchDebounced(productIds) {
+      if (this.debouncedSearchTimer) {
+        clearTimeout(this.debouncedSearchTimer);
+      }
+
+      this.debouncedSearchTimer = setTimeout(async () => {
+        try {
+          const response = await banHangService.checkStockBatch(productIds);
+          this.updateProductStock(response);
+          this.lastStockCheck = Date.now();
+        } catch (error) {
+          console.error('Batch stock check error:', error);
+        }
+      }, 300); // 300ms debounce
+    },
+
+    // ✅ NEW: Smart stock status calculation
+    getStockStatus(product) {
+      if (!product.trang_thai || !product.trang_thai_san_pham) {
+        return {
+          status: 'INACTIVE',
+          color: 'red',
+          text: 'Ngừng hoạt động',
+          disabled: true
+        };
+      } else if (product.so_luong === 0) {
+        return {
+          status: 'OUT_OF_STOCK',
+          color: 'orange',
+          text: 'Hết hàng',
+          disabled: true
+        };
+      } else if (product.so_luong <= 5) {
+        return {
+          status: 'LOW_STOCK',
+          color: 'gold',
+          text: `Còn ${product.so_luong}`,
+          disabled: false
+        };
+      } else {
+        return {
+          status: 'AVAILABLE',
+          color: 'green',
+          text: `Còn ${product.so_luong}`,
+          disabled: false
+        };
+      }
+    },
+
+    // ✅ NEW: Update product stock in state
+    updateProductStock(stockInfo) {
+      stockInfo.forEach(info => {
+        const product = this.getAllCTSPKMList.find(p =>
+          p.id_chi_tiet_san_pham === info.id);
+        if (product) {
+          product.so_luong = info.so_luong;
+          product.trang_thai = info.trang_thai;
+          product.trang_thai_san_pham = info.trang_thai_san_pham;
+          product.stock_warning = info.warning;
+          product.stock_status = info.status;
+        }
+      });
+    },
+
+    // ✅ NEW: Enhanced add product with validation
+    async addProductToCartWithValidation(product, quantity) {
+      try {
+        // Pre-validation
+        const validation = await this.validateStockBeforeOperation(
+          product.id_chi_tiet_san_pham, 0, quantity, 'ADD'
+        );
+
+        if (!validation.valid) {
+          this.$error(validation.errorMessage);
+          return false;
+        }
+
+        // Show low stock warning
+        if (validation.availableStock <= 5) {
+          this.$warning(`Chỉ còn ${validation.availableStock} sản phẩm!`);
+        }
+
+        // Call API
+        const result = await banHangService.themSPHDMoi(
+          this.currentHoaDonId, product.id_chi_tiet_san_pham, quantity
+        );
+
+        if (result.error) {
+          this.$error(result.errorMessage);
+          return false;
+        }
+
+        // Refresh data
+        await this.refreshBanHangData();
+        return true;
+
+      } catch (error) {
+        console.error('Add product error:', error);
+        this.$error('Có lỗi xảy ra, vui lòng thử lại!');
+        return false;
+      }
+    },
+
+    // ✅ NEW: Enhanced update quantity with validation
+    async updateQuantityWithValidation(productId, currentQty, newQty) {
+      try {
+        // Validation
+        const validation = await this.validateStockBeforeOperation(
+          productId, currentQty, newQty, 'UPDATE'
+        );
+
+        if (!validation.valid) {
+          this.$error(validation.errorMessage);
+          return false;
+        }
+
+        // Call API
+        const result = await banHangService.setSPHD(
+          this.currentHoaDonId, productId, newQty
+        );
+
+        if (result.error) {
+          this.$error(result.errorMessage);
+          return false;
+        }
+
+        // Refresh data
+        await this.refreshBanHangData();
+        return true;
+
+      } catch (error) {
+        console.error('Update quantity error:', error);
+        this.$error('Có lỗi xảy ra, vui lòng thử lại!');
+        return false;
+      }
+    },
+
+    // ✅ NEW: Refresh data when switching tabs
+    async refreshBanHangData() {
+      try {
+        await Promise.all([
+          this.getAllCTSPKM(),
+          this.getAllHoaDonCTT()
+        ]);
+      } catch (error) {
+        console.error('Refresh data error:', error);
+      }
     },
     // List sản phẩm theo tên sản phẩm(trang sản phẩm)
     async getSanPhamByTenSP(keywords) {
@@ -3731,6 +3915,28 @@ export const useGbStore = defineStore('gbStore', {
       } catch (error) {
         console.error('Lỗi tạo đơn ZaloPay:', error);
         throw error;
+      }
+    },
+
+    // ✅ API mới: Get realtime stock của CTSP
+    async getCTSPRealtime(idCTSP) {
+      try {
+        const response = await banHangService.getCTSPRealtime(idCTSP);
+        return response;
+      } catch (error) {
+        console.error('Error getting realtime CTSP:', error);
+        throw error;
+      }
+    },
+
+    // ✅ API mới: Kiểm tra stock realtime cho tất cả items trong giỏ hàng
+    async checkCartStock(idHoaDon) {
+      try {
+        const response = await banHangService.checkCartStock(idHoaDon);
+        return response;
+      } catch (error) {
+        console.error('Error checking cart stock:', error);
+        return { has_invalid_items: false, items: [], invalid_item_names: [] };
       }
     },
 

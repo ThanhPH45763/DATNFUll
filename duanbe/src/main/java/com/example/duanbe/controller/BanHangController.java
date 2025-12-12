@@ -422,12 +422,83 @@ public class BanHangController {
         }
     }
 
+    /**
+     * ✅ API mới: Get realtime stock và status của CTSP
+     * Gọi trước khi tăng/giảm số lượng để check stock hiện tại
+     */
+    @GetMapping("/getCTSPRealtime/{idCTSP}")
+    public ResponseEntity<?> getCTSPRealtime(@PathVariable Integer idCTSP) {
+        try {
+            ChiTietSanPham ctsp = chiTietSanPhamRepo.findById(idCTSP)
+                    .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại!"));
+
+            // Trả về thông tin cần thiết
+            Map<String, Object> response = new HashMap<>();
+            response.put("id_chi_tiet_san_pham", ctsp.getId_chi_tiet_san_pham());
+            response.put("so_luong", ctsp.getSo_luong());
+            response.put("trang_thai", ctsp.getTrang_thai());
+            response.put("trang_thai_san_pham", ctsp.getSanPham().getTrang_thai());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi lấy thông tin sản phẩm: " + e.getMessage());
+        }
+    }
+
+    /**
+     * ✅ API mới: Kiểm tra stock realtime cho TẤT CẢ items trong hóa đơn
+     * Gọi khi: switch tab, reload page, trước khi thanh toán
+     */
+    @GetMapping("/checkCartStock/{idHoaDon}")
+    public ResponseEntity<?> checkCartStock(@PathVariable Integer idHoaDon) {
+        try {
+            List<HoaDonChiTiet> items = hoaDonChiTietRepo.findByIdHoaDon(idHoaDon);
+            List<Map<String, Object>> stockStatus = new ArrayList<>();
+            List<String> invalidItems = new ArrayList<>();
+
+            for (HoaDonChiTiet item : items) {
+                ChiTietSanPham ctsp = item.getChiTietSanPham();
+                Map<String, Object> status = new HashMap<>();
+                status.put("id", ctsp.getId_chi_tiet_san_pham());
+                status.put("name", ctsp.getSanPham().getTen_san_pham());
+                status.put("qty_in_cart", item.getSo_luong());
+                status.put("stock", ctsp.getSo_luong());
+                status.put("ctsp_active", ctsp.getTrang_thai());
+                status.put("product_active", ctsp.getSanPham().getTrang_thai());
+
+                boolean isInvalid = !Boolean.TRUE.equals(ctsp.getTrang_thai())
+                        || !Boolean.TRUE.equals(ctsp.getSanPham().getTrang_thai())
+                        || ctsp.getSo_luong() < 0;
+                status.put("invalid", isInvalid);
+
+                if (isInvalid)
+                    invalidItems.add(ctsp.getSanPham().getTen_san_pham());
+                stockStatus.add(status);
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "items", stockStatus,
+                    "has_invalid_items", !invalidItems.isEmpty(),
+                    "invalid_item_names", invalidItems));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", true, "message", "Lỗi kiểm tra stock: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/setSPHD")
     public ResponseEntity<?> setSPHD(
             @RequestParam("idHoaDon") Integer idHD,
             @RequestParam("idCTSP") Integer idCTSP,
             @RequestParam("soLuongMoi") Integer soLuongMoi) {
         try {
+            // ✅ QUY TẮC MỚI: Enforce minimum quantity = 1
+            if (soLuongMoi < 1) {
+                return ResponseEntity.badRequest()
+                        .body("Số lượng tối thiểu là 1. Vui lòng sử dụng nút xóa để loại bỏ sản phẩm khỏi giỏ hàng.");
+            }
+
             if (soLuongMoi <= 0) {
                 return ResponseEntity.badRequest().body("Số lượng phải lớn hơn 0!");
             }
@@ -552,10 +623,9 @@ public class BanHangController {
 
                 ctsp.setSo_luong(ctsp.getSo_luong() + soLuongXoa);
 
-                // ✅ Restore status if stock > 0
-                if (ctsp.getSo_luong() > 0 && (ctsp.getTrang_thai() == null || !ctsp.getTrang_thai())) {
-                    ctsp.setTrang_thai(true); // Reactivate CTSP
-                }
+                // ⛔ KHÔNG tự động thay đổi trạng thái sản phẩm
+                // Trạng thái sản phẩm (trang_thai) phải được admin quản lý thủ công
+                // Đã xóa logic: auto-restore trang_thai = true khi stock > 0
 
                 chiTietSanPhamRepo.save(ctsp);
             } else {

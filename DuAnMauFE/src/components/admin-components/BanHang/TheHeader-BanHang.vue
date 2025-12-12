@@ -4,6 +4,7 @@
         <div class="search-section">
             <a-dropdown v-model:open="dropdownVisible" :trigger="['click']" overlayClassName="product-dropdown">
                 <a-input-search v-model:value="searchQuery" placeholder="Tìm kiếm sản phẩm theo tên..."
+                    @focus="handleSearchFocus"
                     @search="performSearch" style="width: 300px">
                     <template #enterButton>
                         <search-outlined />
@@ -16,14 +17,28 @@
                             Không tìm thấy sản phẩm phù hợp.
                         </div>
                         <div v-if="filteredProducts.length > 0">
-                            <div v-for="(product) in filteredProducts" :key="product.id" class="product-option"
+                            <div v-for="(product) in filteredProducts" :key="product.id" 
+                                class="product-option"
+                                :class="{
+                                    'out-of-stock-item': product.so_luong <= 0 && product.trang_thai !== false,
+                                    'inactive-item': product.trang_thai === false || product.trang_thai === 0
+                                }"
                                 @click="handleDropdownClick(product)">
 
                                 <img :src="product.hinh_anh || 'default-product.png'" alt="Product"
                                     class="product-image" />
                                 <div class="product-info-split">
                                     <div class="info-left">
-                                        <div class="product-name">{{ product.ten_san_pham }}</div>
+                                        <div class="product-name">
+                                            {{ product.ten_san_pham }}
+                                            <!-- Status badges -->
+                                            <a-tag v-if="product.trang_thai === false || product.trang_thai === 0" color="red" style="margin-left: 8px;">
+                                                Ngừng hoạt động
+                                            </a-tag>
+                                            <a-tag v-else-if="product.so_luong <= 0" color="orange" style="margin-left: 8px;">
+                                                Hết hàng
+                                            </a-tag>
+                                        </div>
                                         <div class="product-details">
                                             <span>Kích thước: {{ product.gia_tri }}</span>
                                             <span>Màu sắc: {{ product.ten_mau }}</span>
@@ -45,7 +60,7 @@
                                             </template>
                                         </div>
                                         <div class="product-stock">
-                                            Tồn kho: <span :class="product.so_luong > 5 ? 'in-stock' : 'low-stock'">{{
+                                            Tồn kho: <span :class="product.so_luong > 5 ? 'in-stock' : (product.so_luong > 0 ? 'low-stock' : 'no-stock')">{{
                                                 product.so_luong }}</span>
                                         </div>
                                     </div>
@@ -70,7 +85,15 @@
         <!-- Invoice Tabs with Suspended Dropdown -->
         <div class="invoice-tabs" style="display: flex; align-items: center;">
             <a-tabs v-model:activeKey="activeKey" type="editable-card" @edit="onEdit" style="flex: 1;">
-                <a-tab-pane v-for="pane in activeInvoices" :key="pane.key" :tab="pane.title" :closable="pane.closable">
+                <a-tab-pane v-for="pane in activeInvoices" :key="pane.key" :closable="pane.closable">
+                    <template #tab>
+                        <div class="invoice-tab-label">
+                            <span class="product-count-badge" :class="{ 'has-products': getInvoiceProductCount(pane) > 0 }">
+                                {{ getInvoiceProductCount(pane) }}
+                            </span>
+                            <span class="tab-title">{{ pane.title }}</span>
+                        </div>
+                    </template>
                     {{ pane.content }}
                 </a-tab-pane>
             </a-tabs>
@@ -88,8 +111,25 @@
                             :key="invoice.key"
                             @click="activateSuspendedInvoice(invoice.hd.id_hoa_don)"
                         >
-                            <div style="display: flex; justify-content: space-between; align-items: center; min-width: 200px;">
-                                <span>
+                            <div style="display: flex; justify-content: space-between; align-items: center; min-width: 250px; position: relative;">
+                                <!-- Badge số lượng sản phẩm ở góc trái -->
+                                <a-badge 
+                                    :count="getInvoiceProductCount(invoice)"
+                                    :show-zero="true"
+                                    :number-style="{ 
+                                        backgroundColor: getInvoiceProductCount(invoice) > 0 ? '#52c41a' : '#d9d9d9',
+                                        fontSize: '10px',
+                                        minWidth: '18px',
+                                        height: '18px',
+                                        lineHeight: '18px'
+                                    }"
+                                    style="margin-right: 8px;"
+                                >
+                                    <a-tooltip :title="getInvoiceProductCount(invoice) > 0 ? `${getInvoiceProductCount(invoice)} sản phẩm` : 'Chưa có sản phẩm'">
+                                        <span style="display: inline-block; width: 8px;"></span>
+                                    </a-tooltip>
+                                </a-badge>
+                                <span style="flex: 1;">
                                     <strong>{{ invoice.title }}</strong> - {{ invoice.hd.ma_hoa_don }}
                                 </span>
                                 <a-badge 
@@ -132,18 +172,30 @@
                 <div class="table-responsive mt-4" style="max-height: 350px; height: 350px; overflow-y: auto;">
                     <table class="table table-hover">
                         <thead class="sticky-top bg-white" style="top: 0; z-index: 1;">
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Ảnh</th>
-                                <th scope="col">Tên sản phẩm</th>
-                                <th scope="col">Số lượng</th>
-                                <th scope="col">Giá bán</th>
-                                <th scope="col">Tổng tiền</th>
-                                <th scope="col">Thao tác</th>
+                            <tr style="color: rgb(250, 84, 28); font-weight: bold">
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 15%;">Ảnh</th>
+                                <th style="width: 30%;">Tên sản phẩm</th>
+                                <th style="width: 10%;">Số lượng</th>
+                                <th style="width: 15%;">Đơn giá</th>
+                                <th style="width: 15%;">Thành tiền</th>
+                                <th style="width: 10%;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="!activeTabData || currentInvoiceItems.length === 0">
+                            <!-- ✅ Warning banner for invalid items -->
+                            <tr v-if="activeTabData && hasInvalidItems(activeTabData)" class="invalid-items-banner">
+                                <td colspan="7">
+                                    <a-alert
+                                        type="warning"
+                                        message="Có sản phẩm không hợp lệ trong giỏ hàng!"
+                                        :description="getInvalidItemsMessage(activeTabData)"
+                                        show-icon
+                                        closable
+                                    />
+                                </td>
+                            </tr>
+                            <tr v-if="!activeTabData || !currentInvoiceItems || currentInvoiceItems.length === 0">
                                 <td colspan="7" class="text-center" style="padding: 20px;">
                                     {{ !activeTabData ? 'Vui lòng chọn hoặc tạo hóa đơn.' : 'Chưa có sản phẩm nào.' }}
                                 </td>
@@ -160,14 +212,24 @@
                                 <td>
                                     {{ item.ten_san_pham }} <br />
                                     <small>(Màu: {{ item.mau_sac }} - Size: {{ item.kich_thuoc }})</small>
+                                    <!-- ✅ Status badges -->
+                                    <div v-if="isItemInvalid(item)" class="item-status-badges">
+                                        <a-tag v-if="isItemInactive(item)" color="red">Ngưng hoạt động</a-tag>
+                                        <a-tag v-else-if="isItemOutOfStock(item)" color="orange">Hết hàng</a-tag>
+                                        <a-tag v-else-if="isItemInsufficientStock(item)" color="gold">Không đủ hàng</a-tag>
+                                    </div>
                                 </td>
                                 <td>
                                     <a-space direction="vertical">
-                                        <a-input-number v-model:value="item.so_luong" :min="1"
-                                            :max="getMaxQuantity(item)"
-                                            @change="validateAndCorrectQuantity(item)"
-                                            style="width: 80px;" />
-
+                                    <a-input-number 
+                                            v-model:value="item.so_luong" 
+                                            :min="1"
+                                            :max="getItemMaxQuantity(item)"
+                                            :disabled="isItemInvalid(item)"
+                                            @blur="handleQuantityBlur(item)"
+                                            @change="handleQuantityChange(item)"
+                                            style="width: 80px;" 
+                                        />
                                     </a-space>
                                 </td>
                                 <td>{{ formatCurrency(item.gia_ban) }} đ</td>
@@ -240,7 +302,7 @@
                                                 <tr v-for="(khachHang, index) in filteredKhachHang"
                                                     :key="khachHang.idKhachHang">
                                                     <td>{{ index + 1 }}</td>
-                                                    <td>{{ khachHang.tenKhachHang }}</td>
+                                                    <td>{{ khachHang.hoTen }}</td>
                                                     <td>{{ khachHang.gioiTinh ? "Nam" : "Nữ" }}</td>
                                                     <td>{{ khachHang.soDienThoai }}</td>
                                                     <td>{{ khachHang.diaChi }}</td>
@@ -632,7 +694,7 @@ const danhSachKhachHang = computed(() => {
 const chonKhachHang = async (khachHang) => {
     try {
         Object.assign(activeTabData.value.hd, {
-            ten_khach_hang: khachHang.tenKhachHang,
+            ten_khach_hang: khachHang.hoTen,
             so_dien_thoai: khachHang.soDienThoai,
             dia_chi: khachHang.diaChi || 'Chưa có địa chỉ',
             id_khach_hang: khachHang.idKhachHang
@@ -642,7 +704,7 @@ const chonKhachHang = async (khachHang) => {
             activeTabData.value.hd.id_hoa_don,
             khachHang.idKhachHang,
             khachHang.diaChi,
-            khachHang.tenKhachHang,
+            khachHang.hoTen,
             khachHang.soDienThoai
         );
 
@@ -658,7 +720,7 @@ const chonKhachHang = async (khachHang) => {
         localStorage.setItem('khachHangBH', JSON.stringify(khachHang));
         localStorage.setItem('chonKH', true);
 
-        message.success(`Đã chọn khách hàng: ${khachHang.tenKhachHang}`);
+        message.success(`Đã chọn khách hàng: ${khachHang.hoTen}`);
         triggerUpdate.value = Date.now();
     } catch (error) {
         console.error('Lỗi khi chọn khách hàng:', error);
@@ -737,7 +799,7 @@ const filteredKhachHang = computed(() => {
 
     const normalizedQuery = normalizeString(searchQueryKH.value);
     return danhSachKhachHang.value.filter(khachHang => {
-        const normalizedName = normalizeString(khachHang.tenKhachHang);
+        const normalizedName = normalizeString(khachHang.hoTen);
         const normalizedPhone = normalizeString(khachHang.soDienThoai);
         return normalizedName.includes(normalizedQuery) || normalizedPhone.includes(normalizedQuery);
     });
@@ -777,6 +839,20 @@ const filteredProducts = computed(() => {
 });
 
 
+// ✅ QUY TẮC MỚI: Luôn reload products khi click vào search
+const handleSearchFocus = async () => {
+    console.log('🔍 Search focused - Reloading fresh product data...');
+    try {
+        const freshProducts = await store.getAllCTSPKM();
+        allProducts.value = freshProducts;
+        console.log(`✅ Loaded ${freshProducts.length} products from API`);
+    } catch (error) {
+        console.error('❌ Error loading products:', error);
+        message.error('Lỗi tải danh sách sản phẩm');
+    }
+};
+
+
 // Lấy dữ liệu của tab đang active
 const activeTabData = computed(() => {
     return panes.value.find(pane => pane.key === activeKey.value);
@@ -786,31 +862,66 @@ const currentInvoiceItems = computed(() => {
     return activeTabData.value?.items?.value || [];
 });
 
-// ✅ Computed: Tính max quantity cho mỗi item trong giỏ
-const getMaxQuantity = (item) => {
-    // Tìm product trong allProducts để lấy stock hiện tại
-    const productInList = allProducts.value.find(p => p.id_chi_tiet_san_pham === item.id_chi_tiet_san_pham);
+// ✅ Get realtime stock từ backend API
+const getCTSPRealtime = async (idCTSP) => {
+    try {
+        const response = await store.getCTSPRealtime(idCTSP);
+        return response;
+    } catch (error) {
+        console.error('❌ Error getting realtime stock:', error);
+        return null;
+    }
+};
+
+// ✅ Tính max quantity - GỌI API REALTIME
+const getMaxQuantity = async (item) => {
+    // Gọi API để lấy stock mới nhất
+    const realtimeData = await getCTSPRealtime(item.id_chi_tiet_san_pham);
     
-    if (!productInList) {
-        // Fallback: nếu không tìm thấy, dùng so_luong_ton_goc
-        return item.so_luong_ton_goc || item.so_luong;
+    if (!realtimeData) {
+        console.warn(`⚠️ Cannot get realtime data for ${item.ten_san_pham}`);
+        return item.so_luong || 1; // Fallback to current quantity
     }
     
-    // Max = stock hiện tại + số lượng đang có trong giỏ
-    // Ví dụ: stock = 5, cart = 3 => max = 5 + 3 = 8
-    const currentStock = productInList.so_luong || 0;
+    // Max = Stock hiện tại trong DB + Số lượng hiện tại trong giỏ
+    // Lưu ý: Stock trong DB đã bị trừ khi thêm vào giỏ, nên cần cộng lại
+    const currentStock = realtimeData.so_luong || 0;
     const cartQuantity = item.so_luong || 0;
     const maxQty = currentStock + cartQuantity;
     
     console.log(`📊 Max for ${item.ten_san_pham}: stock=${currentStock}, cart=${cartQuantity}, max=${maxQty}`);
-    return maxQty > 0 ? maxQty : 1; // Tối thiểu là 1
+    return maxQty > 0 ? maxQty : cartQuantity; // Nếu stock = 0, giữ nguyên số lượng hiện tại
+};
+
+// ✅ ĐỒNG BỘ - Tính max quantity cho input-number :max attribute
+// QUAN TRỌNG: Max phải CỐ ĐỊNH dựa trên stock hiện tại trong DB
+// Không sử dụng item.so_luong vì nó thay đổi khi user nhập
+const getItemMaxQuantity = (item) => {
+    // so_luong_ton hoặc so_luong_ton_kho = stock HIỆN TẠI trong DB (đã trừ khi thêm vào giỏ)
+    // Lấy giá trị _originalMax nếu đã được cache, hoặc tính mới
+    if (item._originalMax !== undefined) {
+        console.log(`📊 getItemMaxQuantity (cached): max=${item._originalMax}`);
+        return item._originalMax;
+    }
+    
+    const stockInDB = item.so_luong_ton ?? item.so_luong_ton_kho ?? 0;
+    const cartQty = item.so_luong || 0;
+    
+    // Max = Stock còn lại + số đang trong giỏ (tính 1 lần)
+    const max = stockInDB + cartQty;
+    
+    // Cache lại để không tính lại
+    item._originalMax = max > 0 ? max : 1;
+    
+    console.log(`📊 getItemMaxQuantity (new): stock=${stockInDB}, cart=${cartQty}, max=${item._originalMax}`);
+    return item._originalMax;
 };
 
 // ✅ Validate và auto-correct quantity khi user thay đổi
 const validateAndCorrectQuantity = (item) => {
     console.log(`🔍 Validating quantity for ${item.ten_san_pham}:`, item.so_luong);
     
-    const maxQty = getMaxQuantity(item);
+    const maxQty = getItemMaxQuantity(item);
     console.log(`📊 Max allowed: ${maxQty}, Current: ${item.so_luong}`);
     
     // Nếu số lượng vượt quá max, tự động chuyển về max
@@ -821,8 +932,15 @@ const validateAndCorrectQuantity = (item) => {
         console.log(`⚠️ EXCEEDED! Auto-correcting ${oldQuantity} → ${maxQty}`);
         
         message.warning(
-            `Không thể tăng quá ${maxQty} sản phẩm! Kho còn ${maxQty} sp. Đã tự động điều chỉnh về ${maxQty}.`,
+            `Không thể tăng quá ${maxQty} sản phẩm! Đã tự động điều chỉnh về ${maxQty}.`,
             4
+        );
+    } else if (item.so_luong === maxQty) {
+        // ✅ Thông báo khi đạt max
+        console.log(`✅ REACHED MAX: ${item.so_luong} = ${maxQty}`);
+        message.info(
+            `Đã đạt số lượng tối đa! Kho chỉ còn ${maxQty} sản phẩm.`,
+            3
         );
     } else {
         console.log(`✅ Quantity OK: ${item.so_luong} <= ${maxQty}`);
@@ -830,6 +948,129 @@ const validateAndCorrectQuantity = (item) => {
     
     // Cập nhật tổng tiền
     updateItemTotal(item);
+};
+
+// ✅ NEW: Handle quantity change - chạy mỗi khi user thay đổi số lượng (realtime)
+let quantityChangeTimer = null;
+const handleQuantityChange = async (item) => {
+    // Debounce: chờ 300ms sau khi user ngừng nhập
+    if (quantityChangeTimer) clearTimeout(quantityChangeTimer);
+    
+    quantityChangeTimer = setTimeout(async () => {
+        const maxQty = getItemMaxQuantity(item);
+        
+        if (item.so_luong > maxQty) {
+            item.so_luong = maxQty;
+            message.warning(`Số lượng tối đa: ${maxQty}`);
+        }
+        
+        if (!item.so_luong || item.so_luong < 1) {
+            item.so_luong = 1;
+        }
+    }, 300);
+};
+
+// ✅ Handle khi user rời khỏi input (blur) - GỌI API VÀ RELOAD
+const handleQuantityBlur = async (item) => {
+    // Lấy max từ sync function (nhanh hơn)
+    const maxQty = getItemMaxQuantity(item);
+    
+    // Validate min
+    if (!item.so_luong || item.so_luong < 1) {
+        item.so_luong = 1;
+        message.info('Số lượng tối thiểu là 1');
+    }
+    
+    // Validate max
+    if (item.so_luong > maxQty) {
+        item.so_luong = maxQty;
+        message.warning(`Đã điều chỉnh về số lượng tối đa: ${maxQty}`);
+    }
+    
+    try {
+        // Gọi API update
+        const result = await store.setSPHD(item.id_hoa_don, item.id_chi_tiet_san_pham, item.so_luong);
+        
+        if (!result || result.error) {
+            message.error(result?.message || 'Cập nhật số lượng thất bại');
+        }
+    } catch (error) {
+        console.error('Lỗi cập nhật số lượng:', error);
+        message.error('Lỗi khi cập nhật số lượng');
+    } finally {
+        // ✅ LUÔN reload cart từ backend để đảm bảo data đồng bộ
+        await reloadCartFromBackend(item.id_hoa_don);
+        store.getAllCTSPKM().then(p => allProducts.value = p);
+    }
+};
+
+// ✅ Validation: Check if item is FULLY INVALID (chỉ khi inactive - admin đã tắt)
+// CHÚ Ý: Không block sản phẩm hết hàng - vẫn cho phép giảm số lượng
+const isItemInvalid = (item) => {
+    // CHỈ block khi sản phẩm thực sự inactive, KHÔNG block khi chỉ hết stock
+    return isItemInactive(item);
+};
+
+// ✅ Check if product is INACTIVE (admin đã tắt trạng thái)
+// CHỈ dựa vào trang_thai từ backend response, KHÔNG dựa vào allProducts
+const isItemInactive = (item) => {
+    // Chỉ check backend response fields - đây là nguồn đáng tin cậy nhất
+    // trang_thai_ctsp và trang_thai_san_pham được trả về từ API getSPGH
+    if (item.trang_thai_ctsp === false || item.trang_thai_ctsp === 0) {
+        return true;
+    }
+    if (item.trang_thai_san_pham === false || item.trang_thai_san_pham === 0) {
+        return true;
+    }
+    
+    return false;
+};
+
+// ✅ Check if product is OUT OF STOCK (hết hàng - stock = 0)
+const isItemOutOfStock = (item) => {
+    // Cách 1: Check từ backend response (so_luong_ton_kho)
+    if (item.so_luong_ton_kho !== undefined && item.so_luong_ton_kho <= 0) {
+        return true;
+    }
+    
+    // Cách 2: Nếu không tìm thấy trong allProducts (do query filter stock > 0), coi như hết hàng
+    const product = allProducts.value.find(p => p.id_chi_tiet_san_pham === item.id_chi_tiet_san_pham);
+    if (!product) {
+        // Sản phẩm không có trong allProducts = stock = 0 (đã thêm hết vào giỏ)
+        return true;
+    }
+    
+    // Cách 3: Check stock từ allProducts
+    return product.so_luong <= 0;
+};
+
+// ✅ Check if stock is insufficient for current cart quantity
+const isItemInsufficientStock = (item) => {
+    const product = allProducts.value.find(p => p.id_chi_tiet_san_pham === item.id_chi_tiet_san_pham);
+    if (!product) return true; // Không có trong list = không đủ
+    
+    return product.so_luong < item.so_luong;
+};
+
+// ✅ Check if tab has any invalid items
+const hasInvalidItems = (tab) => {
+    if (!tab?.items?.value) return false;
+    return tab.items.value.some(item => isItemInvalid(item));
+};
+
+// ✅ Get message describing invalid items
+const getInvalidItemsMessage = (tab) => {
+    if (!tab?.items?.value) return '';
+    
+    const invalidItems = tab.items.value.filter(item => isItemInvalid(item));
+    const inactiveCount = invalidItems.filter(item => isItemInactive(item)).length;
+    const outOfStockCount = invalidItems.filter(item => isItemOutOfStock(item)).length;
+    
+    let messages = [];
+    if (inactiveCount > 0) messages.push(`${inactiveCount} sản phẩm ngưng hoạt động`);
+    if (outOfStockCount > 0) messages.push(`${outOfStockCount} sản phẩm hết hàng`);
+    
+    return `${messages.join(', ')}. Vui lòng xóa để tiếp tục thanh toán.`;
 };
 
 // --- Methods ---
@@ -888,6 +1129,13 @@ const getRemainingMinutes = (invoiceId) => {
     const elapsed = Date.now() - timerData.createdAt;
     const remaining = EXPIRY_TIME - elapsed;
     return Math.ceil(remaining / 60000); // Convert to minutes
+};
+
+// Lấy tổng số lượng sản phẩm trong hóa đơn (cộng tất cả so_luong)
+const getInvoiceProductCount = (invoice) => {
+    if (!invoice || !invoice.items || !invoice.items.value) return 0;
+    // Tính tổng số lượng của tất cả sản phẩm trong hóa đơn
+    return invoice.items.value.reduce((total, item) => total + (item.so_luong || 0), 0);
 };
 
 // Xóa hóa đơn hết hạn
@@ -986,6 +1234,31 @@ const refreshHoaDon = async (idHoaDon) => {
     }
 };
 
+/**
+ * ✅ Helper: Reload cart items từ backend (Single Source of Truth)
+ * Gọi sau mỗi thao tác thêm/sửa/xóa để đảm bảo data luôn đồng bộ
+ */
+const reloadCartFromBackend = async (idHoaDon) => {
+    await store.getAllSPHD(idHoaDon);
+    const currentTab = activeTabData.value;
+    if (currentTab) {
+        currentTab.items.value = store.getAllSPHDArr.map(item => ({
+            id_hoa_don: item.id_hoa_don,
+            id_chi_tiet_san_pham: item.id_chi_tiet_san_pham,
+            hinh_anh: item.hinh_anh,
+            ten_san_pham: item.ten_san_pham,
+            mau_sac: item.ten_mau_sac,
+            kich_thuoc: item.gia_tri,
+            so_luong: item.so_luong,
+            gia_ban: item.gia_ban,
+            tong_tien: item.don_gia,
+            trang_thai_ctsp: item.trang_thai_ctsp,
+            trang_thai_san_pham: item.trang_thai_san_pham,
+            so_luong_ton_kho: item.so_luong_ton_kho
+        }));
+    }
+};
+
 // ✅ Helper function to check if product is inactive (FIXED)
 const isProductInactive = (item) => {
     const isInactive = (status) => {
@@ -1027,9 +1300,25 @@ const isProductInactive = (item) => {
 
 
 // Thêm sản phẩm vào hóa đơn chi tiết của tab hiện tại
-const handleDropdownClick = (product) => {
+const handleDropdownClick = async (product) => {
     if (!dropdownVisible.value) return; // Ngăn nếu dropdown đang ẩn
-    addToBill(product);
+    
+    // ✅ Block sản phẩm ngừng hoạt động
+    if (product.trang_thai === false || product.trang_thai === 0) {
+        message.error('Sản phẩm này đã ngừng hoạt động!');
+        return;
+    }
+    
+    // ✅ Block sản phẩm hết hàng
+    if (product.so_luong <= 0) {
+        message.warning('Sản phẩm này đã hết hàng!');
+        return;
+    }
+    
+    await addToBill(product);
+    
+    // ✅ QUY TẮC MỚI: Reload dữ liệu sau khi chọn sản phẩm
+    await handleSearchFocus();
 };
 
 // ✅ Thêm biến chống spam click
@@ -1037,7 +1326,7 @@ let isAdding = false;
 let lastClickTime = 0;
 const CLICK_DELAY = 500; // ms - thời gian chờ giữa 2 lần click
 
-const addToBill = (product) => {
+const addToBill = async (product) => {
     const now = Date.now();
     if (isAdding || (now - lastClickTime < CLICK_DELAY)) {
         return;
@@ -1052,22 +1341,19 @@ const addToBill = (product) => {
         return;
     }
 
-    // ✅ NEW: Check product status before adding
+    // ✅ Check product status before adding
     const isActiveProduct = (status) => {
         if (status === true || status === 1 || status === '1') return true;
         if (status === false || status === 0 || status === '0' || status === 'false') return false;
-        return true; // Default: assume active if status is undefined
+        return true;
     };
 
     if (!isActiveProduct(product.trang_thai)) {
         message.error(`Sản phẩm "${product.ten_san_pham}" không còn hoạt động. Đang tải lại danh sách...`);
-        
-        // Reload products to get updated data
         store.getAllCTSPKM().then(p => {
             allProducts.value = p;
             message.info('Đã cập nhật danh sách sản phẩm');
         });
-        
         isAdding = false;
         return;
     }
@@ -1078,64 +1364,41 @@ const addToBill = (product) => {
         return;
     }
 
-    // ✅ Safety check
-    if (!currentTab.items || !currentTab.items.value) {
-        message.error('Lỗi: Không thể truy cập giỏ hàng!');
+    // ✅ Safety check - auto-initialize items if not exists
+    if (!currentTab.items) {
+        currentTab.items = ref([]);
+    }
+    if (!currentTab.items.value) {
+        currentTab.items.value = [];
+    }
+
+    try {
+        // ✅ REFACTORED: GỌI API TRƯỚC - KHÔNG optimistic UI
+        const result = await store.themSPHDMoi(
+            currentTab.hd.id_hoa_don, 
+            product.id_chi_tiet_san_pham, 
+            1
+        );
+
+        if (!result) {
+            throw new Error("Thêm sản phẩm thất bại");
+        }
+
+        // ✅ SAU KHI THÀNH CÔNG: Reload từ backend
+        await reloadCartFromBackend(currentTab.hd.id_hoa_don);
+        await refreshHoaDon(currentTab.hd.id_hoa_don);
+        store.getAllCTSPKM().then(p => allProducts.value = p);
+
+        message.success(`Đã thêm "${product.ten_san_pham}"`);
+        dropdownVisible.value = false;
+        searchQuery.value = '';
+
+    } catch (error) {
+        console.error('Lỗi khi thêm sản phẩm:', error);
+        message.error('Lỗi: Không thể thêm sản phẩm vào hóa đơn.');
+    } finally {
         isAdding = false;
-        return;
     }
-
-    // --- Optimistic UI Update ---
-    const existingItem = currentTab.items.value.find(item => item.id_chi_tiet_san_pham === product.id_chi_tiet_san_pham);
-    
-    if (existingItem) {
-        // Chỉ tăng số lượng local
-        existingItem.so_luong++;
-    } else {
-        // Thêm sản phẩm mới vào mảng local
-        const newItem = {
-            id_hoa_don: currentTab.hd.id_hoa_don,
-            id_chi_tiet_san_pham: product.id_chi_tiet_san_pham,
-            hinh_anh: product.hinh_anh,
-            ten_san_pham: product.ten_san_pham,
-            mau_sac: product.ten_mau,
-            kich_thuoc: product.gia_tri,
-            so_luong: 1,
-            gia_ban: product.gia_ban,
-            so_luong_ton_goc: product.so_luong - 1, // Giả định giảm tồn kho local
-        };
-        currentTab.items.value.push(newItem);
-    }
-    message.success(`Đã thêm "${product.ten_san_pham}"`);
-    dropdownVisible.value = false;
-    searchQuery.value = '';
-    // --- Kết thúc Optimistic UI Update ---
-
-    // --- Gửi yêu cầu lên backend ở chế độ nền ---
-    store.themSPHDMoi(currentTab.hd.id_hoa_don, product.id_chi_tiet_san_pham, 1)
-        .then(result => {
-            if (!result) { throw new Error("Thêm sản phẩm thất bại"); }
-            // Cập nhật lại toàn bộ hóa đơn từ backend để đảm bảo đồng bộ 100%
-            refreshHoaDon(currentTab.hd.id_hoa_don); 
-            // ✅ RELOAD products để cập nhật stock và getMaxQuantity chính xác
-            store.getAllCTSPKM().then(p => allProducts.value = p);
-        })
-        .catch(error => {
-            console.error('Lỗi khi thêm sản phẩm (backend):', error);
-            message.error('Lỗi: Không thể thêm sản phẩm vào hóa đơn.');
-            // --- Hoàn tác lại thay đổi trên UI nếu có lỗi ---
-            if (existingItem) {
-                existingItem.so_luong--; // Trả lại số lượng
-            } else {
-                const itemIndex = currentTab.items.value.findIndex(item => item.id_chi_tiet_san_pham === product.id_chi_tiet_san_pham);
-                if (itemIndex > -1) {
-                    currentTab.items.value.splice(itemIndex, 1);
-                }
-            }
-        })
-        .finally(() => {
-            isAdding = false;
-        });
 };
 
 
@@ -1302,6 +1565,12 @@ const updateItemTotal = (item) => {
             console.log(`✅ Updated quantity for ${item.ten_san_pham} to ${item.so_luong} on backend.`);
             // Sau khi backend cập nhật thành công, làm mới lại dữ liệu của hóa đơn
             refreshHoaDon(item.id_hoa_don);
+            
+            // ✅ Reload allProducts để cập nhật stock trong search bar
+            store.getAllCTSPKM().then(p => {
+                allProducts.value = p;
+                console.log(`🔄 Reloaded allProducts after quantity update`);
+            });
         })
         .catch(err => {
             console.error('Failed to update quantity on backend:', err);
@@ -2041,28 +2310,82 @@ watch(() => activeKey.value, async (newKey) => {
     const currentTab = panes.value.find(p => p.key === newKey);
     if (currentTab && currentTab.hd.id_hoa_don) {
         console.log('📡 WATCH: GỌI API getAllSPHD cho hóa đơn:', currentTab.hd.id_hoa_don);
+        
+        // ✅ QUY TẮC MỚI: Reload products để lấy status mới nhất
+        await handleSearchFocus();
+        
+        // Reload cart items
         await store.getAllSPHD(currentTab.hd.id_hoa_don);
         
         console.log('📦 WATCH: Dữ liệu từ server:', store.getAllSPHDArr.length, 'items');
         
+        // ✅ NEW: Kiểm tra stock và hiển thị thông báo nếu có items không hợp lệ
+        const stockCheck = await store.checkCartStock(currentTab.hd.id_hoa_don);
+        if (stockCheck.has_invalid_items) {
+            message.warning(`⚠️ Có ${stockCheck.invalid_item_names.length} sản phẩm không hợp lệ: ${stockCheck.invalid_item_names.join(', ')}. Vui lòng kiểm tra giỏ hàng!`, 5);
+        }
+        
+        // Map items với validation
+        const mappedItems = store.getAllSPHDArr.map(item => ({
+            id_hoa_don: item.id_hoa_don,
+            id_chi_tiet_san_pham: item.id_chi_tiet_san_pham,
+            hinh_anh: item.hinh_anh,
+            ten_san_pham: item.ten_san_pham,
+            mau_sac: item.ten_mau_sac,
+            kich_thuoc: item.gia_tri,
+            so_luong: item.so_luong,
+            gia_ban: item.gia_ban,
+            tong_tien: item.don_gia,
+            so_luong_ton_goc: item.so_luong_ton || item.so_luong_ton_kho || 0,
+            // ✅ Validation fields từ backend
+            trang_thai_ctsp: item.trang_thai_ctsp,
+            trang_thai_san_pham: item.trang_thai_san_pham,
+            so_luong_ton_kho: item.so_luong_ton_kho
+        }));
+        
+        console.log('🎨 WATCH: Mapped items:', mappedItems.length, 'items');
+        
+        // ✅ Validate và auto-adjust nếu cần
+        // KHÔNG auto-adjust nếu sản phẩm inactive - để nguyên số lượng
+        for (const item of mappedItems) {
+            // Bỏ qua sản phẩm inactive - không cần adjust
+            if (item.trang_thai_ctsp === false || item.trang_thai_ctsp === 0 ||
+                item.trang_thai_san_pham === false || item.trang_thai_san_pham === 0) {
+                console.log(`⏭️ Skipping inactive product: ${item.ten_san_pham}`);
+                continue;
+            }
+            
+            // Chỉ check nếu stock thay đổi VÀ sản phẩm còn active
+            const stockAvailable = item.so_luong_ton_kho ?? 0;
+            if (item.so_luong > stockAvailable + item.so_luong) {
+                console.warn(`⚠️ Stock changed for ${item.ten_san_pham}: cart=${item.so_luong}, stock=${stockAvailable}`);
+                // KHÔNG reset về 1 - giữ nguyên số lượng trong giỏ
+                // Chỉ notify user thay vì auto-adjust
+            }
+        }
+        
+        // Reload again sau khi adjust
+        await store.getAllSPHD(currentTab.hd.id_hoa_don);
         currentTab.items.value = store.getAllSPHDArr.map(item => ({
             id_hoa_don: item.id_hoa_don,
             id_chi_tiet_san_pham: item.id_chi_tiet_san_pham,
             hinh_anh: item.hinh_anh,
             ten_san_pham: item.ten_san_pham,
-            mau_sac: item.ten_mau_sac || item.mau_sac || null,
-            kich_thuoc: item.gia_tri || null,
+            mau_sac: item.ten_mau_sac,
+            kich_thuoc: item.gia_tri,
             so_luong: item.so_luong,
-            gia_ban: item.gia_ban,  // ✅ Giá lẻ
-            tong_tien: item.don_gia,  // ✅ Tổng tiền
-            so_luong_ton_goc: item.so_luong_ton || 0
-        })) || [];
-        
-        console.log('🎨 WATCH: Mapped items:', currentTab.items.value.length, 'items');
+            gia_ban: item.gia_ban,
+            tong_tien: item.don_gia,
+            so_luong_ton_goc: item.so_luong_ton || item.so_luong_ton_kho || 0,
+            trang_thai_ctsp: item.trang_thai_ctsp,
+            trang_thai_san_pham: item.trang_thai_san_pham,
+            so_luong_ton_kho: item.so_luong_ton_kho
+        }));
         
         // Cập nhật các giá trị liên quan
         ptnh.value = currentTab.hd.phuong_thuc_nhan_hang;
-        store.setCurrentHoaDonId(currentTab.hd.id_hoa_don);
+        // checkForSuspendedInvoiceOverflow(); // Function đã bị xóa - không cần nữa
+        console.log('✅ WATCH: Tab loaded with validation');
     }
 }, { immediate: true });
 
@@ -2451,6 +2774,55 @@ const closeZaloPayModal = () => {
 .invoice-tabs {
     flex: 1;
     max-width: 600px;
+}
+
+/* Invoice Tab Label với Badge */
+.invoice-tab-label {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    padding-left: 8px;
+}
+
+.invoice-tab-label .tab-title {
+    padding: 0 4px;
+    font-weight: 500;
+}
+
+/* Badge số lượng sản phẩm - góc trái lòi ra ngoài */
+.product-count-badge {
+    position: absolute;
+    top: -8px;
+    left: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 18px;
+    text-align: center;
+    color: #fff;
+    background-color: #bfbfbf;
+    border-radius: 10px;
+    box-shadow: 0 0 0 2px #fff;
+    z-index: 10;
+}
+
+.product-count-badge.has-products {
+    background-color: #52c41a;
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% {
+        box-shadow: 0 0 0 2px #fff;
+    }
+    50% {
+        box-shadow: 0 0 0 2px #fff, 0 0 4px 2px rgba(82, 196, 26, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 0 2px #fff;
+    }
 }
 
 /* Action Buttons */
@@ -2920,6 +3292,59 @@ label.form-label {
     background-color: #f5f5f5 !important;
     opacity: 0.65;
     text-decoration: line-through;
+}
+
+/* ✅ Invalid items banner */
+.invalid-items-banner {
+    background-color: #fff7e6 !important;
+}
+
+/* ✅ Item status badges */
+.item-status-badges {
+    margin-top: 8px;
+}
+
+/* ✅ Search dropdown - Out of stock item (gray) */
+.out-of-stock-item {
+    background-color: #f5f5f5 !important;
+    opacity: 0.7;
+    cursor: not-allowed !important;
+}
+
+.out-of-stock-item:hover {
+    background-color: #e0e0e0 !important;
+}
+
+/* ✅ Search dropdown - Inactive item (darker gray, crossed) */
+.inactive-item {
+    background-color: #e8e8e8 !important;
+    opacity: 0.5;
+    cursor: not-allowed !important;
+}
+
+.inactive-item .product-name {
+    text-decoration: line-through;
+    color: #999;
+}
+
+.inactive-item:hover {
+    background-color: #d9d9d9 !important;
+}
+
+/* ✅ Stock status colors */
+.in-stock {
+    color: #52c41a;
+    font-weight: bold;
+}
+
+.low-stock {
+    color: #faad14;
+    font-weight: bold;
+}
+
+.no-stock {
+    color: #ff4d4f;
+    font-weight: bold;
 }
 
 /* Responsive Adjustments */

@@ -101,4 +101,16 @@ router.beforeEach((to, from, next) => {
   }
 });
 
+// ✅ NEW: Router guard for real-time data refresh
+router.afterEach((to, from) => {
+  // Refresh data khi chuyển trang bán hàng
+  if (to.path.startsWith('/admin/banhang') && 
+      to.path !== from.path) {
+    // Trigger refresh sau 100ms để đảm bảo component mounted
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('refresh-banhang-data'));
+    }, 100);
+  }
+});
+
 export default router

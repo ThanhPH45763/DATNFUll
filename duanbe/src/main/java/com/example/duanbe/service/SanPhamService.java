@@ -58,26 +58,30 @@ public class SanPhamService {
 
     @CacheEvict(value = "products", key = "'allSanPham'")
     public void updateProductStatus() {
-        ArrayList<SanPhamView> allProducts = sanPhamRepo.getAllSanPham();
-        boolean hasUpdates = false;
-
-        for (SanPhamView spv : allProducts) {
-            if (spv.getTong_so_luong() == null || spv.getTong_so_luong() <= 0) {
-                SanPham sanPham = sanPhamRepo.findById(spv.getId_san_pham()).get();
-                if (!sanPham.getTrang_thai()) {
-                    sanPham.setTrang_thai(false);
-                    sanPhamRepo.save(sanPham);
-                    hasUpdates = true;
-                }
-            }
-        }
-
-        // Nếu không có cập nhật nào, không cần phải làm mới cache
-        if (!hasUpdates) {
-            System.out.println("Không có sản phẩm nào cần cập nhật trạng thái");
-        } else {
-            System.out.println("Đã cập nhật trạng thái sản phẩm và làm mới cache");
-        }
+        // ⛔ ĐÃ TẮT: Không tự động thay đổi trạng thái sản phẩm dựa trên số lượng
+        // Trạng thái phải được admin quản lý thủ công
+        System.out.println("⛔ updateProductStatus đã bị tắt - không tự động thay đổi trạng thái");
+        /*
+         * ArrayList<SanPhamView> allProducts = sanPhamRepo.getAllSanPham();
+         * boolean hasUpdates = false;
+         * 
+         * for (SanPhamView spv : allProducts) {
+         * if (spv.getTong_so_luong() == null || spv.getTong_so_luong() <= 0) {
+         * SanPham sanPham = sanPhamRepo.findById(spv.getId_san_pham()).get();
+         * if (!sanPham.getTrang_thai()) {
+         * sanPham.setTrang_thai(false);
+         * sanPhamRepo.save(sanPham);
+         * hasUpdates = true;
+         * }
+         * }
+         * }
+         * 
+         * if (!hasUpdates) {
+         * System.out.println("Không có sản phẩm nào cần cập nhật trạng thái");
+         * } else {
+         * System.out.println("Đã cập nhật trạng thái sản phẩm và làm mới cache");
+         * }
+         */
     }
 
     public List<SanPham> getAllFindAll() {
@@ -206,19 +210,15 @@ public class SanPhamService {
             sanPham.setThuongHieu(thuongHieu);
             // sanPham.setNgay_sua(LocalDateTime.now());
 
-            // ✅ FIX: Automatically sync product status based on CTSP
-            // Get all CTSP for this product
-            List<ChiTietSanPham> ctspList = chiTietSanPhamRepo.findBySanPhamIdSanPham(sanPham.getId_san_pham());
+            // ⛔ ĐÃ TẮT: Không tự động sync trạng thái sản phẩm từ CTSP
+            // Trạng thái phải được admin quản lý thủ công
+            // List<ChiTietSanPham> ctspList =
+            // chiTietSanPhamRepo.findBySanPhamIdSanPham(sanPham.getId_san_pham());
+            // boolean hasActiveCTSP = ctspList.stream()
+            // .anyMatch(ctsp -> ctsp.getTrang_thai() != null && ctsp.getTrang_thai());
+            // sanPham.setTrang_thai(hasActiveCTSP);
 
-            // Check if at least one CTSP is active
-            boolean hasActiveCTSP = ctspList.stream()
-                    .anyMatch(ctsp -> ctsp.getTrang_thai() != null && ctsp.getTrang_thai());
-
-            // Update product status based on CTSP
-            sanPham.setTrang_thai(hasActiveCTSP);
-
-            System.out
-                    .println("Updating product status: " + hasActiveCTSP + " (based on " + ctspList.size() + " CTSP)");
+            System.out.println("⛔ Auto-sync trạng thái đã bị tắt - giữ nguyên trạng thái từ request");
 
             SanPham updatedSanPham = sanPhamRepo.save(sanPham);
 

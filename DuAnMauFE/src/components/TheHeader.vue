@@ -3,8 +3,8 @@
         <div class="row">
             <div class="col-12 headers d-flex align-items-center">
                 <div class="logo-section col-sm-2 align-items-center">
-                    <img src="../../public/image/logo/logoGB.png" @click="chuyenTrang('/home')" class="logo-image img-fluid ms-2"
-                        alt="GB Sports Logo">
+                    <img src="../../src/images/logo/anhLogoMenWear.png" @click="chuyenTrang('/home')" class="logo-image img-fluid ms-2"
+                        alt="MenWear Logo">
                 </div>
                 <div class="search-section col-sm-6">
                     <div class="search-container d-flex align-items-center">

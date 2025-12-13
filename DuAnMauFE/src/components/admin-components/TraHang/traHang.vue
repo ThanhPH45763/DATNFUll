@@ -381,7 +381,7 @@ import jsPDF from 'jspdf';
 import { debounce } from 'lodash';
 import '../../../config/fonts/Roboto-normal';
 import '../../../config/fonts/Roboto-bold';
-import logo from '../../../images/logo/logo2.png';
+import logo from '../../../images/logo/LogoM.png';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import QRCode from 'qrcode';

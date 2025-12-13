@@ -1,41 +1,67 @@
 <template>
-    <div>
-        <div class="header-section">
-            <h2>Thông tin khách hàng</h2>
+    <div class="customer-form-wrapper">
+        <!-- Header with icon -->
+        <div class="form-header">
+            <team-outlined class="header-icon" />
+            <h2 class="header-title">Thông tin khách hàng</h2>
         </div>
-        <form @submit.prevent="themKhachHang" @reset.prevent="resetForm">
+        
+        <form @submit.prevent="themKhachHang" @reset.prevent="resetForm" class="customer-form">
             <a-form :model="formData" :label-col="{ span: 24 }" :wrapper-col="{ span: 24 }">
                 <!-- Thông tin cơ bản -->
-                <a-row :gutter="12">
-                    <a-col :span="8">
-                        <a-form-item label="Họ tên khách hàng" :validate-status="errors.tenKhachHang ? 'error' : ''"
-                            :help="errors.tenKhachHang">
-                            <a-input v-model:value="formData.tenKhachHang" placeholder="Nhập tên khách hàng" />
-                        </a-form-item>
-                    </a-col>
+                <div class="form-section">
+                    <a-row :gutter="16">
+                        <a-col :span="8">
+                            <a-form-item label="Họ tên khách hàng" :validate-status="errors.tenKhachHang ? 'error' : ''"
+                                :help="errors.tenKhachHang">
+                                <a-input 
+                                    v-model:value="formData.tenKhachHang" 
+                                    placeholder="Nhập tên khách hàng"
+                                    class="custom-input" 
+                                    size="large" />
+                            </a-form-item>
+                        </a-col>
 
-                    <a-col :span="8">
-                        <a-form-item label="Số điện thoại" :validate-status="errors.soDienThoai ? 'error' : ''"
-                            :help="errors.soDienThoai">
-                            <a-input v-model:value="formData.soDienThoai" placeholder="Nhập số điện thoại" />
-                        </a-form-item>
-                    </a-col>
+                        <a-col :span="8">
+                            <a-form-item label="Số điện thoại" :validate-status="errors.soDienThoai ? 'error' : ''"
+                                :help="errors.soDienThoai">
+                                <a-input 
+                                    v-model:value="formData.soDienThoai" 
+                                    placeholder="Nhập số điện thoại"
+                                    class="custom-input" 
+                                    size="large" />
+                            </a-form-item>
+                        </a-col>
 
-                    <a-col :span="8">
-                        <a-form-item label="Email" :validate-status="errors.email ? 'error' : ''" :help="errors.email">
-                            <a-input v-model:value="formData.email" placeholder="Nhập email" />
-                        </a-form-item>
-                    </a-col>
-                </a-row>
+                        <a-col :span="8">
+                            <a-form-item label="Email" :validate-status="errors.email ? 'error' : ''" :help="errors.email">
+                                <a-input 
+                                    v-model:value="formData.email" 
+                                    placeholder="Nhập email"
+                                    class="custom-input" 
+                                    size="large" />
+                            </a-form-item>
+                        </a-col>
+                    </a-row>
+                </div>
 
                 <!-- Danh sách địa chỉ -->
-                <div v-for="(diaChi, index) in formData.diaChiList" :key="index" class="address-section">
+                <div v-for="(diaChi, index) in formData.diaChiList" :key="index" class="address-card">
+                    <div class="address-card-header">
+                        <environment-outlined class="address-icon" />
+                        <span class="address-title">Địa chỉ giao hàng</span>
+                    </div>
+                    
                     <a-row :gutter="16">
                         <a-col :span="6">
                             <a-form-item label="Tỉnh/Thành phố"
                                 :validate-status="errors.diaChiErrors[index]?.tinhThanhPho ? 'error' : ''"
                                 :help="errors.diaChiErrors[index]?.tinhThanhPho">
-                                <a-select v-model:value="diaChi.tinhThanhPho" placeholder="Chọn Tỉnh/Thành phố"
+                                <a-select 
+                                    v-model:value="diaChi.tinhThanhPho" 
+                                    placeholder="Chọn Tỉnh/Thành phố"
+                                    class="custom-select"
+                                    size="large"
                                     @change="() => handleProvinceChange(index)">
                                     <a-select-option v-for="province in provinces" :key="province.code"
                                         :value="province.name">
@@ -49,8 +75,13 @@
                             <a-form-item label="Quận/Huyện"
                                 :validate-status="errors.diaChiErrors[index]?.quanHuyen ? 'error' : ''"
                                 :help="errors.diaChiErrors[index]?.quanHuyen">
-                                <a-select v-model:value="diaChi.quanHuyen" placeholder="Chọn Quận/Huyện"
-                                    :disabled="!diaChi.tinhThanhPho" @change="() => handleDistrictChange(index)">
+                                <a-select 
+                                    v-model:value="diaChi.quanHuyen" 
+                                    placeholder="Chọn Quận/Huyện"
+                                    class="custom-select"
+                                    size="large"
+                                    :disabled="!diaChi.tinhThanhPho" 
+                                    @change="() => handleDistrictChange(index)">
                                     <a-select-option v-for="district in districts[index]" :key="district.code"
                                         :value="district.name">
                                         {{ district.name }}
@@ -63,7 +94,11 @@
                             <a-form-item label="Phường/Xã"
                                 :validate-status="errors.diaChiErrors[index]?.xaPhuong ? 'error' : ''"
                                 :help="errors.diaChiErrors[index]?.xaPhuong">
-                                <a-select v-model:value="diaChi.xaPhuong" placeholder="Chọn Phường/Xã"
+                                <a-select 
+                                    v-model:value="diaChi.xaPhuong" 
+                                    placeholder="Chọn Phường/Xã"
+                                    class="custom-select"
+                                    size="large"
                                     :disabled="!diaChi.quanHuyen">
                                     <a-select-option v-for="ward in wards[index]" :key="ward.code" :value="ward.name">
                                         {{ ward.name }}
@@ -72,39 +107,73 @@
                             </a-form-item>
                         </a-col>
 
-                        <a-col :span="5">
+                        <a-col :span="6">
                             <a-form-item label="Số nhà, tên đường"
                                 :validate-status="errors.diaChiErrors[index]?.soNha ? 'error' : ''"
                                 :help="errors.diaChiErrors[index]?.soNha">
-                                <a-input v-model:value="diaChi.soNha" placeholder="Số nhà, tên đường..." />
+                                <a-input 
+                                    v-model:value="diaChi.soNha" 
+                                    placeholder="Số nhà, tên đường..."
+                                    class="custom-input" 
+                                    size="large" />
                             </a-form-item>
                         </a-col>
                     </a-row>
                     
                     <!-- Hiển thị phí vận chuyển dự tính -->
-                    <a-row v-if="calculatedShippingFee > 0" :gutter="16" class="mt-2">
-                        <a-col :span="24">
-                            <a-alert
-                                type="info"
-                                :message="`Phí vận chuyển dự tính: ${formatVND(calculatedShippingFee)}`"
-                                show-icon
-                            />
-                        </a-col>
-                    </a-row>
+                    <div v-if="calculatedShippingFee > 0" class="shipping-fee-card">
+                        <div class="shipping-fee-header">
+                            <dollaroutlined class="shipping-fee-icon" />
+                            <span class="shipping-fee-title">Phí vận chuyển dự tính</span>
+                        </div>
+                        <div class="shipping-fee-amount">
+                            {{ formatVND(calculatedShippingFee) }}
+                        </div>
+                    </div>
                     
-                    <button type="button" class="btn btn-danger" @click="xoaDiaChi(index)"
+                    <button 
+                        type="button" 
+                        class="btn-remove-address" 
+                        @click="xoaDiaChi(index)"
                         v-if="formData.diaChiList.length > 1">
+                        <delete-outlined />
                         Xóa địa chỉ
                     </button>
                 </div>
 
                 <!-- Nút hành động -->
-                <div class="mt-4">
-                    <button type="button" class="btn btn-warning me-2" @click="confirmThemKhachHang">Thêm khách
-                        mới</button>
-                    <button type="button" class="btn btn-warning me-2" @click="luuThongTinKhachHang">Lưu thông tin khách
-                        hàng</button>
-                    <button type="button" class="btn btn-secondary" @click="resetForm">Làm mới</button>
+                <div class="action-buttons-wrapper">
+                    <a-button 
+                        type="default"
+                        size="large"
+                        class="btn-add-customer"
+                        @click="confirmThemKhachHang">
+                        <template #icon>
+                            <user-add-outlined />
+                        </template>
+                        Thêm khách mới
+                    </a-button>
+                    
+                    <a-button 
+                        type="primary"
+                        size="large"
+                        class="btn-save-info"
+                        @click="luuThongTinKhachHang">
+                        <template #icon>
+                            <save-outlined />
+                        </template>
+                        Lưu thông tin khách hàng
+                    </a-button>
+                    
+                    <a-button 
+                        size="large"
+                        class="btn-reset"
+                        @click="resetForm">
+                        <template #icon>
+                            <redo-outlined />
+                        </template>
+                        Làm mới
+                    </a-button>
                 </div>
             </a-form>
         </form>
@@ -116,7 +185,15 @@ import { ref, onMounted, reactive, computed, watch, onUnmounted, h } from 'vue';
 import { useGbStore } from '@/stores/gbStore';
 import { toast } from 'vue3-toastify';
 import { Modal as AModal } from 'ant-design-vue';
-import { UserAddOutlined, SaveOutlined } from '@ant-design/icons-vue';
+import { 
+    UserAddOutlined, 
+    SaveOutlined,
+    TeamOutlined,
+    EnvironmentOutlined,
+    DollarOutlined,
+    DeleteOutlined,
+    RedoOutlined
+} from '@ant-design/icons-vue';
 import { calculateShippingFee, formatVND } from '@/utils/shippingFeeCalculator';
 
 const gbStore = useGbStore();
@@ -619,42 +696,255 @@ const handleAllAddressLevels = async () => {
 };
 
 
-
 </script>
 
 <style scoped>
-.header-section {
+/* Wrapper */
+.customer-form-wrapper {
+    margin-top: 24px;
+    background: #ffffff;
+    padding: 0;
+}
+
+/* Form Header */
+.form-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
+    border-radius: 12px 12px 0 0;
+    margin-bottom: 24px;
+}
+
+.header-icon {
+    font-size: 28px;
+    color: white;
+}
+
+.header-title {
+    margin: 0;
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* Form Section */
+.form-section {
+    padding: 0 24px 20px 24px;
+    border-bottom: 2px solid #f0f0f0;
+    margin-bottom: 24px;
+}
+
+/* Custom Inputs */
+:deep(.custom-input .ant-input) {
+    border-radius: 8px;
+    border: 2px solid #e8e8e8;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+:deep(.custom-input .ant-input:hover) {
+    border-color: #ff6600;
+}
+
+:deep(.custom-input .ant-input:focus) {
+    border-color: #ff6600;
+    box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.1);
+}
+
+/* Custom Select */
+:deep(.custom-select .ant-select-selector) {
+    border-radius: 8px !important;
+    border: 2px solid #e8e8e8 !important;
+    font-size: 14px !important;
+    transition: all 0.3s ease !important;
+}
+
+:deep(.custom-select:hover .ant-select-selector) {
+    border-color: #ff6600 !important;
+}
+
+:deep(.custom-select.ant-select-focused .ant-select-selector) {
+    border-color: #ff6600 !important;
+    box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.1) !important;
+}
+
+/* Address Card */
+.address-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
+    border: 2px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 0 24px 20px 24px;
+    transition: all 0.3s ease;
+}
+
+.address-card:hover {
+    border-color: #ff6600;
+    box-shadow: 0 2px 12px rgba(255, 102, 0, 0.1);
+}
+
+.address-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.address-icon {
+    font-size: 22px;
+    color: #ff6600;
+}
+
+.address-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #262626;
+}
+
+/* Shipping Fee Card */
+.shipping-fee-card {
+    background: linear-gradient(135deg, #fff7e6 0%, #ffffff 100%);
+    border: 2px solid #ffd591;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    transition: all 0.3s ease;
 }
 
-.header-section h2 {
-    margin: 0;
+.shipping-fee-card:hover {
+    border-color: #ff6600;
+    box-shadow: 0 2px 10px rgba(255, 102, 0, 0.15);
 }
 
-.btn-secondary {
-    margin-left: auto;
+.shipping-fee-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.address-section {
-    border: 1px solid #e8e8e8;
-    padding: 16px;
-    margin-bottom: 16px;
-    border-radius: 4px;
-    position: relative;
+.shipping-fee-icon {
+    font-size: 20px;
+    color: #ff6600;
 }
 
-.address-section h3 {
-    margin-bottom: 16px;
-    font-size: 16px;
-    color: #333;
+.shipping-fee-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #595959;
 }
 
-.btn-danger {
-    position: absolute;
-    top: 16px;
-    right: 16px;
+.shipping-fee-amount {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ff6600;
+}
+
+/* Remove Address Button */
+.btn-remove-address {
+    margin-top: 16px;
+    padding: 8px 16px;
+    background: #fff;
+    border: 2px solid #ff4d4f;
+    border-radius: 8px;
+    color: #ff4d4f;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-remove-address:hover {
+    background: #ff4d4f;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 77, 79, 0.3);
+}
+
+/* Action Buttons Wrapper */
+.action-buttons-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 24px;
+    border-top: 2px solid #f0f0f0;
+    margin-top: 20px;
+}
+
+/* Add Customer Button */
+.btn-add-customer {
+    height: 44px !important;
+    padding: 0 24px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    border: 2px solid #52c41a !important;
+    color: #52c41a !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-add-customer:hover {
+    background: #52c41a !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3) !important;
+}
+
+/* Save Info Button */
+.btn-save-info {
+    height: 44px !important;
+    padding: 0 24px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%) !important;
+    border: none !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-save-info:hover {
+    background: linear-gradient(135deg, #ff8533 0%, #ffa366 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(255, 102, 0, 0.35) !important;
+}
+
+/* Reset Button */
+.btn-reset {
+    height: 44px !important;
+    padding: 0 24px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    border: 2px solid #d9d9d9 !important;
+    color: #595959 !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-reset:hover {
+    border-color: #ff6600 !important;
+    color: #ff6600 !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Form Labels */
+:deep(.ant-form-item-label > label) {
+    font-weight: 500;
+    color: #262626;
+    font-size: 14px;
+}
+
+/* Error Messages */
+:deep(.ant-form-item-explain-error) {
+    font-size: 13px;
 }
 </style>

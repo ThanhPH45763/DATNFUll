@@ -5,7 +5,7 @@
             <div class="container">
                 <div class="hero-content">
                     <h1 class="hero-title">Hỗ trợ & Chăm sóc khách hàng</h1>
-                    <p class="hero-description">G&B SPORTS luôn sẵn sàng hỗ trợ khách hàng mọi lúc mọi nơi</p>
+                    <p class="hero-description">MenWear luôn sẵn sàng hỗ trợ khách hàng mọi lúc mọi nơi</p>
                     <div class="hero-buttons">
                         <a-button type="primary" size="large" @click="scrollToElement('contactForm')">
                             Liên hệ ngay
@@ -53,7 +53,7 @@
                             <shop-outlined />
                         </div>
                         <h3>Cửa hàng</h3>
-                        <p>Ghé thăm cửa hàng G&B SPORTS</p>
+                        <p>Ghé thăm cửa hàng MenWear</p>
                         <a-button @click="router.push('/cuaHang')">Xem địa chỉ</a-button>
                     </div>
                 </div>
@@ -71,7 +71,7 @@
                         <a-tab-pane key="order" tab="Đặt hàng">
                             <a-collapse accordion>
                                 <a-collapse-panel header="Làm thế nào để đặt hàng trên website?" key="1">
-                                    <p>Để đặt hàng trên website G&B SPORTS, bạn vui lòng thực hiện theo các bước sau:
+                                    <p>Để đặt hàng trên website MenWear, bạn vui lòng thực hiện theo các bước sau:
                                     </p>
                                     <ul>
                                         <li>Tìm kiếm và chọn sản phẩm bạn muốn mua</li>
@@ -92,7 +92,7 @@
                                     <p>Hoặc bạn có thể gọi điện thoại đến số 0987 654 321 để được hỗ trợ.</p>
                                 </a-collapse-panel>
                                 <a-collapse-panel header="Các phương thức thanh toán được chấp nhận?" key="3">
-                                    <p>G&B SPORTS chấp nhận các phương thức thanh toán sau:</p>
+                                    <p>MenWear chấp nhận các phương thức thanh toán sau:</p>
                                     <ul>
                                         <li>Thanh toán khi nhận hàng (COD)</li>
                                         <li>Chuyển khoản ngân hàng</li>
@@ -103,7 +103,7 @@
                         <a-tab-pane key="shipping" tab="Vận chuyển">
                             <a-collapse accordion>
                                 <a-collapse-panel header="Thời gian giao hàng từ Hà Nội là bao lâu?" key="1">
-                                <p>G&B SPORTS, đặt tại <strong>Hà Nội</strong>, hợp tác với <strong>Giao Hàng Tiết Kiệm (GHTK)</strong> để giao hàng nhanh chóng và an toàn. Thời gian giao hàng phụ thuộc vào địa điểm nhận hàng:</p>
+                                <p>MenWear, đặt tại <strong>Hà Nội</strong>, hợp tác với <strong>Giao Hàng Tiết Kiệm (GHTK)</strong> để giao hàng nhanh chóng và an toàn. Thời gian giao hàng phụ thuộc vào địa điểm nhận hàng:</p>
                                 <ul>
                                     <li><strong>Nội thành Hà Nội</strong>: 1-2 ngày làm việc.</li>
                                     <li><strong>Các tỉnh miền Bắc</strong> (gần Hà Nội, như Bắc Ninh, Hải Phòng): 2-3 ngày làm việc.</li>
@@ -121,14 +121,14 @@
                                     <li><strong>Các tỉnh miền Trung và miền Nam</strong>: 35.000đ - 50.000đ (tùy khoảng cách).</li>
                                     <li><strong>Vùng sâu, vùng xa, hải đảo</strong>: 50.000đ trở lên, tùy thuộc vào địa điểm cụ thể.</li>
                                 </ul>
-                                <p>Chi phí vận chuyển chính xác sẽ được hiển thị tại bước thanh toán trên website hoặc ứng dụng của G&B SPORTS. Nếu bạn chọn dịch vụ <strong>GHTK Express</strong>, chi phí có thể cao hơn nhưng thời gian giao hàng sẽ nhanh hơn. Để được hỗ trợ, vui lòng liên hệ qua số <strong>0397572262</strong> hoặc email <strong>info@gbsports.com</strong>.</p>
+                                <p>Chi phí vận chuyển chính xác sẽ được hiển thị tại bước thanh toán trên website hoặc ứng dụng của MenWear. Nếu bạn chọn dịch vụ <strong>GHTK Express</strong>, chi phí có thể cao hơn nhưng thời gian giao hàng sẽ nhanh hơn. Để được hỗ trợ, vui lòng liên hệ qua số <strong>0397572262</strong> hoặc email <strong>info@menwear.com</strong>.</p>
                                 </a-collapse-panel>
                             </a-collapse>
                             </a-tab-pane>
                         <a-tab-pane key="return" tab="Trả hàng tại quầy">
                             <a-collapse accordion>
-                                <a-collapse-panel header="Chính sách trả hàng tại quầy của G&B SPORTS?" key="1">
-                                <p>G&B SPORTS cam kết mang đến trải nghiệm mua sắm tốt nhất và hỗ trợ trả hàng tại quầy trong vòng <strong>14 ngày</strong> kể từ ngày nhận hàng, với các điều kiện sau:</p>
+                                <a-collapse-panel header="Chính sách trả hàng tại quầy của MenWear?" key="1">
+                                <p>MenWear cam kết mang đến trải nghiệm mua sắm tốt nhất và hỗ trợ trả hàng tại quầy trong vòng <strong>14 ngày</strong> kể từ ngày nhận hàng, với các điều kiện sau:</p>
                                 <ul>
                                     <li>Sản phẩm còn <strong>nguyên tem, mác, chưa qua sử dụng, giặt ủi</strong> hoặc không bị hư hỏng do khách hàng.</li>
                                     <li>Sản phẩm bị <strong>lỗi do nhà sản xuất</strong> hoặc <strong>giao sai mẫu, kích thước, màu sắc</strong>.</li>
@@ -144,12 +144,12 @@
                                 <a-collapse-panel header="Làm thế nào để trả hàng tại quầy?" key="2">
                                 <p>Để thực hiện trả hàng tại quầy, bạn vui lòng làm theo các bước sau:</p>
                                 <ol>
-                                    <li>Đến cửa hàng G&B SPORTS gần nhất với <strong>sản phẩm cần trả</strong> và <strong>mã đơn hàng</strong> hoặc <strong>hóa đơn mua hàng</strong>.</li>
+                                    <li>Đến cửa hàng MenWear gần nhất với <strong>sản phẩm cần trả</strong> và <strong>mã đơn hàng</strong> hoặc <strong>hóa đơn mua hàng</strong>.</li>
                                     <li>Cung cấp <strong>mã đơn hàng</strong> để nhân viên tra cứu hoặc sử dụng chức năng <strong>quét mã QR</strong> trên hóa đơn (nếu có).</li>
                                     <li>Chọn sản phẩm cần trả, nhập số lượng và lý do trả hàng (ví dụ: sản phẩm lỗi, nhầm lẫn của nhân viên).</li>
                                     <li>Nhân viên sẽ kiểm tra sản phẩm và xử lý yêu cầu trả hàng ngay tại quầy. Nếu được chấp thuận, bạn sẽ nhận được <strong>hoàn tiền</strong> theo tổng số tiền của sản phẩm trả lại.</li>
                                 </ol>
-                                <p>Sau khi tiếp nhận, yêu cầu trả hàng sẽ được xử lý ngay lập tức tại quầy, và bạn sẽ nhận được hóa đơn trả hàng (nếu yêu cầu in). Để được hỗ trợ thêm, vui lòng liên hệ qua số điện thoại <strong>0397572262</strong> hoặc email <strong>info@gbsports.com</strong>.</p>
+                                <p>Sau khi tiếp nhận, yêu cầu trả hàng sẽ được xử lý ngay lập tức tại quầy, và bạn sẽ nhận được hóa đơn trả hàng (nếu yêu cầu in). Để được hỗ trợ thêm, vui lòng liên hệ qua số điện thoại <strong>0397572262</strong> hoặc email <strong>info@menwear.com</strong>.</p>
                                 </a-collapse-panel>
                             </a-collapse>
                             </a-tab-pane>
@@ -286,7 +286,7 @@
                             <span class="counter">365 </span>
                             <span>ngày</span>
                         </div>
-                        <p>Tất cả sản phẩm chính hãng tại G&B SPORTS đều được bảo hành theo chính sách của nhà sản xuất,
+                        <p>Tất cả sản phẩm chính hãng tại MenWear đều được bảo hành theo chính sách của nhà sản xuất,
                             từ 30 đến 365 ngày tùy loại sản phẩm.</p>
                     </div>
 

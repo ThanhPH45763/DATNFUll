@@ -3,8 +3,8 @@
         <!-- Banner Hero Section -->
         <section class="hero-section">
             <div class="hero-content">
-                <img src="../../../images/logo/logoGB.png" alt="G&B SPORTS" class="hero-logo" />
-                <h1 class="hero-title">G&B SPORTS</h1>
+                <img src="../../../images/logo/LogoM.png" alt="MenWear" class="hero-logo" />
+                <h1 class="hero-title">MENWEAR</h1>
                 <p class="hero-slogan">CHẤT LƯỢNG TẠO NÊN PHONG CÁCH</p>
                 <a-button type="primary" size="large" class="shop-now-btn" @click="navigateTo('/home')">KHÁM PHÁ
                     NGAY</a-button>
@@ -16,13 +16,13 @@
             <a-row :gutter="[24, 24]" align="middle">
                 <a-col :xs="24" :md="12">
                     <div class="section-content scroll-animation">
-                        <h2 class="section-title">Giới thiệu về G&B SPORTS</h2>
+                        <h2 class="section-title">Giới thiệu về MenWear</h2>
                         <div class="title-divider"></div>
                         <p class="section-text">
-                            G&B SPORTS tự hào là thương hiệu chuyên cung cấp các sản phẩm thể thao chất lượng cao tại
-                            Việt Nam. Ra đời với sứ mệnh mang đến những sản phẩm thể thao chất lượng, đa dạng và phù hợp
-                            với mọi nhu cầu, G&B SPORTS đã và đang trở thành người bạn đồng hành đáng tin cậy của nhiều
-                            thế hệ người yêu thể thao.
+                            MenWear tự hào là thương hiệu chuyên cung cấp các sản phẩm thời trang nam chất lượng cao tại
+                            Việt Nam. Ra đời với sứ mệnh mang đến những sản phẩm thời trang nam chất lượng, đa dạng và phù hợp
+                            với mọi nhu cầu, MenWear đã và đang trở thành người bạn đồng hành đáng tin cậy của nhiều
+                            thế hệ quý ông.
                         </p>
                         <p class="section-text">
                             Với hơn 10 năm kinh nghiệm trong lĩnh vực, chúng tôi không ngừng đổi mới và phát triển để
@@ -33,7 +33,7 @@
                 </a-col>
                 <a-col :xs="24" :md="12">
                     <div class="about-image scroll-animation delay-200">
-                        <img src="https://cdn.qwenlm.ai/output/90379cce-2313-4ef6-a5f5-69f4ca22e9aa/t2i/fa9d07c5-c1e3-47ca-996c-0464302354a5/de19f865-4918-4b9e-82b6-3e358dda3c04.png?key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXNvdXJjZV91c2VyX2lkIjoiOTAzNzljY2UtMjMxMy00ZWY2LWE1ZjUtNjlmNGNhMjJlOWFhIiwicmVzb3VyY2VfaWQiOiJkZTE5Zjg2NS00OTE4LTRiOWUtODJiNi0zZTM1OGRkYTNjMDQiLCJyZXNvdXJjZV9jaGF0X2lkIjpudWxsfQ.zKoDbBl0PP6ow6MhGtGAG1ISbPgN9HIHEtFoE3j_2gk"
+                        <img src="../../../images/thuongHieuSanPham/AnhCuaHang2png.png"
                             alt="G&B Store" />
                     </div>
                 </a-col>
@@ -175,7 +175,7 @@
                         <div class="testimonial-avatar">
                             <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Khách hàng" />
                         </div>
-                        <p class="testimonial-text">"Quần áo thể thao ở G&B rất chất lượng, tôi đã mua và sử dụng trong
+                        <p class="testimonial-text">"Quần áo tại MenWear rất chất lượng, tôi đã mua và sử dụng trong
                             hơn 2 năm mà vẫn giữ được form dáng và màu sắc. Nhân viên tư vấn rất nhiệt tình và chuyên
                             nghiệp."</p>
                         <h4 class="testimonial-name">Nguyễn Văn A</h4>
@@ -187,7 +187,7 @@
                         <div class="testimonial-avatar">
                             <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Khách hàng" />
                         </div>
-                        <p class="testimonial-text">"Tôi rất hài lòng với chất lượng dịch vụ tại G&B SPORTS. Đội ngũ
+                        <p class="testimonial-text">"Tôi rất hài lòng với chất lượng dịch vụ tại MenWear. Đội ngũ
                             nhân viên luôn tận tình hỗ trợ và sản phẩm đa dạng, phù hợp với nhiều nhu cầu khác nhau."
                         </p>
                         <h4 class="testimonial-name">Trần Thị B</h4>
@@ -339,7 +339,7 @@ onMounted(() => {
 /* Hero Section */
 .hero-section {
     height: 600px;
-    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('https://images.unsplash.com/photo-1576678927484-cc907957088c?q=80&w=1000') center/cover no-repeat;
+    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('../../../images/thuongHieuSanPham/anhCuaHangGT.png') center/cover no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -348,7 +348,7 @@ onMounted(() => {
     position: relative;
 }
 
-.hero-content {
+.hero-content { 
     max-width: 800px;
     padding: 0 20px;
 }

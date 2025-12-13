@@ -17,12 +17,12 @@
             <div class="login-box">
                 <div class="login-header">
                     <a href="">
-                        <img src="../../images/logo/logoGB.png" alt="Logo G&B SPORTS"
+                        <img src="../../images/logo/LogoM.png" alt="Logo"
                             class="container-fluid d-flex justify-content-center align-items-center mb-3"
                             style="width:150px">
                     </a>
 
-                    <p>Đăng nhập hệ thống quản trị G&B SPORTS 🔐</p>
+                    <p>Đăng nhập hệ thống quản trị 🔐</p>
                 </div>
 
                 <!-- Form đăng nhập -->

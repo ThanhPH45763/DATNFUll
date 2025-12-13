@@ -35,15 +35,15 @@
                 </template>
                 
                 <div class="carousel-slide">
-                    <img src="../images/banner/Banner-PC-3.png" alt="Banner chính">
+                    <img src="../../src/images/banerSale/anhBanerWear.png" alt="Banner chính">
                     <div class="slide-overlay"></div>
                 </div>
                 <div class="carousel-slide">
-                    <img src="../images/banner/banner1.webp" alt="Banner sản phẩm">
+                    <img src="../../src/images/banerSale/anhBanerWear2.png" alt="Banner sản phẩm">
                     <div class="slide-overlay"></div>
                 </div>
                 <div class="carousel-slide">
-                    <img src="../images/banner/slider_2.jpg" alt="Banner khuyến mãi">
+                    <img src="../../src/images/banerSale/anhBanerrWear3.png" alt="Banner khuyến mãi">
                     <div class="slide-overlay"></div>
                 </div>
             </a-carousel>

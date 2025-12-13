@@ -552,7 +552,7 @@ const columns = [
         title: 'Hành động',
         dataIndex: 'action',
         key: 'action',
-        width: '25%',
+        width: '15%',
     },
 ];
 const columnsCTSP = [
@@ -594,12 +594,6 @@ const columnsCTSP = [
     {
         title: 'QR Code',
         key: 'qrcode',
-    },
-    {
-        title: 'Action',
-        key: 'action',
-        fixed: 'right',
-        width: 180,
     }
 ];
 const showConfirmDownload = (ctspRecord) => {

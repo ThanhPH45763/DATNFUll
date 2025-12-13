@@ -142,7 +142,7 @@ import { defineProps, ref, defineExpose, computed } from 'vue';
 import QrcodeVue from 'qrcode.vue';
 import { useRouter } from 'vue-router';
 import html2pdf from 'html2pdf.js';
-import logoGB from '@/images/logo/logoGB.png';
+import logoGB from '@/images/logo/LogoM.png';
 
 const props = defineProps({
     hoaDon: {

@@ -17,7 +17,7 @@
             <div class="login-box">
                 <div class="login-header">
                     <a href="">
-                        <img src="../../images/logo/logoGB.png" alt="Logo G&B SPORTS"
+                        <img src="../../images/logo/LogoM.png" alt="Logo MenWear"
                             class="container-fluid d-flex justify-content-center align-items-center mb-3"
                             style="width:150px">
                     </a>
@@ -352,7 +352,7 @@ const handleRegister = async () => {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('https://cdn.hpdecor.vn/wp-content/uploads/2022/01/cua-hang-quan-ao-the-thao.jpg');
+    background-image: url('../../images/anhcuahang.png');
     background-size: cover;
     background-position: center;
     z-index: 1;

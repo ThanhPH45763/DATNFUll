@@ -187,7 +187,7 @@
                             được thông tin giao hàng.</p>
                     </a-collapse-panel>
                 </a-collapse>
-                <img src="../images/logo/logo2.png" alt="logo" id="logo" hidden>
+                <img src="../images/logo/LogoM.png" alt="logo" id="logo" hidden>
             </div>
         </div>
     </div>

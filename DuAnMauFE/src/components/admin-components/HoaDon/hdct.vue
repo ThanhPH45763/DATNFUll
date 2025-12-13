@@ -828,7 +828,7 @@ import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import '../../../config/fonts/Roboto-normal'
 import '../../../config/fonts/Roboto-bold'
-import logo from '../../../images/logo/logo2.png';
+import logo from '../../../images/logo/LogoM.png';
 import QRCode from 'qrcode';
 
 // Ant Design Vue components
@@ -1949,7 +1949,7 @@ const printInvoice = async () => {
     // Thông tin cửa hàng
     doc.setFontSize(16);
     doc.setFont("Roboto", "bold");
-    doc.text("G&B SPORTS", 105, 55, { align: "center" });
+    doc.text("Cửa hàng MenWear", 105, 55, { align: "center" });
     doc.setFontSize(10);
     doc.setFont("Roboto", "normal");
     doc.text("Địa chỉ: Phương Canh, Nam Từ Liêm, Hà Nội", 105, 63, { align: "center" });

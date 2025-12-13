@@ -3,11 +3,16 @@
         <!-- Search Combo Box -->
         <div class="search-section">
             <a-dropdown v-model:open="dropdownVisible" :trigger="['click']" overlayClassName="product-dropdown">
-                <a-input-search v-model:value="searchQuery" placeholder="Tìm kiếm sản phẩm theo tên..."
+                <a-input-search 
+                    v-model:value="searchQuery" 
+                    class="product-search-bar"
+                    placeholder="Tìm kiếm sản phẩm theo tên..."
                     @focus="handleSearchFocus"
-                    @search="performSearch" style="width: 300px">
+                    @search="performSearch" 
+                    size="large"
+                    style="width: 320px">
                     <template #enterButton>
-                        <search-outlined />
+                        <search-outlined style="font-size: 18px;" />
                     </template>
                 </a-input-search>
 
@@ -71,10 +76,17 @@
                 </template>
             </a-dropdown>
             <!-- Thêm nút QR Code bên ngoài kính lúp -->
-            <a-tooltip title="Quét mã QR">
-                <a-qrcode error-level="H" :value="qrValue" :size="70" :icon="logo" :iconSize="20" @click="showQrScanner"
-                    style="cursor: pointer; margin-left: 10px;" />
-            </a-tooltip>
+            <a-button 
+                type="primary" 
+                class="qr-scan-button"
+                @click="showQrScanner" 
+                size="large"
+                style="margin-left: 10px;">
+                <template #icon>
+                    <qrcode-outlined style="font-size: 18px;" />
+                </template>
+                <span style="font-weight: 500; margin-left: 6px;">Quét QR</span>
+            </a-button>
         </div>
 
         <!-- Thêm modal cho quét QR -->
@@ -170,16 +182,16 @@
         <div class="row ">
             <div class="col-8 text-center">
                 <div class="table-responsive mt-4" style="max-height: 350px; height: 350px; overflow-y: auto;">
-                    <table class="table table-hover">
-                        <thead class="sticky-top bg-white" style="top: 0; z-index: 1;">
-                            <tr style="color: rgb(250, 84, 28); font-weight: bold">
+                    <table class="table cart-table">
+                        <thead class="cart-table-header">
+                            <tr>
                                 <th style="width: 5%;">#</th>
-                                <th style="width: 15%;">Ảnh</th>
-                                <th style="width: 30%;">Tên sản phẩm</th>
-                                <th style="width: 10%;">Số lượng</th>
-                                <th style="width: 15%;">Đơn giá</th>
-                                <th style="width: 15%;">Thành tiền</th>
-                                <th style="width: 10%;">Thao tác</th>
+                                <th style="width: 12%;">Ảnh</th>
+                                <th style="width: 35%;">Tên sản phẩm</th>
+                                <th style="width: 13%;">Số lượng</th>
+                                <th style="width: 13%;">Đơn giá</th>
+                                <th style="width: 13%;">Thành tiền</th>
+                                <th style="width: 9%;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -203,11 +215,10 @@
                             <tr v-for="(item, index) in currentInvoiceItems" 
                                 :key="item.id_chi_tiet_san_pham"
                                 :class="{ 'inactive-product-row': isProductInactive(item) }">
-                                <td>{{ index + 1 }}</td>
-                                <td>
-                                    <img style="width: 50px; height: 50px;"
-                                        :src="item.hinh_anh || 'default-product.png'" alt="Item"
-                                        class="invoice-item-image" />
+                                <td class="text-center cart-index">{{ index + 1 }}</td>
+                                <td class="text-center">
+                                    <img class="cart-product-image"
+                                        :src="item.hinh_anh || 'default-product.png'" alt="Item" />
                                 </td>
                                 <td>
                                     {{ item.ten_san_pham }} <br />
@@ -232,9 +243,9 @@
                                         />
                                     </a-space>
                                 </td>
-                                <td>{{ formatCurrency(item.gia_ban) }} đ</td>
-                                <td>{{ formatCurrency(item.gia_ban * item.so_luong) }} đ</td>
-                                <td>
+                                <td class="cart-price-cell">{{ formatCurrency(item.gia_ban) }} đ</td>
+                                <td class="cart-total-cell">{{ formatCurrency(item.gia_ban * item.so_luong) }} đ</td>
+                                <td class="text-center">
                                     <a-button type="danger" shape="circle" size="small"
                                         @click="removeFromBill(item.id_chi_tiet_san_pham)">
                                         <template #icon><delete-outlined /></template>
@@ -252,90 +263,76 @@
             <div class="col-4">
                 <form v-if="activeTabData && activeTabData.hd" @submit.prevent="handlePayment">
                     <input type="hidden" v-model="activeTabData.hd.id_hoa_don">
-                    <div class="mb-3">
-                        <label class="form-label">Mã hóa đơn: {{ activeTabData.hd.ma_hoa_don }}</label>
-                    </div>
-                   
-                    <div class="mb-3">
-                        <div class="row align-items-center">
-                            <label for="idKhachHang" class="form-label col-6">
-                                Tên khách hàng: 
-                                {{activeTabData.hd.ten_khach_hang||activeTabData.hd.ho_ten||'Khách lẻ'}}
-                            </label>
-                            <div class="col 4">
-                                <a-button type="primary" @click="showModal">Chọn khách hàng</a-button>
+                    
+                    <!-- Mã hóa đơn -->
+                    <div class="invoice-info-card mb-3">
+                        <div class="info-item">
+                            <file-text-outlined class="info-icon" />
+                            <div class="info-content">
+                                <span class="info-label">Mã hóa đơn</span>
+                                <span class="info-value">{{ activeTabData.hd.ma_hoa_don }}</span>
                             </div>
                         </div>
-                        <div class="row mb-3">
-
-
-                            <a-modal v-model:open="open" title="Danh sách khách hàng" @ok="handleOk" width="1000px">
-                                <template #footer>
-                                    <a-button key="back" @click="handleCancel">Quay lại</a-button>
-                                    <a-button key="submit" type="primary" :loading="loading" @click="handleOk">Xác
-                                        nhận</a-button>
-                                </template>
-                                <!-- Thanh tìm kiếm -->
-                                <div class="mb-4">
-                                    <a-input v-model:value="searchQueryKH" style="width: 350px; height: 40px;"
-                                        placeholder="     Tìm kiếm theo tên hoặc số điện thoại"
-                                        @input="handleSearch" />
-                                </div>
-                                <div v-if="filteredKhachHang.length === 0" class="text-center py-4">
-                                    <a-empty :image="simpleImage" />
-                                </div>
-                                <div v-else>
-                                    <div class="table-responsive mt-4" ref="scrollContainer"
-                                        style="max-height: 400px; overflow-y: auto" @scroll="handleScroll">
-                                        <table class="table table-hover">
-                                            <thead>
-                                                <tr>
-                                                    <th scope="col">STT</th>
-                                                    <th scope="col">Tên khách hàng</th>
-                                                    <th scope="col">Giới tính</th>
-                                                    <th scope="col">Số điện thoại</th>
-                                                    <th scope="col">Địa chỉ</th>
-                                                    <th scope="col">Thao tác</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr v-for="(khachHang, index) in filteredKhachHang"
-                                                    :key="khachHang.idKhachHang">
-                                                    <td>{{ index + 1 }}</td>
-                                                    <td>{{ khachHang.hoTen }}</td>
-                                                    <td>{{ khachHang.gioiTinh ? "Nam" : "Nữ" }}</td>
-                                                    <td>{{ khachHang.soDienThoai }}</td>
-                                                    <td>{{ khachHang.diaChi }}</td>
-                                                    <td>
-                                                        <a-button size="small" type="link"
-                                                            @click="chonKhachHang(khachHang)">Chọn</a-button>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </a-modal>
-                        </div>
-
-
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label d-block mb-2">Phương thức nhận hàng</label>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" :name="'phuongThucNhanHang_' + activeKey"
-                                :id="'nhanTaiCuahang_' + activeKey" value="Nhận tại cửa hàng"
-                                v-model="activeTabData.hd.phuong_thuc_nhan_hang" @change="handlePhuongThucChange" />
-                            <label class="form-check-label" :for="'nhanTaiCuahang_' + activeKey">Nhận tại cửa
-                                hàng</label>
+                   
+                    <!-- Tên khách hàng -->
+                    <div class="invoice-info-card mb-3">
+                        <div class="info-item">
+                            <user-outlined class="info-icon" />
+                            <div class="info-content">
+                                <span class="info-label">Tên khách hàng</span>
+                                <span class="info-value">
+                                    {{activeTabData.hd.ten_khach_hang||activeTabData.hd.ho_ten||'Khách lẻ'}}
+                                </span>
+                            </div>
+                            <a-button 
+                                type="primary" 
+                                size="small"
+                                class="select-customer-btn"
+                                @click="showModal">
+                                <template #icon>
+                                    <edit-outlined />
+                                </template>
+                                Chọn
+                            </a-button>
                         </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" :name="'phuongThucNhanHang_' + activeKey"
-                                :id="'giaoHang_' + activeKey" value="Giao hàng"
-                                v-model="activeTabData.hd.phuong_thuc_nhan_hang" @change="handlePhuongThucChange" />
-                            <label class="form-check-label" :for="'giaoHang_' + activeKey">Giao hàng</label>
+                    </div> <!-- Closing invoice-info-card for customer -->
+
+                    <!-- Phương thức nhận hàng -->
+                    <div class="invoice-info-card mb-3">
+                        <label class="shipping-method-label mb-3">
+                            <car-outlined style="margin-right: 8px; color: #ff6600;" />
+                            Phương thức nhận hàng
+                        </label>
+                        <div class="shipping-methods">
+                            <label class="shipping-radio-card" :class="{ 'active': activeTabData.hd.phuong_thuc_nhan_hang === 'Nhận tại cửa hàng' }">
+                                <input 
+                                    class="form-check-input" 
+                                    type="radio" 
+                                    :name="'phuongThucNhanHang_' + activeKey"
+                                    :id="'nhanTaiCuahang_' + activeKey" 
+                                    value="Nhận tại cửa hàng"
+                                    v-model="activeTabData.hd.phuong_thuc_nhan_hang" 
+                                    @change="handlePhuongThucChange" />
+                                <shop-outlined class="radio-icon" />
+                                <span class="radio-text">Nhận tại cửa hàng</span>
+                            </label>
+                            
+                            <label class="shipping-radio-card" :class="{ 'active': activeTabData.hd.phuong_thuc_nhan_hang === 'Giao hàng' }">
+                                <input 
+                                    class="form-check-input" 
+                                    type="radio" 
+                                    :name="'phuongThucNhanHang_' + activeKey"
+                                    :id="'giaoHang_' + activeKey" 
+                                    value="Giao hàng"
+                                    v-model="activeTabData.hd.phuong_thuc_nhan_hang" 
+                                    @change="handlePhuongThucChange" />
+                                <car-outlined class="radio-icon" />
+                                <span class="radio-text">Giao hàng</span>
+                            </label>
                         </div>
-                        <div v-if="activeTabData.hd.phuong_thuc_nhan_hang === 'Giao hàng'" class="mt-2">
+                        
+                        <div v-if="activeTabData.hd.phuong_thuc_nhan_hang === 'Giao hàng'" class="mt-3">
                             <div class="form-label-with-logo">
                                 <label class="form-label">Phí vận chuyển (VNĐ)</label>
                                 <img src="../../../images/logo/logo_GHTK.png" alt="GHTK Logo" class="ghtk-logo" />
@@ -345,7 +342,7 @@
                                 :parser="value => value.replace(/\$\s?|(,*)/g, '')" placeholder="Nhập phí vận chuyển"
                                 style="width: 100%" />
                         </div>
-                    </div>
+                    </div> <!-- Closing invoice-info-card -->
                     <div class="mb-3">
                         <label class="form-label">Tổng tiền hàng:</label>
                         <input type="text" class="form-control"
@@ -357,14 +354,22 @@
                             :value="formatCurrency(fe_phiVanChuyen) + 'đ'" disabled>
                     </div>
                     <div class="mb-3">
-                        <label for="idVoucher" class="form-label">Voucher</label>
-                        <select name="idVoucher" id="idVoucher" class="form-select"
-                            v-model="activeTabData.hd.id_voucher" @change="updateVoucher(true)">
-                            <option :value="null">-- Không dùng voucher --</option>
-                             <option v-for="voucher in availableVouchers" :key="voucher.id_voucher" :value="voucher.id_voucher">
-                                {{ voucher.ten_voucher }} (Giảm {{ formatCurrency(voucher.so_tien_giam) }} đ)
-                            </option>
-                        </select>
+                        <label for="idVoucher" class="form-label voucher-label">
+                            <gift-outlined style="margin-right: 8px; color: #ff6600;" />
+                            Voucher
+                        </label>
+                        <a-select
+                            v-model:value="activeTabData.hd.id_voucher"
+                            class="voucher-select"
+                            size="large"
+                            placeholder="Chọn voucher giảm giá"
+                            @change="updateVoucher(true)"
+                            style="width: 100%"
+                            :options="voucherOptions">
+                            <template #suffixIcon>
+                                <gift-outlined style="color: #ff6600;" />
+                            </template>
+                        </a-select>
                     </div>
                     <div class="mb-3" v-if="fe_giamGia > 0">
                         <label class="form-label">Giảm từ Voucher:</label>
@@ -527,9 +532,96 @@
                         </template>
                     </a-modal>
                 </form>
+                
                 <div v-else class="text-center text-muted mt-5">
                     Vui lòng chọn hoặc tạo một hóa đơn.
                 </div>
+                
+                <!-- Modal chọn khách hàng - đặt ngoài v-if/v-else -->
+                <a-modal 
+                    v-model:open="open" 
+                    class="customer-select-modal"
+                    width="1100px"
+                    :footer="null">
+                    <template #title>
+                        <div class="modal-custom-title">
+                            <team-outlined class="title-icon" />
+                            <span>Danh sách khách hàng</span>
+                        </div>
+                    </template>
+                    
+                    <!-- Thanh tìm kiếm đẹp -->
+                    <div class="customer-search-section mb-4">
+                        <a-input-search
+                            v-model:value="searchQueryKH"
+                            class="customer-search-input"
+                            size="large"
+                            placeholder="Tìm kiếm theo tên hoặc số điện thoại..."
+                            @input="handleSearch">
+                            <template #prefix>
+                                <search-outlined style="color: #ff6600;" />
+                            </template>
+                        </a-input-search>
+                    </div>
+                    
+                    <div v-if="filteredKhachHang.length === 0" class="text-center py-5">
+                        <a-empty :image="simpleImage" description="Không tìm thấy khách hàng" />
+                    </div>
+                    
+                    <div v-else class="customer-table-wrapper">
+                        <div class="table-responsive" ref="scrollContainer"
+                            style="max-height: 450px; overflow-y: auto" @scroll="handleScroll">
+                            <table class="table customer-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="text-center" style="width: 50px;">STT</th>
+                                        <th scope="col" style="width: 200px;">
+                                            <user-outlined style="margin-right: 6px;" />
+                                            Tên khách hàng
+                                        </th>
+                                        <th scope="col" class="text-center" style="width: 90px;">Giới tính</th>
+                                        <th scope="col" class="text-center" style="width: 120px;">
+                                            <phone-outlined style="margin-right: 6px;" />
+                                            SĐT
+                                        </th>
+                                        <th scope="col">
+                                            <environment-outlined style="margin-right: 6px;" />
+                                            Địa chỉ
+                                        </th>
+                                        <th scope="col" class="text-center" style="width: 110px; padding-right: 20px !important;">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(khachHang, index) in filteredKhachHang"
+                                        :key="khachHang.idKhachHang"
+                                        class="customer-row">
+                                        <td class="text-center">{{ index + 1 }}</td>
+                                        <td class="customer-name">{{ khachHang.hoTen }}</td>
+                                        <td class="text-center">
+                                            <a-tag :color="khachHang.gioiTinh ? 'blue' : 'pink'">
+                                                {{ khachHang.gioiTinh ? "Nam" : "Nữ" }}
+                                            </a-tag>
+                                        </td>
+                                        <td class="text-center">{{ khachHang.soDienThoai }}</td>
+                                        <td class="customer-address">{{ khachHang.diaChi }}</td>
+                                        <td class="text-center">
+                                            <a-button 
+                                                type="primary" 
+                                                size="small"
+                                                class="select-btn"
+                                                @click="chonKhachHang(khachHang)">
+                                                <template #icon>
+                                                    <check-circle-outlined />
+                                                </template>
+                                                Chọn
+                                            </a-button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </a-modal>
             </div>
         </div>
     </div>
@@ -548,7 +640,17 @@ import {
     MoreOutlined,
     ExclamationCircleOutlined,
     PrinterOutlined,
-    CheckCircleOutlined
+    CheckCircleOutlined,
+    GiftOutlined,
+    FileTextOutlined,
+    UserOutlined,
+    EditOutlined,
+    CarOutlined,
+    ShopOutlined,
+    TeamOutlined,
+    PhoneOutlined,
+    EnvironmentOutlined,
+    CloseCircleOutlined
 } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import { useGbStore } from '@/stores/gbStore';
@@ -1490,6 +1592,25 @@ const fe_tongThanhToan = computed(() => {
     return total > 0 ? total : 0;
 });
 
+// Computed cho voucher options với format đẹp
+const voucherOptions = computed(() => {
+    const options = [
+        {
+            value: null,
+            label: '-- Không dùng voucher --'
+        }
+    ];
+    
+    availableVouchers.value.forEach(voucher => {
+        options.push({
+            value: voucher.id_voucher,
+            label: `🎁 ${voucher.ten_voucher} - Giảm ${formatCurrency(voucher.so_tien_giam)}đ`
+        });
+    });
+    
+    return options;
+});
+
 
 // 2. HÀM CẬP NHẬT VOUCHER KHI NGƯỜI DÙNG CHỌN
 const updateVoucher = async (isManualAction = false) => {
@@ -1795,7 +1916,7 @@ const printInvoice = async () => {
     // Thông tin cửa hàng
     doc.setFontSize(16);
     doc.setFont("Roboto", "bold");
-    doc.text("Tập đoàn R", 105, 55, { align: "center" });
+    doc.text("Cửa hàng MenWear", 105, 55, { align: "center" });
     doc.setFontSize(10);
     doc.setFont("Roboto", "normal");
     doc.text("Địa chỉ: Trịnh Văn Bô, Nam Từ Liêm, Hà Nội", 105, 63, { align: "center" });
@@ -2277,6 +2398,33 @@ async function loadData() {
 
             })
         }));
+
+        // ✅ Load items cho tất cả các tabs ngay từ đầu
+        for (const pane of panes.value) {
+            if (pane.hd.id_hoa_don) {
+                try {
+                    await store.getAllSPHD(pane.hd.id_hoa_don);
+                    pane.items.value = store.getAllSPHDArr.map(item => ({
+                        id_hoa_don: item.id_hoa_don,
+                        id_chi_tiet_san_pham: item.id_chi_tiet_san_pham,
+                        hinh_anh: item.hinh_anh,
+                        ten_san_pham: item.ten_san_pham,
+                        mau_sac: item.ten_mau_sac,
+                        kich_thuoc: item.gia_tri,
+                        so_luong: item.so_luong,
+                        gia_ban: item.gia_ban,
+                        tong_tien: item.don_gia,
+                        so_luong_ton_goc: item.so_luong_ton || item.so_luong_ton_kho || 0,
+                        trang_thai_ctsp: item.trang_thai_ctsp,
+                        trang_thai_san_pham: item.trang_thai_san_pham,
+                        so_luong_ton_kho: item.so_luong_ton_kho
+                    }));
+                    console.log(`✅ Loaded ${pane.items.value.length} items for invoice ${pane.hd.id_hoa_don}`);
+                } catch (error) {
+                    console.error(`❌ Error loading items for invoice ${pane.hd.id_hoa_don}:`, error);
+                }
+            }
+        }
 
         if (panes.value.length > 0) {
             activeKey.value = panes.value[0].key;
@@ -2782,6 +2930,7 @@ const closeZaloPayModal = () => {
     align-items: center;
     position: relative;
     padding-left: 8px;
+    overflow: visible;
 }
 
 .invoice-tab-label .tab-title {
@@ -2792,19 +2941,19 @@ const closeZaloPayModal = () => {
 /* Badge số lượng sản phẩm - góc trái lòi ra ngoài */
 .product-count-badge {
     position: absolute;
-    top: -8px;
-    left: -6px;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 18px;
+    top: -16px;
+    left: -16px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 22px;
     text-align: center;
     color: #fff;
     background-color: #bfbfbf;
-    border-radius: 10px;
-    box-shadow: 0 0 0 2px #fff;
+    border-radius: 11px;
+    box-shadow: 0 0 0 2px #fff, 0 2px 4px rgba(0, 0, 0, 0.15);
     z-index: 10;
 }
 
@@ -2818,11 +2967,467 @@ const closeZaloPayModal = () => {
         box-shadow: 0 0 0 2px #fff;
     }
     50% {
-        box-shadow: 0 0 0 2px #fff, 0 0 4px 2px rgba(82, 196, 26, 0.4);
+        box-shadow: 0 0 0 2px #fff, 0 0 4px 2px rgba(107, 255, 34, 0.4);
     }
     100% {
         box-shadow: 0 0 0 2px #fff;
     }
+}
+
+/* Override Ant Design tabs để badge không bị cắt */
+:deep(.ant-tabs-nav),
+:deep(.ant-tabs-nav-wrap),
+:deep(.ant-tabs-nav-list),
+:deep(.ant-tabs-tab) {
+    overflow: visible !important;
+}
+
+/* QR Scan Button */
+.qr-scan-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 8px 20px !important;
+    height: 42px !important;
+    border-radius: 8px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 2px 8px #ff6600 !important;
+    transition: all 0.3s ease !important;
+    background: linear-gradient(135deg, #ff6600 0%, #ff6600 100%) !important;
+    border: none !important;
+}
+
+.qr-scan-button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px #ff6600 !important;
+    background: linear-gradient(135deg, #ff6600 0%, #ff6600 100%) !important;
+}
+
+.qr-scan-button:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 6px #ff6600 !important;
+}
+
+/* Product Search Bar */
+.product-search-bar {
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+.product-search-bar :deep(.ant-input) {
+    height: 42px !important;
+    border-radius: 8px 0 0 8px !important;
+    border: 2px solid #d9d9d9 !important;
+    font-size: 15px !important;
+    padding: 8px 16px !important;
+    transition: all 0.3s ease !important;
+}
+
+.product-search-bar :deep(.ant-input:hover) {
+    border-color: #ff6600 !important;
+}
+
+.product-search-bar :deep(.ant-input:focus) {
+    border-color: #ff6600 !important;
+    box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.1) !important;
+}
+
+.product-search-bar :deep(.ant-input-search-button) {
+    height: 42px !important;
+    border-radius: 0 8px 8px 0 !important;
+    background: #ff6600 !important;
+    border: 2px solid #ff6600 !important;
+    border-left: none !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.product-search-bar :deep(.ant-input-search-button:hover) {
+    background: #ff8533 !important;
+    border-color: #ff8533 !important;
+    transform: scale(1.05) !important;
+}
+
+.product-search-bar :deep(.ant-input-group-addon) {
+    background: transparent !important;
+}
+
+/* Voucher Select Styling */
+.voucher-label {
+    display: flex;
+    align-items: center;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    color: #262626 !important;
+    margin-bottom: 8px !important;
+}
+
+.voucher-select :deep(.ant-select-selector) {
+    height: 44px !important;
+    border-radius: 8px !important;
+    border: 2px solid #ffd591 !important;
+    background: linear-gradient(135deg, #fff7e6 0%, #ffffff 100%) !important;
+    transition: all 0.3s ease !important;
+    padding: 4px 12px !important;
+}
+
+.voucher-select :deep(.ant-select-selector:hover) {
+    border-color: #ff6600 !important;
+    background: linear-gradient(135deg, #fff4e6 0%, #ffffff 100%) !important;
+    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.15) !important;
+}
+
+.voucher-select :deep(.ant-select-focused .ant-select-selector) {
+    border-color: #ff6600 !important;
+    box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.1) !important;
+}
+
+.voucher-select :deep(.ant-select-selection-item) {
+    font-weight: 500 !important;
+    color: #ff6600 !important;
+    display: flex !important;
+    align-items: center !important;
+    line-height: 36px !important;
+}
+
+.voucher-select :deep(.ant-select-arrow) {
+    color: #ff6600 !important;
+}
+
+/* Voucher Dropdown Options */
+:deep(.ant-select-dropdown .ant-select-item) {
+    padding: 12px 16px !important;
+    border-radius: 6px !important;
+    margin: 4px 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+:deep(.ant-select-dropdown .ant-select-item-option) {
+    background: #fff !important;
+}
+
+:deep(.ant-select-dropdown .ant-select-item-option:hover) {
+    background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%) !important;
+    color: #ff6600 !important;
+    transform: translateX(4px) !important;
+}
+
+:deep(.ant-select-dropdown .ant-select-item-option-selected) {
+    background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+/* Invoice Info Cards */
+.invoice-info-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
+    border: 2px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+}
+
+.invoice-info-card:hover {
+    border-color: #ff6600;
+    box-shadow: 0 4px 12px rgba(255, 102, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.info-icon {
+    font-size: 24px;
+    color: #ff6600;
+    flex-shrink: 0;
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.info-label {
+    font-size: 13px;
+    color: #8c8c8c;
+    font-weight: 500;
+}
+
+.info-value {
+    font-size: 16px;
+    color: #262626;
+    font-weight: 600;
+}
+
+.select-customer-btn {
+    border-radius: 8px !important;
+    height: 36px !important;
+}
+
+/* Shipping Method Styling */
+.shipping-method-label {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: #262626;
+    margin-bottom: 12px;
+}
+
+.shipping-methods {
+    display: flex;
+    gap: 10px;
+}
+
+.shipping-radio-card {
+    margin-top: 12px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 2px solid #e8e8e8;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #ffffff;
+}
+
+.shipping-radio-card:hover {
+    border-color: #ff6600;
+    background: linear-gradient(135deg, #fff7e6 0%, #ffffff 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(255, 102, 0, 0.1);
+}
+
+.shipping-radio-card.active {
+    border-color: #ff6600;
+    background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
+    box-shadow: 0 3px 10px rgba(255, 102, 0, 0.25);
+}
+
+.shipping-radio-card.active .radio-icon,
+.shipping-radio-card.active .radio-text {
+    color: white !important;
+}
+
+.shipping-radio-card .form-check-input {
+    display: none;
+}
+
+.shipping-radio-card .radio-icon {
+    font-size: 16px;
+    color: #ff6600;
+    transition: color 0.3s ease;
+}
+
+.shipping-radio-card .radio-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: #262626;
+    transition: color 0.3s ease;
+}
+
+/* Customer Select Modal */
+.customer-select-modal :deep(.ant-modal-content) {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.customer-select-modal :deep(.ant-modal-header) {
+    background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
+    border-bottom: none;
+    padding: 20px 24px;
+}
+
+.customer-select-modal :deep(.ant-modal-body) {
+    padding: 24px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modal-custom-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.modal-custom-title .title-icon {
+    font-size: 24px;
+}
+
+/* Customer Search Section */
+.customer-search-section {
+    margin-bottom: 20px;
+}
+
+.customer-search-input {
+    width: 100%;
+}
+
+.customer-search-input :deep(.ant-input) {
+    border-radius: 8px;
+    border: 2px solid #e8e8e8;
+    padding: 8px 16px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.customer-search-input :deep(.ant-input:hover) {
+    border-color: #ff6600;
+}
+
+.customer-search-input :deep(.ant-input:focus) {
+    border-color: #ff6600;
+    box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.1);
+}
+
+.customer-search-input :deep(.ant-input-search-button) {
+    background: #ff6600;
+    border-color: #ff6600;
+    height: 44px;
+}
+
+.customer-search-input :deep(.ant-input-search-button:hover) {
+    background: #ff8533;
+    border-color: #ff8533;
+}
+
+/* Customer Table */
+.customer-table-wrapper {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e8e8e8;
+    overflow: hidden;
+}
+
+.customer-table {
+    margin-bottom: 0 !important;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.customer-table thead {
+    background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
+}
+
+.customer-table thead th {
+    font-weight: 600;
+    color: #262626;
+    border-bottom: 2px solid #e8e8e8 !important;
+    padding: 16px 12px !important;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.customer-table tbody .customer-row {
+    transition: all 0.2s ease;
+}
+
+.customer-table tbody .customer-row:hover {
+    background: linear-gradient(135deg, #fff7e6 0%, #fffbf0 100%);
+    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.08);
+}
+
+.customer-table tbody td {
+    padding: 14px 12px !important;
+    vertical-align: middle !important;
+    font-size: 13px;
+    border-bottom: 1px solid #f0f0f0 !important;
+}
+
+.customer-name {
+    font-weight: 500;
+    color: #262626;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.customer-address {
+    color: #595959;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.customer-table .select-btn {
+    border-radius: 6px;
+    font-weight: 500;
+    padding: 4px 16px !important;
+    height: 32px !important;
+    font-size: 13px !important;
+}
+
+.customer-table .select-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+}
+
+/* Action column spacing */
+.customer-table tbody td:last-child {
+    padding-right: 20px !important;
+}
+
+/* Modal Custom Footer */
+.modal-custom-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    padding-top: 20px;
+    margin-top: 20px;
+    border-top: 2px solid #e8e8e8;
+}
+
+.modal-custom-footer .cancel-btn {
+    border-radius: 8px;
+    height: 42px;
+    padding: 0 28px;
+    font-weight: 500;
+    font-size: 14px;
+    border: 2px solid #d9d9d9;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-custom-footer .cancel-btn:hover {
+    border-color: #ff6600;
+    color: #ff6600;
+    transform: translateY(-1px);
+}
+
+.modal-custom-footer .confirm-btn {
+    border-radius: 8px;
+    height: 42px;
+    padding: 0 28px;
+    font-weight: 500;
+    font-size: 14px;
+    background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-custom-footer .confirm-btn:hover {
+    background: linear-gradient(135deg, #ff8533 0%, #ffa366 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 102, 0, 0.35);
 }
 
 /* Action Buttons */
@@ -3394,6 +3999,187 @@ label.form-label {
         margin-right: 0;
         margin-bottom: 8px;
     }
+}
+
+/* ======================== CART TABLE STYLING ======================== */
+.cart-table-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%) !important;
+}
+
+.cart-table-header th {
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    padding: 6px 8px !important;
+    border: none !important;
+    line-height: 1.4 !important;
+}
+
+.cart-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.cart-table tbody tr:hover {
+    background: linear-gradient(135deg, #fff7e6 0%, #fffbf0 100%);
+    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.08);
+}
+
+.cart-table tbody td {
+    vertical-align: middle !important;
+    padding: 8px 6px !important;
+}
+
+.cart-index {
+    font-weight: 600;
+    color: #595959;
+}
+
+.cart-product-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid #e8e8e8;
+    transition: all 0.3s ease;
+}
+
+.cart-product-image:hover {
+    transform: scale(1.15);
+    border-color: #ff6600;
+}
+
+.cart-price-cell,
+.cart-total-cell {
+    font-weight: 600;
+    color: #ff6600;
+    text-align: right;
+    padding-right: 16px !important;
+}
+
+.cart-total-cell {
+    color: #262626;
+    font-size: 15px;
+}
+
+/* ======================== PRODUCT DROPDOWN STYLING ======================== */
+.product-option {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.product-option:hover {
+    background: linear-gradient(135deg, #fff7e6 0%, #fffbf0 100%);
+    transform: translateX(4px);
+    border-left: 3px solid #ff6600;
+}
+
+.product-image {
+    border-radius: 8px;
+    border: 2px solid #e8e8e8;
+}
+
+.product-option:hover .product-image {
+    border-color: #ff6600;
+}
+
+.product-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #262626;
+}
+
+.product-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ff6600;
+}
+
+.original-price {
+    font-size: 13px;
+    color: #8c8c8c;
+    text-decoration: line-through;
+}
+
+.discount-badge {
+    background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.current-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ff6600;
+}
+
+.in-stock {
+    color: #52c41a;
+    font-weight: 600;
+}
+
+.low-stock {
+    color: #faad14;
+    font-weight: 600;
+}
+
+.no-stock {
+    color: #ff4d4f;
+    font-weight: 600;
+}
+
+/* ======================== WARNING BANNER STYLING ======================== */
+.invalid-items-banner {
+    background: linear-gradient(135deg, #fff7e6 0%, #fffbf0 100%);
+    border-left: 4px solid #faad14;
+}
+
+.invalid-items-banner td {
+    padding: 16px 20px !important;
+}
+
+.invalid-items-banner :deep(.ant-alert) {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+.invalid-items-banner :deep(.ant-alert-warning) {
+    background: transparent !important;
+}
+
+.invalid-items-banner :deep(.ant-alert-message) {
+    color: #262626 !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    margin-bottom: 8px !important;
+}
+
+.invalid-items-banner :deep(.ant-alert-description) {
+    color: #595959 !important;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+}
+
+.invalid-items-banner :deep(.ant-alert-icon) {
+    color: #faad14 !important;
+    font-size: 24px !important;
+}
+
+.invalid-items-banner :deep(.ant-alert-close-icon) {
+    color: #8c8c8c !important;
+    font-size: 14px !important;
+}
+
+.invalid-items-banner :deep(.ant-alert-close-icon:hover) {
+    color: #ff6600 !important;
 }
 
 </style>

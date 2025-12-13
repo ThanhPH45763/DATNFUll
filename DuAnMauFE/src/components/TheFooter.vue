@@ -4,7 +4,7 @@
             <!-- Brand Section -->
             <div class="footer-brand">
                 <div class="logo-container">
-                    <img src="../images/logo/logo2.png" class="footer-logo" alt="G&B Sports Logo">
+                    <img src="../images/logo/LogoM.png" class="footer-logo" alt="MenWear Logo">
                 </div>
                 <p class="brand-description">
                     Chuyên cung cấp áo sơ mi nam cao cấp với chất liệu tốt nhất. 

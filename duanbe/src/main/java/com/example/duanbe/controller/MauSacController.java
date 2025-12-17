@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.*;
 
-
 import com.example.duanbe.entity.MauSac;
 import com.example.duanbe.service.MauSacService;
 import java.util.List;
@@ -29,8 +28,15 @@ public class MauSacController {
     }
 
     @PostMapping("/addMauSac")
-    public ResponseEntity<?> addMauSac(@RequestParam("tenMauSac") String tenMauSac) {
-        return ResponseEntity.ok(mauSacService.getMauSacOrCreateMauSac(tenMauSac));
+    public ResponseEntity<?> addMauSac(
+            @RequestParam("maMauSac") String maMauSac,
+            @RequestParam("tenMauSac") String tenMauSac) {
+        try {
+            MauSac newMauSac = mauSacService.createMauSac(maMauSac, tenMauSac);
+            return ResponseEntity.ok(newMauSac);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/changeTrangThaiMauSac")

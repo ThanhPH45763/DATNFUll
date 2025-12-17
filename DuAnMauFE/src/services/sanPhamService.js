@@ -358,11 +358,16 @@ const addChatLieu = async (chatLieuData) => {
 
 const addMauSac = async (mauSacData) => {
   try {
-    const response = await axiosInstance.post(qlsp + 'addMauSac?tenMauSac=' + mauSacData);
+    // ✅ UPDATE: Gửi cả mã màu (hex) và tên màu
+    const params = new URLSearchParams();
+    params.append('maMauSac', mauSacData.maMauSac);
+    params.append('tenMauSac', mauSacData.tenMauSac);
+
+    const response = await axiosInstance.post(qlsp + 'addMauSac', null, { params });
     return response.data;
   } catch (error) {
     console.error('Error in addMauSac:', error);
-    return { error: true, message: error.response?.data?.message || 'Có lỗi xảy ra khi thêm màu sắc' };
+    return { error: true, message: error.response?.data || 'Failed to add color' };
   }
 };
 

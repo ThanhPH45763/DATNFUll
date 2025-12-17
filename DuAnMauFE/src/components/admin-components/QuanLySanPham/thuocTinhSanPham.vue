@@ -9,7 +9,8 @@
                     <div class="content-area">
                         <div class="add-form">
                             <a-input v-model:value="newAttribute.name" placeholder="Thêm danh mục mới"
-                                class="input-field" :status="validationStatus.category" @blur="validateNewAttribute" @keyup.enter="addNewAttribute">
+                                class="input-field" :status="validationStatus.category" @blur="validateNewAttribute"
+                                @keyup.enter="addNewAttribute">
                                 <template #suffix>
                                     <a-button type="primary" @click="addNewAttribute" :disabled="!isValidNewAttr">
                                         <template #icon>
@@ -63,7 +64,8 @@
                     <div class="content-area">
                         <div class="add-form">
                             <a-input v-model:value="newAttribute.name" placeholder="Thêm thương hiệu mới"
-                                class="input-field" :status="validationStatus.brand" @blur="validateNewAttribute" @keyup.enter="addNewAttribute">
+                                class="input-field" :status="validationStatus.brand" @blur="validateNewAttribute"
+                                @keyup.enter="addNewAttribute">
                                 <template #suffix>
                                     <a-button type="primary" @click="addNewAttribute" :disabled="!isValidNewAttr">
                                         <template #icon>
@@ -117,7 +119,8 @@
                     <div class="content-area">
                         <div class="add-form">
                             <a-input v-model:value="newAttribute.name" placeholder="Thêm chất liệu mới"
-                                class="input-field" :status="validationStatus.material" @blur="validateNewAttribute" @keyup.enter="addNewAttribute">
+                                class="input-field" :status="validationStatus.material" @blur="validateNewAttribute"
+                                @keyup.enter="addNewAttribute">
                                 <template #suffix>
                                     <a-button type="primary" @click="addNewAttribute" :disabled="!isValidNewAttr">
                                         <template #icon>
@@ -169,18 +172,43 @@
                 <!-- Tab Màu Sắc -->
                 <a-tab-pane key="color" tab="Màu Sắc">
                     <div class="content-area">
-                        <div class="add-form">
-                            <a-input v-model:value="newAttribute.name" placeholder="Thêm màu sắc mới"
-                                class="input-field" :status="validationStatus.color" @blur="validateNewAttribute" @keyup.enter="addNewAttribute">
-                                <template #suffix>
-                                    <a-button type="primary" @click="addNewAttribute" :disabled="!isValidNewAttr">
+                        <!-- ✅ NEW: Color Picker Form -->
+                        <div class="add-form color-picker-form">
+                            <div class="color-input-container">
+                                <div class="color-picker-wrapper">
+                                    <label class="color-label">Chọn màu:</label>
+                                    <input type="color" v-model="newAttribute.colorHex" @change="onColorChange"
+                                        class="color-picker-input" title="Chọn màu sắc" />
+                                    <span class="color-preview"
+                                        :style="{ backgroundColor: newAttribute.colorHex }"></span>
+                                </div>
+
+                                <div class="color-field-group">
+                                    <a-input v-model:value="newAttribute.colorHex" placeholder="#FF5733"
+                                        class="hex-input" :status="validationStatus.color" @input="onColorChange"
+                                        @blur="validateNewAttribute" :maxlength="7">
+                                        <template #prefix>
+                                            <span class="hex-prefix">Hex:</span>
+                                        </template>
+                                    </a-input>
+
+                                    <a-input v-model:value="newAttribute.name" placeholder="Tên màu (tự động)"
+                                        class="name-input" readonly :status="validationStatus.color">
+                                        <template #prefix>
+                                            <span class="name-prefix">Tên:</span>
+                                        </template>
+                                    </a-input>
+
+                                    <a-button type="primary" @click="addNewAttribute" :disabled="!isValidNewAttr"
+                                        class="add-color-btn">
                                         <template #icon>
                                             <plus-outlined />
                                         </template>
-                                        Thêm mới
+                                        Thêm
                                     </a-button>
-                                </template>
-                            </a-input>
+                                </div>
+                            </div>
+
                             <div v-if="validationError.color" class="validation-error">
                                 {{ validationError.color }}
                             </div>
@@ -312,6 +340,8 @@ import { useGbStore } from '../../../stores/gbStore'
 import { storeToRefs } from 'pinia'
 import { Modal, message } from 'ant-design-vue'
 import dayjs from 'dayjs'
+// ✅ NEW: Import color mapper
+import { getVietnameseColorName, isValidHexColor, normalizeHexColor } from '@/utils/colorMapper'
 
 const store = useGbStore()
 const currentTab = ref('category')
@@ -684,7 +714,8 @@ async function loadSizes() {
 const newAttribute = ref({
     name: '', // for other tabs
     value: '', // for size value
-    unit: ''  // for size unit
+    unit: '',  // for size unit
+    colorHex: '#FF0000' // ✅ NEW: for color picker (default red)
 })
 
 // Get current items based on selected tab
@@ -849,39 +880,38 @@ const validateNewAttribute = () => {
             return;
         }
 
-        // Kiểm tra trùng lặp
-        let currentList = [];
-        let checkField = '';
+        // ✅ UPDATE: Kiểm tra trùng lặp (chỉ cho category, brand, material)
+        // Bỏ qua cho color vì cho phép trùng tên (miễn khác hex)
+        if (currentTab.value !== 'color') {
+            let currentList = [];
+            let checkField = '';
 
-        switch (currentTab.value) {
-            case 'category':
-                currentList = categories.value;
-                checkField = 'ten_danh_muc';
-                break;
-            case 'brand':
-                currentList = brands.value;
-                checkField = 'ten_thuong_hieu';
-                break;
-            case 'material':
-                currentList = materials.value;
-                checkField = 'ten_chat_lieu';
-                break;
-            case 'color':
-                currentList = colors.value;
-                checkField = 'ten_mau_sac';
-                break;
-        }
+            switch (currentTab.value) {
+                case 'category':
+                    currentList = categories.value;
+                    checkField = 'ten_danh_muc';
+                    break;
+                case 'brand':
+                    currentList = brands.value;
+                    checkField = 'ten_thuong_hieu';
+                    break;
+                case 'material':
+                    currentList = materials.value;
+                    checkField = 'ten_chat_lieu';
+                    break;
+            }
 
-        const isDuplicate = currentList.some(item =>
-            item[checkField]?.toLowerCase() === newAttribute.value.name.trim().toLowerCase() &&
-            item.trang_thai
-        );
+            const isDuplicate = currentList.some(item =>
+                item[checkField]?.toLowerCase() === newAttribute.value.name.trim().toLowerCase() &&
+                item.trang_thai
+            );
 
-        if (isDuplicate) {
-            validationStatus.value[currentTab.value] = 'error';
-            validationError.value[currentTab.value] = 'Tên này đã tồn tại!';
-            isValidNewAttr.value = false;
-            return;
+            if (isDuplicate) {
+                validationStatus.value[currentTab.value] = 'error';
+                validationError.value[currentTab.value] = 'Tên này đã tồn tại!';
+                isValidNewAttr.value = false;
+                return;
+            }
         }
     }
 }
@@ -914,7 +944,11 @@ const addNewAttribute = async () => {
                 response = await store.addChatLieu(newAttribute.value.name.trim());
                 break;
             case 'color':
-                response = await store.addMauSac(newAttribute.value.name.trim());
+                // ✅ NEW: Gửi cả mã màu và tên màu
+                response = await store.addMauSac({
+                    maMauSac: newAttribute.value.colorHex.toUpperCase(),
+                    tenMauSac: newAttribute.value.name.trim()
+                });
                 break;
         }
 
@@ -922,24 +956,67 @@ const addNewAttribute = async () => {
             throw new Error('Có lỗi xảy ra khi thêm mới');
         }
 
-        // Reset form
-        if (currentTab.value === 'size') {
+        if (response.success) {
+            message.success(`Thêm ${getTabLabel()} thành công`);
+
+            // Reset form
+            newAttribute.value.name = '';
             newAttribute.value.value = '';
             newAttribute.value.unit = '';
+            // ✅ NEW: Reset color picker
+            newAttribute.value.colorHex = '#FF0000';
+
+            // Tải lại dữ liệu
+            await loadCurrentTab();
         } else {
-            newAttribute.value.name = '';
+            message.error(response.message || `Thêm ${getTabLabel()} thất bại`);
         }
-
-        // Reset validation
-        validationStatus.value[currentTab.value] = '';
-        validationError.value[currentTab.value] = '';
-
-        // Reload data
-        await loadCurrentTab();
-        message.success('Thêm mới thành công!');
     } catch (error) {
-        console.error('Error adding:', error);
-        message.error('Có lỗi xảy ra khi thêm mới: ' + error.message);
+        console.error('Lỗi khi thêm thuộc tính:', error);
+        message.error(`Có lỗi xảy ra khi thêm ${getTabLabel()}`);
+    }
+};
+
+// Helper function to get current tab label
+const getTabLabel = () => {
+    const labels = {
+        'category': 'danh mục',
+        'brand': 'thương hiệu',
+        'material': 'chất liệu',
+        'color': 'màu sắc',
+        'size': 'kích thước'
+    };
+    return labels[currentTab.value] || 'thuộc tính';
+};
+
+// ✅ NEW: Xử lý khi thay đổi màu
+const onColorChange = () => {
+    // Normalize hex code
+    let hex = newAttribute.value.colorHex;
+
+    // Safety check: Nếu empty hoặc undefined, dùng màu mặc định
+    if (!hex || hex.trim() === '') {
+        newAttribute.value.colorHex = '#FF0000';
+        newAttribute.value.name = 'Đỏ';
+        return;
+    }
+
+    // Ensure # prefix
+    if (!hex.startsWith('#')) {
+        hex = '#' + hex;
+    }
+
+    // Validate and normalize
+    if (isValidHexColor(hex)) {
+        newAttribute.value.colorHex = normalizeHexColor(hex);
+        // Auto-generate Vietnamese name
+        newAttribute.value.name = getVietnameseColorName(newAttribute.value.colorHex);
+    } else {
+        // Invalid hex, show error
+        if (hex.length === 7) {
+            validationStatus.value.color = 'error';
+            validationError.value.color = 'Mã màu không hợp lệ!';
+        }
     }
 };
 
@@ -1219,6 +1296,92 @@ watch(currentTab, () => {
 <style scoped>
 .product-attributes {
     padding: 20px;
+}
+
+/* ✅ NEW: Color Picker Styles */
+.color-picker-form {
+    margin-bottom: 24px;
+}
+
+.color-input-container {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.color-picker-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.color-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.color-picker-input {
+    width: 60px;
+    height: 60px;
+    border: 2px solid #d9d9d9;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.color-picker-input:hover {
+    border-color: #ff6600;
+    transform: scale(1.05);
+}
+
+.color-preview {
+    width: 60px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid #d9d9d9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.color-field-group {
+    display: flex;
+    gap: 12px;
+    flex: 1;
+    align-items: flex-start;
+}
+
+.hex-input {
+    width: 140px;
+}
+
+.name-input {
+    flex: 1;
+    min-width: 150px;
+}
+
+.hex-prefix,
+.name-prefix {
+    font-weight: 500;
+    color: #666;
+}
+
+.add-color-btn {
+    height: 40px;
+}
+
+/* Existing styles */
+.content-area {
+    padding: 24px;
+}
+
+.add-form {
+    margin-bottom: 24px;
+}
+
+.input-field {
+    width: 100%;
 }
 
 .page-title {

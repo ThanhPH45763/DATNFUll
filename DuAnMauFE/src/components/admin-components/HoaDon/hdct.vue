@@ -264,13 +264,13 @@
                                 <p>Mã hóa đơn: {{ store.hoaDonDetail.ma_hoa_don || 'N/A' }}</p>
                                 <p>Trạng thái: {{ store.hoaDonDetail.trang_thai || 'N/A' }}</p>
                                 <p>Phương thức thanh toán: {{ store.hoaDonDetail.hinh_thuc_thanh_toan || 'Chưa xác định'
-                                    }}</p>
+                                }}</p>
                             </a-col>
                             <a-col :span="12">
                                 <p>Ngày tạo: {{ formatDateTime(store.hoaDonDetail.ngay_tao) }}</p>
                                 <p>Nhân viên tiếp nhận: {{ store.hoaDonDetail.ten_nhan_vien || 'Chưa xác định' }}</p>
                                 <p>Hình thức nhận hàng: {{ store.hoaDonDetail.phuong_thuc_nhan_hang || 'Chưa xác định'
-                                    }}</p>
+                                }}</p>
                             </a-col>
                         </a-row>
                     </div>
@@ -295,11 +295,17 @@
                         <a-table :columns="productColumns" :data-source="store.chiTietHoaDons" :pagination="false"
                             row-key="id_chi_tiet_san_pham">
                             <template #bodyCell="{ column, record, index }">
+                                <template v-if="column.key === 'id_chi_tiet_san_pham'">
+                                    <div style="text-align: center;">
+                                        {{ record.id_chi_tiet_san_pham || 'N/A' }}
+                                    </div>
+                                </template>
                                 <template v-if="column.key === 'san_pham'">
                                     <div class="product-info">
                                         <img :src="record.hinh_anh || '/images/default.jpg'" alt="Product"
                                             class="product-image">
                                         <div class="product-details">
+
                                             <div class="product-name">
                                                 {{ record.ten_san_pham || 'N/A' }}
                                                 <a-tag v-if="hasMultiplePrices(record)" color="orange" size="small">
@@ -374,9 +380,9 @@
                                 <a-col :md="4" style="text-align: right;color: red;">
                                     <p>- {{
                                         formatCurrency((store.hoaDonDetail.tong_tien_truoc_giam || 0) +
-                                        (store.hoaDonDetail.phi_van_chuyen || 0) -
-                                        (store.hoaDonDetail.tong_tien_sau_giam ||
-                                        0)) }} VNĐ</p>
+                                            (store.hoaDonDetail.phi_van_chuyen || 0) -
+                                            (store.hoaDonDetail.tong_tien_sau_giam ||
+                                                0)) }} VNĐ</p>
                                 </a-col>
                             </a-row>
                             <a-row v-if="store.hoaDonDetail?.phuong_thuc_nhan_hang === 'Giao hàng'">
@@ -482,9 +488,9 @@
                                 <a-col :md="4" style="text-align: right;color: red;">
                                     <p>- {{
                                         formatCurrency((store.hoaDonDetail.tong_tien_truoc_giam || 0) +
-                                        (store.hoaDonDetail.phi_van_chuyen || 0) -
-                                        (store.hoaDonDetail.tong_tien_sau_giam ||
-                                        0)) }} VNĐ</p>
+                                            (store.hoaDonDetail.phi_van_chuyen || 0) -
+                                            (store.hoaDonDetail.tong_tien_sau_giam ||
+                                                0)) }} VNĐ</p>
                                 </a-col>
                             </a-row>
                             <a-row>
@@ -569,8 +575,8 @@
                                 <a-col :md="4" style="text-align: right;">
                                     <h6>{{
                                         formatCurrency((store.hoaDonDetail.tong_tien_sau_giam) -
-                                        (store.traHangs.reduce((total,
-                                        traHang) => total + traHang.tong_tien_hoan, 0)))}} VNĐ</h6>
+                                            (store.traHangs.reduce((total,
+                                                traHang) => total + traHang.tong_tien_hoan, 0)))}} VNĐ</h6>
                                 </a-col>
                             </a-row>
                         </div>
@@ -790,13 +796,13 @@
                         </span>
                         <span v-else>Số lượng sản phẩm
                             (Khả dụng: {{ popupType === 'decrease' ? currentProduct.so_luong :
-                            currentProduct.so_luong_con_lai || 0 }})
+                                currentProduct.so_luong_con_lai || 0 }})
                         </span>
                     </label>
                     <label style="width: 100px;">Số lượng:</label>
                     <a-input-number v-if="shouldCalculateSoLuongTon" style="width: 150px;" type="number"
                         v-model:value="quantityChange" :min="0"
-                        :max="popupType === 'decrease' ?currentProduct.so_luong : (shouldCalculateSoLuongTon ? calculateSoLuongTon(currentProduct) : currentProduct.so_luong)" />
+                        :max="popupType === 'decrease' ? currentProduct.so_luong : (shouldCalculateSoLuongTon ? calculateSoLuongTon(currentProduct) : currentProduct.so_luong)" />
                     <a-input-number v-else style="width: 150px;" type="number" v-model:value="quantityChange" :min="0"
                         :max="popupType === 'decrease' ? currentProduct.so_luong : (shouldCalculateSoLuongTon ? currentProduct.so_luong : currentProduct.so_luong_con_lai)" />
                 </div>
@@ -809,11 +815,11 @@
             </a-modal>
 
             <!-- ✅ NEW: Modal xác nhận thay đổi giá -->
-            <a-modal v-model:visible="showPriceChangeModal" title="⚠️ Thông báo thay đổi giá" 
-                     :maskClosable="false" width="500px">
+            <a-modal v-model:visible="showPriceChangeModal" title="⚠️ Thông báo thay đổi giá" :maskClosable="false"
+                width="500px">
                 <div class="price-change-content">
                     <p><strong>{{ priceChangeInfo.productName }}</strong> có sự thay đổi giá so với lần trước:</p>
-                    
+
                     <div class="price-comparison">
                         <div class="price-item old-price">
                             <span>Giá cũ trong hóa đơn:</span>
@@ -824,13 +830,14 @@
                             <span class="price-value">{{ formatCurrency(priceChangeInfo.newPrice) }}</span>
                         </div>
                     </div>
-                    
+
                     <div class="price-change-info">
                         <p><i class="fas fa-info-circle"></i> Sản phẩm sẽ được thêm vào hóa đơn với mức giá mới.</p>
-                        <p><i class="fas fa-exclamation-triangle"></i> Phụ thu chỉ được tính khi cộng vào sản phẩm có cùng giá.</p>
+                        <p><i class="fas fa-exclamation-triangle"></i> Phụ thu chỉ được tính khi cộng vào sản phẩm có
+                            cùng giá.</p>
                     </div>
                 </div>
-                
+
                 <template #footer>
                     <a-button @click="cancelPriceChange" size="large">
                         <i class="fas fa-times"></i> Hủy
@@ -842,38 +849,37 @@
             </a-modal>
 
             <!-- ✅ NEW: Modal thông báo kết quả xử lý -->
-            <a-modal v-model:visible="showProcessingResultModal" title="📋 Kết quả xử lý" 
-                     :footer="null" width="450px">
+            <a-modal v-model:visible="showProcessingResultModal" title="📋 Kết quả xử lý" :footer="null" width="450px">
                 <div class="processing-result-content">
                     <div class="result-item">
                         <a-tag color="green" size="large">
-                            <i class="fas fa-plus-circle"></i> 
+                            <i class="fas fa-plus-circle"></i>
                             {{ processingResult.mergedProducts }} sản phẩm cộng số lượng
                         </a-tag>
                     </div>
-                    
+
                     <div class="result-item">
                         <a-tag color="blue" size="large">
-                            <i class="fas fa-file-alt"></i> 
+                            <i class="fas fa-file-alt"></i>
                             {{ processingResult.newProducts }} sản phẩm thêm mới
                         </a-tag>
                     </div>
-                    
+
                     <div v-if="processingResult.hasPriceConflict" class="result-item">
                         <a-tag color="orange" size="large">
-                            <i class="fas fa-exclamation-triangle"></i> 
+                            <i class="fas fa-exclamation-triangle"></i>
                             Có thay đổi giá
                         </a-tag>
                     </div>
-                    
+
                     <div v-if="processingResult.phuThuApplied" class="result-item">
                         <a-tag color="purple" size="large">
-                            <i class="fas fa-coins"></i> 
+                            <i class="fas fa-coins"></i>
                             Đã tính phụ thu
                         </a-tag>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer">
                     <a-button type="primary" @click="closeProcessingResult" block size="large">
                         <i class="fas fa-check"></i> Đã hiểu
@@ -884,10 +890,10 @@
             <div class="notification">
                 <template v-if="store.hoaDonDetail.trang_thai?.toLowerCase() === 'trả hàng'">
                     HOÀN THÀNH ĐƠN HÀNG {{
-                    formatCurrency(
-                    store.hoaDonDetail.tong_tien_sau_giam -
-                    store.traHangs.reduce((total, traHang) => total + traHang.tong_tien_hoan, 0)
-                    )
+                        formatCurrency(
+                            store.hoaDonDetail.tong_tien_sau_giam -
+                            store.traHangs.reduce((total, traHang) => total + traHang.tong_tien_hoan, 0)
+                        )
                     }} VNĐ
                 </template>
                 <template v-else>
@@ -927,6 +933,7 @@ const loading = ref(true);
 
 // Product table columns
 const productColumns = [
+    { title: 'Id', key: 'id_chi_tiet_san_pham', width: '10%' },
     { title: 'Sản phẩm', key: 'san_pham', width: '40%' },
     { title: 'Đơn giá', key: 'don_gia', width: '20%' },
     { title: 'Số lượng', key: 'so_luong', width: '10%' },
@@ -948,7 +955,7 @@ const productPopupColumns = [
     { title: 'Danh mục', dataIndex: 'ten_danh_muc', key: 'ten_danh_muc', width: '15%' },
     { title: 'Màu sắc', dataIndex: 'ten_mau', key: 'ten_mau', width: '8%' },
     { title: 'Size', dataIndex: 'gia_tri', key: 'gia_tri', width: '7%' },
-    { title: 'Số lượng', dataIndex: 'so_luong', key: 'so_luong', width: '8%'},
+    { title: 'Số lượng', dataIndex: 'so_luong', key: 'so_luong', width: '8%' },
     { title: 'Giá bán(VNĐ)', key: 'gia_ban', width: '10%' },
     // { title: 'Trạng thái', dataIndex: 'trang_thai', key: 'trang_thai', width: '8%' },
     { title: 'Số lượng mua', key: 'so_luong_mua', width: '20%' },
@@ -1635,7 +1642,7 @@ const addSelectedProducts = async () => {
     }
     // Gửi yêu cầu thêm sản phẩm vào hóa đơn
     const response = await store.addProductsToInvoice(store.hoaDonDetail.ma_hoa_don, selectedProducts);
-    
+
     // ✅ NEW: Xử lý kết quả từ backend
     if (response && response.success) {
         // Hiển thị kết quả xử lý nếu có thay đổi
@@ -1649,13 +1656,13 @@ const addSelectedProducts = async () => {
         } else {
             toast.success('Thêm sản phẩm thành công!');
         }
-        
+
         // Gọi lại API để cập nhật danh sách sản phẩm
         await store.getAllCTSP_HD(0, 100, searchKeyword.value);
-        
+
         // Reset số lượng và đóng popup
         quantities.value = new Array(store.listCTSP_HD.length).fill(0);
-        
+
         // Tính phí vận chuyển
         const phiVanChuyen = await calculatePhiVanChuyen();
         console.log('Phí vận chuyển tính được khi thêm sản phẩm:', phiVanChuyen);
@@ -2116,21 +2123,21 @@ const printInvoice = async () => {
     doc.setFontSize(10);
     doc.setFont("Roboto", "normal");
     store.chiTietHoaDons.forEach((item, index) => {
-            // Tên sản phẩm
-    const productName = `${index + 1}. ${item.ten_san_pham}`;
-    const colorSize = `(Màu: ${item.ten_mau_sac} - Size: ${item.kich_thuoc})`;
+        // Tên sản phẩm
+        const productName = `${index + 1}. ${item.ten_san_pham}`;
+        const colorSize = `(Màu: ${item.ten_mau_sac} - Size: ${item.kich_thuoc})`;
 
-    const productLines = doc.splitTextToSize(productName, 80);
-    const colorSizeLines = doc.splitTextToSize(colorSize, 80);
+        const productLines = doc.splitTextToSize(productName, 80);
+        const colorSizeLines = doc.splitTextToSize(colorSize, 80);
 
-    doc.text(productLines, 20, y);
-    y += productLines.length * 6; // tăng dòng nếu tên sản phẩm dài
+        doc.text(productLines, 20, y);
+        y += productLines.length * 6; // tăng dòng nếu tên sản phẩm dài
 
-    doc.setFontSize(9);
-    doc.setTextColor(100); // màu xám nhẹ cho dòng (Màu - Size)
-    doc.text(colorSizeLines, 20, y);
-    doc.setFontSize(10);
-    doc.setTextColor(0); // Reset màu và size về bình thường
+        doc.setFontSize(9);
+        doc.setTextColor(100); // màu xám nhẹ cho dòng (Màu - Size)
+        doc.text(colorSizeLines, 20, y);
+        doc.setFontSize(10);
+        doc.setTextColor(0); // Reset màu và size về bình thường
         doc.text(`${item.so_luong}`, 110, y, { align: "center" });
 
         // Đơn giá
@@ -2165,131 +2172,132 @@ const printInvoice = async () => {
     doc.line(20, y, 190, y);
     // Tổng tiền
     y += 10;
-    if (store.hoaDonDetail.trang_thai?.toLowerCase() !== 'trả hàng'){
-    doc.setFontSize(12);
-    doc.setFont("Roboto", "normal");
-    doc.text(`Tổng tiền hàng:`, 115, y, { align: "left" });
-    doc.text(`${formatCurrency(store.hoaDonDetail.tong_tien_truoc_giam)} VNĐ`, 190, y, { align: "right" });
-
-    y += 6;
-    const giamGia = (store.hoaDonDetail.tong_tien_truoc_giam || 0) +
-        (store.hoaDonDetail.phi_van_chuyen || 0) -
-        (store.hoaDonDetail.tong_tien_sau_giam || 0);
-    doc.text(`Giảm giá:`, 115, y, { align: "left" });
-    doc.text(`-${formatCurrency(giamGia)} VNĐ`, 190, y, { align: "right" });
-
-    if (store.hoaDonDetail.phuong_thuc_nhan_hang === 'Giao hàng') {
-        y += 6;
-        doc.text(`Phí vận chuyển:`, 115, y, { align: "left" });
-        doc.text(`+${formatCurrency(store.hoaDonDetail.phi_van_chuyen || 0)} VNĐ`, 190, y, { align: "right" });
-    }
-
-    y += 6;
-    doc.setFont("Roboto", "bold");
-    doc.text(`Thành tiền:`, 115, y, { align: "left" });
-    doc.text(`${formatCurrency(store.hoaDonDetail.tong_tien_sau_giam)} VNĐ`, 190, y, { align: "right" });
-    // Thêm dòng Vui lòng thanh toán thêm
-    if (store.hoaDonDetail?.loai_hoa_don === 'Online' && store.hoaDonDetail?.hinh_thuc_thanh_toan === 'Chuyển khoản' && store.chiTietHoaDons[0]?.phu_thu > 0
-        || store.hoaDonDetail?.loai_hoa_don === 'Offline' && store.hoaDonDetail?.phuong_thuc_nhan_hang === 'Giao hàng' && store.chiTietHoaDons[0]?.phu_thu > 0) {
-        y += 6;
+    if (store.hoaDonDetail.trang_thai?.toLowerCase() !== 'trả hàng') {
+        doc.setFontSize(12);
         doc.setFont("Roboto", "normal");
-        doc.setTextColor(255, 0, 0);
-        doc.text(`Vui lòng thanh toán thêm:`, 115, y, { align: "left" });
-        doc.text(`${formatCurrency(store.chiTietHoaDons[0]?.phu_thu)} VNĐ`, 190, y, { align: "right" });
-        doc.setTextColor(0);
-    }}
+        doc.text(`Tổng tiền hàng:`, 115, y, { align: "left" });
+        doc.text(`${formatCurrency(store.hoaDonDetail.tong_tien_truoc_giam)} VNĐ`, 190, y, { align: "right" });
+
+        y += 6;
+        const giamGia = (store.hoaDonDetail.tong_tien_truoc_giam || 0) +
+            (store.hoaDonDetail.phi_van_chuyen || 0) -
+            (store.hoaDonDetail.tong_tien_sau_giam || 0);
+        doc.text(`Giảm giá:`, 115, y, { align: "left" });
+        doc.text(`-${formatCurrency(giamGia)} VNĐ`, 190, y, { align: "right" });
+
+        if (store.hoaDonDetail.phuong_thuc_nhan_hang === 'Giao hàng') {
+            y += 6;
+            doc.text(`Phí vận chuyển:`, 115, y, { align: "left" });
+            doc.text(`+${formatCurrency(store.hoaDonDetail.phi_van_chuyen || 0)} VNĐ`, 190, y, { align: "right" });
+        }
+
+        y += 6;
+        doc.setFont("Roboto", "bold");
+        doc.text(`Thành tiền:`, 115, y, { align: "left" });
+        doc.text(`${formatCurrency(store.hoaDonDetail.tong_tien_sau_giam)} VNĐ`, 190, y, { align: "right" });
+        // Thêm dòng Vui lòng thanh toán thêm
+        if (store.hoaDonDetail?.loai_hoa_don === 'Online' && store.hoaDonDetail?.hinh_thuc_thanh_toan === 'Chuyển khoản' && store.chiTietHoaDons[0]?.phu_thu > 0
+            || store.hoaDonDetail?.loai_hoa_don === 'Offline' && store.hoaDonDetail?.phuong_thuc_nhan_hang === 'Giao hàng' && store.chiTietHoaDons[0]?.phu_thu > 0) {
+            y += 6;
+            doc.setFont("Roboto", "normal");
+            doc.setTextColor(255, 0, 0);
+            doc.text(`Vui lòng thanh toán thêm:`, 115, y, { align: "left" });
+            doc.text(`${formatCurrency(store.chiTietHoaDons[0]?.phu_thu)} VNĐ`, 190, y, { align: "right" });
+            doc.setTextColor(0);
+        }
+    }
     // Chân trang
-       // Nếu trạng thái là "Trả hàng", thêm danh sách sản phẩm hoàn trả
-       if (store.hoaDonDetail.trang_thai?.toLowerCase() === 'trả hàng' && store.chiTietTraHangs.length > 0) {
-    // Vẽ đường kẻ ngang trước phần sản phẩm hoàn trả
-    doc.setLineWidth(0.2);
-    doc.line(20, y, 190, y);
+    // Nếu trạng thái là "Trả hàng", thêm danh sách sản phẩm hoàn trả
+    if (store.hoaDonDetail.trang_thai?.toLowerCase() === 'trả hàng' && store.chiTietTraHangs.length > 0) {
+        // Vẽ đường kẻ ngang trước phần sản phẩm hoàn trả
+        doc.setLineWidth(0.2);
+        doc.line(20, y, 190, y);
 
-    // Tiêu đề phần hoàn trả
-    y += 6;
-    doc.setFontSize(12);
-    doc.setFont("Roboto", "bold");
-    doc.text("Thông tin sản phẩm hoàn trả", 20, y);
+        // Tiêu đề phần hoàn trả
+        y += 6;
+        doc.setFontSize(12);
+        doc.setFont("Roboto", "bold");
+        doc.text("Thông tin sản phẩm hoàn trả", 20, y);
 
-    // Header bảng
-    // y += 8;
-    doc.setFontSize(10);
-    doc.setFont("Roboto", "bold");
-    doc.text("Số lượng", 110, y, { align: "center" });
-    doc.text("Đơn giá", 140, y, { align: "center" });
-    doc.text("Tổng tiền hoàn", 180, y, { align: "center" });
+        // Header bảng
+        // y += 8;
+        doc.setFontSize(10);
+        doc.setFont("Roboto", "bold");
+        doc.text("Số lượng", 110, y, { align: "center" });
+        doc.text("Đơn giá", 140, y, { align: "center" });
+        doc.text("Tổng tiền hoàn", 180, y, { align: "center" });
 
-    // Đường kẻ ngang dưới tiêu đề
-    y += 2;
-    doc.setLineWidth(0.2);
-    doc.line(20, y, 190, y);
+        // Đường kẻ ngang dưới tiêu đề
+        y += 2;
+        doc.setLineWidth(0.2);
+        doc.line(20, y, 190, y);
 
-    // Danh sách sản phẩm hoàn trả
-    y += 6;
-    doc.setFontSize(10);
-    doc.setFont("Roboto", "normal");
-    store.chiTietTraHangs.forEach((item, index) => {
-    // Tên sản phẩm
-    const productName = `${index + 1}. ${item.ten_san_pham}`;
-    const colorSize = `(Màu: ${item.ten_mau_sac} - Size: ${item.kich_thuoc})`;
+        // Danh sách sản phẩm hoàn trả
+        y += 6;
+        doc.setFontSize(10);
+        doc.setFont("Roboto", "normal");
+        store.chiTietTraHangs.forEach((item, index) => {
+            // Tên sản phẩm
+            const productName = `${index + 1}. ${item.ten_san_pham}`;
+            const colorSize = `(Màu: ${item.ten_mau_sac} - Size: ${item.kich_thuoc})`;
 
-    const productLines = doc.splitTextToSize(productName, 80);
-    const colorSizeLines = doc.splitTextToSize(colorSize, 80);
+            const productLines = doc.splitTextToSize(productName, 80);
+            const colorSizeLines = doc.splitTextToSize(colorSize, 80);
 
-    doc.text(productLines, 20, y);
-    y += productLines.length * 6; // tăng dòng nếu tên sản phẩm dài
+            doc.text(productLines, 20, y);
+            y += productLines.length * 6; // tăng dòng nếu tên sản phẩm dài
 
-    doc.setFontSize(9);
-    doc.setTextColor(100); // màu xám nhẹ cho dòng (Màu - Size)
-    doc.text(colorSizeLines, 20, y);
-    doc.setFontSize(10);
-    doc.setTextColor(0); // Reset màu và size về bình thường
+            doc.setFontSize(9);
+            doc.setTextColor(100); // màu xám nhẹ cho dòng (Màu - Size)
+            doc.text(colorSizeLines, 20, y);
+            doc.setFontSize(10);
+            doc.setTextColor(0); // Reset màu và size về bình thường
 
-    // Số lượng
-    doc.text(`${item.so_luong}`, 110, y - (colorSizeLines.length - 1) * 6, { align: "center" });
-    // Đơn giá
-    doc.text(`${formatCurrency(item.don_gia)} VNĐ`, 140, y - (colorSizeLines.length - 1) * 6, { align: "center" });
-    // Tổng tiền hoàn
-    doc.text(`${formatCurrency(item.tien_hoan)} VNĐ`, 180, y - (colorSizeLines.length - 1) * 6, { align: "center" });
+            // Số lượng
+            doc.text(`${item.so_luong}`, 110, y - (colorSizeLines.length - 1) * 6, { align: "center" });
+            // Đơn giá
+            doc.text(`${formatCurrency(item.don_gia)} VNĐ`, 140, y - (colorSizeLines.length - 1) * 6, { align: "center" });
+            // Tổng tiền hoàn
+            doc.text(`${formatCurrency(item.tien_hoan)} VNĐ`, 180, y - (colorSizeLines.length - 1) * 6, { align: "center" });
 
-    y += colorSizeLines.length * 6 + 4; // sau khi xong màu size thì nhảy dòng thêm
-});
+            y += colorSizeLines.length * 6 + 4; // sau khi xong màu size thì nhảy dòng thêm
+        });
 
-    // Đường kẻ ngang sau danh sách
-    doc.setLineWidth(0.2);
-    doc.line(20, y, 190, y);
+        // Đường kẻ ngang sau danh sách
+        doc.setLineWidth(0.2);
+        doc.line(20, y, 190, y);
 
-    // Tổng tiền hoàn trả
-    y += 10;
-    doc.setFontSize(12);
-    doc.setFont("Roboto", "normal");
-    doc.text(`Tổng tiền hàng:`, 90, y);
-    doc.text(`${formatCurrency(store.hoaDonDetail.tong_tien_truoc_giam)} VNĐ`, 190, y , { align: "right" });
+        // Tổng tiền hoàn trả
+        y += 10;
+        doc.setFontSize(12);
+        doc.setFont("Roboto", "normal");
+        doc.text(`Tổng tiền hàng:`, 90, y);
+        doc.text(`${formatCurrency(store.hoaDonDetail.tong_tien_truoc_giam)} VNĐ`, 190, y, { align: "right" });
 
-    y += 6;
-    const giamGia = (store.hoaDonDetail.tong_tien_truoc_giam || 0) + (store.hoaDonDetail.phi_van_chuyen || 0) - (store.hoaDonDetail.tong_tien_sau_giam || 0);
-    doc.text(`Giảm giá:`, 90, y);
-    doc.text(`-${formatCurrency(giamGia)} VNĐ`, 190, y, { align: "right" });
+        y += 6;
+        const giamGia = (store.hoaDonDetail.tong_tien_truoc_giam || 0) + (store.hoaDonDetail.phi_van_chuyen || 0) - (store.hoaDonDetail.tong_tien_sau_giam || 0);
+        doc.text(`Giảm giá:`, 90, y);
+        doc.text(`-${formatCurrency(giamGia)} VNĐ`, 190, y, { align: "right" });
 
-    y += 6;
-    doc.text(`Phí vận chuyển:`, 90, y);
-    doc.text(`${formatCurrency(store.hoaDonDetail.phi_van_chuyen || 0)} VNĐ`, 190, y, { align: "right" });
+        y += 6;
+        doc.text(`Phí vận chuyển:`, 90, y);
+        doc.text(`${formatCurrency(store.hoaDonDetail.phi_van_chuyen || 0)} VNĐ`, 190, y, { align: "right" });
 
-    y += 6;
-    doc.text(`Tổng tiền khách đã thanh toán:`, 90, y);
-    doc.text(`${formatCurrency(store.hoaDonDetail.tong_tien_sau_giam)} VNĐ`, 190, y, { align: "right" });
+        y += 6;
+        doc.text(`Tổng tiền khách đã thanh toán:`, 90, y);
+        doc.text(`${formatCurrency(store.hoaDonDetail.tong_tien_sau_giam)} VNĐ`, 190, y, { align: "right" });
 
-    y += 6;
-    const tongTienHoan = store.traHangs.reduce((total, traHang) => total + traHang.tong_tien_hoan, 0);
-    doc.text(`Tổng tiền hoàn trả lại khách:`, 90, y);
-    doc.text(`${formatCurrency(tongTienHoan)} VNĐ`, 190, y, { align: "right" });
+        y += 6;
+        const tongTienHoan = store.traHangs.reduce((total, traHang) => total + traHang.tong_tien_hoan, 0);
+        doc.text(`Tổng tiền hoàn trả lại khách:`, 90, y);
+        doc.text(`${formatCurrency(tongTienHoan)} VNĐ`, 190, y, { align: "right" });
 
-    y += 6;
-    doc.setFont("Roboto", "bold");
-    const thanhTien = (store.hoaDonDetail.tong_tien_sau_giam || 0) - tongTienHoan;
-    doc.text(`Thành tiền:`, 90, y);
-    doc.text(`${formatCurrency(thanhTien)} VNĐ`, 190, y, { align: "right" });
-}
+        y += 6;
+        doc.setFont("Roboto", "bold");
+        const thanhTien = (store.hoaDonDetail.tong_tien_sau_giam || 0) - tongTienHoan;
+        doc.text(`Thành tiền:`, 90, y);
+        doc.text(`${formatCurrency(thanhTien)} VNĐ`, 190, y, { align: "right" });
+    }
     y += 10;
     doc.setFontSize(10);
     doc.setFont("Roboto", "normal");
@@ -2479,7 +2487,7 @@ const getUpdatedStatuses = computed(() => {
 // ✅ NEW: Computed property để kiểm tra sản phẩm có đa giá không
 const productsWithMultiplePrices = computed(() => {
     if (!store.chiTietHoaDons) return new Set();
-    
+
     // Nhóm sản phẩm theo id_chi_tiet_san_pham
     const productGroups = {};
     store.chiTietHoaDons.forEach(item => {
@@ -2489,7 +2497,7 @@ const productsWithMultiplePrices = computed(() => {
         }
         productGroups[idCTSP].add(item.don_gia / item.so_luong); // Đơn giá mỗi sản phẩm
     });
-    
+
     // Lấy ra các sản phẩm có nhiều hơn 1 giá
     const multiplePriceIds = new Set();
     Object.keys(productGroups).forEach(idCTSP => {
@@ -2497,7 +2505,7 @@ const productsWithMultiplePrices = computed(() => {
             multiplePriceIds.add(parseInt(idCTSP));
         }
     });
-    
+
     return multiplePriceIds;
 });
 
@@ -2542,91 +2550,91 @@ const getStatusDate = (status) => {
 
 // Calculate position for update markers based on surrounding main statuses
 const getUpdatePosition = (update) => {
-  if (!update || !update.ngay_chuyen) return 50;
+    if (!update || !update.ngay_chuyen) return 50;
 
-  const statusPoints = {
-    'Chờ xác nhận': 0,
-    'Đã xác nhận': 25, //20
-    'Chờ đóng gói': 50, //40
-    'Đang giao': 75, //60
-    'Hoàn thành': 100, //80
-    'Trả hàng': 100 //100
-  };
+    const statusPoints = {
+        'Chờ xác nhận': 0,
+        'Đã xác nhận': 25, //20
+        'Chờ đóng gói': 50, //40
+        'Đang giao': 75, //60
+        'Hoàn thành': 100, //80
+        'Trả hàng': 100 //100
+    };
 
-  const orderedStatuses = [...store.trangThaiHistory]
-    .filter(s => s.ngay_chuyen)
-    .sort((a, b) => new Date(a.ngay_chuyen).getTime() - new Date(b.ngay_chuyen).getTime());
-  
-  const updateIndex = orderedStatuses.findIndex(s =>
-    s.trang_thai === 'Đã cập nhật' &&
-    s.ngay_chuyen === update.ngay_chuyen
-  );
-  if (updateIndex === -1) return 50;
+    const orderedStatuses = [...store.trangThaiHistory]
+        .filter(s => s.ngay_chuyen)
+        .sort((a, b) => new Date(a.ngay_chuyen).getTime() - new Date(b.ngay_chuyen).getTime());
 
-  let prevIndex = -1;
-  for (let i = updateIndex - 1; i >= 0; i--) {
-    if (statusPoints[orderedStatuses[i].trang_thai] !== undefined) {
-      prevIndex = i;
-      break;
+    const updateIndex = orderedStatuses.findIndex(s =>
+        s.trang_thai === 'Đã cập nhật' &&
+        s.ngay_chuyen === update.ngay_chuyen
+    );
+    if (updateIndex === -1) return 50;
+
+    let prevIndex = -1;
+    for (let i = updateIndex - 1; i >= 0; i--) {
+        if (statusPoints[orderedStatuses[i].trang_thai] !== undefined) {
+            prevIndex = i;
+            break;
+        }
     }
-  }
 
-  let nextIndex = -1;
-  for (let i = updateIndex + 1; i < orderedStatuses.length; i++) {
-    if (statusPoints[orderedStatuses[i].trang_thai] !== undefined) {
-      nextIndex = i;
-      break;
+    let nextIndex = -1;
+    for (let i = updateIndex + 1; i < orderedStatuses.length; i++) {
+        if (statusPoints[orderedStatuses[i].trang_thai] !== undefined) {
+            nextIndex = i;
+            break;
+        }
     }
-  }
 
-  if (prevIndex !== -1 && nextIndex !== -1) {
-    const prev = orderedStatuses[prevIndex];
-    const next = orderedStatuses[nextIndex];
+    if (prevIndex !== -1 && nextIndex !== -1) {
+        const prev = orderedStatuses[prevIndex];
+        const next = orderedStatuses[nextIndex];
 
-    const prevPoint = statusPoints[prev.trang_thai];
-    const nextPoint = statusPoints[next.trang_thai];
+        const prevPoint = statusPoints[prev.trang_thai];
+        const nextPoint = statusPoints[next.trang_thai];
 
-    const prevDate = new Date(prev.ngay_chuyen);
-    const nextDate = new Date(next.ngay_chuyen);
-    const updateDate = new Date(update.ngay_chuyen);
+        const prevDate = new Date(prev.ngay_chuyen);
+        const nextDate = new Date(next.ngay_chuyen);
+        const updateDate = new Date(update.ngay_chuyen);
 
-    const total = nextDate - prevDate;
-    const progress = updateDate - prevDate;
+        const total = nextDate - prevDate;
+        const progress = updateDate - prevDate;
 
-    if (total > 0 && progress >= 0) {
-      let position = prevPoint + ((nextPoint - prevPoint) * (progress / total));
-      
-      const tolerance = 4;
-      if (Math.abs(position - prevPoint) < tolerance) {
-        position = prevPoint + tolerance;
-      } else if (Math.abs(position - nextPoint) < tolerance) {
-        position = nextPoint - tolerance;
-      }
-      
-      return Math.max(0, Math.min(100, position));
-    } else {
-      return (prevPoint + nextPoint) / 2;
+        if (total > 0 && progress >= 0) {
+            let position = prevPoint + ((nextPoint - prevPoint) * (progress / total));
+
+            const tolerance = 4;
+            if (Math.abs(position - prevPoint) < tolerance) {
+                position = prevPoint + tolerance;
+            } else if (Math.abs(position - nextPoint) < tolerance) {
+                position = nextPoint - tolerance;
+            }
+
+            return Math.max(0, Math.min(100, position));
+        } else {
+            return (prevPoint + nextPoint) / 2;
+        }
     }
-  }
 
-  if (prevIndex !== -1) {
-    let position = statusPoints[orderedStatuses[prevIndex].trang_thai] + 12.5;
-    const tolerance = 5;
-    if (Math.abs(position - statusPoints[orderedStatuses[prevIndex].trang_thai]) < tolerance) {
-      position += tolerance;
+    if (prevIndex !== -1) {
+        let position = statusPoints[orderedStatuses[prevIndex].trang_thai] + 12.5;
+        const tolerance = 5;
+        if (Math.abs(position - statusPoints[orderedStatuses[prevIndex].trang_thai]) < tolerance) {
+            position += tolerance;
+        }
+        return Math.max(0, Math.min(100, position));
     }
-    return Math.max(0, Math.min(100, position));
-  }
-  if (nextIndex !== -1) {
-    let position = statusPoints[orderedStatuses[nextIndex].trang_thai] - 12.5;
-    const tolerance = 5;
-    if (Math.abs(position - statusPoints[orderedStatuses[nextIndex].trang_thai]) < tolerance) {
-      position -= tolerance;
+    if (nextIndex !== -1) {
+        let position = statusPoints[orderedStatuses[nextIndex].trang_thai] - 12.5;
+        const tolerance = 5;
+        if (Math.abs(position - statusPoints[orderedStatuses[nextIndex].trang_thai]) < tolerance) {
+            position -= tolerance;
+        }
+        return Math.max(0, Math.min(100, position));
     }
-    return Math.max(0, Math.min(100, position));
-  }
 
-  return 50;
+    return 50;
 };
 
 // ✅ NEW: Methods xử lý modal thay đổi giá

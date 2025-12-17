@@ -1,8 +1,9 @@
 <template>
-    <div class="container-fluid" style="width: 70%;">
+    <div v-if="shouldShowSearch" class="container-fluid" style="width: 70%;">
         <form class="d-flex align-items-center justify-content-start" role="search" @submit.prevent="handleSearch">
             <SearchOutlined class="icon-search" @click="handleSearch" />
-            <input class="form-control me-2" v-model="searchInput" type="search" placeholder="Bạn muốn tìm gì?"
+            <input class="form-control me-2" v-model="searchInput" type="search" 
+                :placeholder="searchPlaceholder"
                 aria-label="Search">
         </form>
     </div>
@@ -30,12 +31,40 @@ const formattedSearchInput = computed(() => {
     return formatSearchString(searchInput.value);
 });
 
+// Determine if search should be shown
+const shouldShowSearch = computed(() => {
+    const hideRoutes = ['admin']; // Thống kê
+    return !hideRoutes.includes(route.name);
+});
+
+// Dynamic placeholder based on route
+const searchPlaceholder = computed(() => {
+    const placeholders = {
+        'admin-quan-ly-san-pham': 'Tìm sản phẩm...',
+        'admin-quan-ly-hoa-don': 'Tìm hóa đơn...',
+        'admin-quan-ly-khach-hang': 'Tìm khách hàng...',
+        'admin-quan-ly-nhan-vien': 'Tìm nhân viên...',
+        'admin-quan-ly-voucher': 'Tìm voucher...',
+        'admin-quan-ly-khuyen-mai': 'Tìm khuyến mãi...'
+    };
+    return placeholders[route.name] || 'Bạn muốn tìm gì?';
+});
+
 // Hàm xóa kết quả tìm kiếm
 const clearSearchResults = () => {
     if (route.name === 'admin-quan-ly-san-pham') {
         // Chỉ cập nhật keyword, giữ nguyên các tham số lọc khác
         store.updateSearchFilterParams({ keyword: '' });
         store.applySearchAndFilter();
+    } else if (route.name === 'admin-quan-ly-hoa-don') {
+        store.searchs = '';
+        store.hoaDonSearch = [];
+    } else if (route.name === 'admin-quan-ly-voucher') {
+        store.voucherSearchs = '';
+        store.voucherSearch = [];
+    } else if (route.name === 'admin-quan-ly-khuyen-mai') {
+        store.khuyenMaiSearchs = '';
+        store.khuyenMaiSearch = [];
     } else {
         // Xử lý các trường hợp khác
         store.searchs = '';
@@ -64,19 +93,22 @@ watch(searchInput, (newValue) => {
             store.getAllNhanVien(0, 5);
         } else if (route.name === 'admin-quan-ly-khach-hang') {
             store.getAllKhachHang(0, 3, null, null);
+        } else if (route.name === 'admin-quan-ly-hoa-don') {
+            store.getAllHoaDon(0, 5);
+        } else if (route.name === 'admin-quan-ly-voucher') {
+            store.getAllVouchers(0, 5);
+        } else if (route.name === 'admin-quan-ly-khuyen-mai') {
+            store.getAllKhuyenMai(0, 5);
         }
     }
 });
 
 // Hàm xử lý tìm kiếm
 const handleSearch = async () => {
-    // Lấy chuỗi tìm kiếm đã được xử lý
     const formattedValue = formattedSearchInput.value;
-
-    // Giữ lại các bộ lọc hiện tại
     const currentFilters = { ...store.searchFilterParams };
+    
     if (!searchInput.value || searchInput.value.trim() === '') {
-        // Nếu ô tìm kiếm trống, xóa kết quả tìm kiếm
         clearSearchResults();
         return;
     }
@@ -84,62 +116,61 @@ const handleSearch = async () => {
     console.log('Đang tìm kiếm với từ khóa:', searchInput.value);
 
     try {
-        // Tìm kiếm dựa trên route hiện tại
+        // Sản phẩm
         if (route.name === 'admin-quan-ly-san-pham') {
             if (!formattedValue) {
-                // Nếu ô tìm kiếm trống, chỉ xóa keyword, giữ nguyên các bộ lọc
                 currentFilters.keyword = '';
                 store.updateSearchFilterParams(currentFilters);
             } else {
-                // Cập nhật keyword nhưng giữ nguyên các bộ lọc
                 currentFilters.keyword = formattedValue;
                 store.updateSearchFilterParams(currentFilters);
-
-                console.log('Đang tìm kiếm với từ khóa:', formattedValue);
-                console.log('Các bộ lọc hiện tại:', currentFilters);
             }
-
-            try {
-                // Áp dụng cả tìm kiếm và lọc
-                await store.applySearchAndFilter();
-
-                // Phát sự kiện để thông báo thay đổi
-                window.dispatchEvent(new CustomEvent('search-filter-changed', {
-                    detail: {
-                        results: store.filteredProductsData,
-                        keyword: formattedValue
-                    }
-                }));
-
-                console.log('Kết quả tìm kiếm và lọc:', store.filteredProductsData.length, 'sản phẩm');
-            } catch (error) {
-                console.error('Lỗi khi tìm kiếm:', error);
-            }
-
-            // Cập nhật giá trị hiển thị trong ô tìm kiếm để người dùng thấy chuỗi đã được chuẩn hóa
+            
+            await store.applySearchAndFilter();
+            window.dispatchEvent(new CustomEvent('search-filter-changed', {
+                detail: {
+                    results: store.filteredProductsData,
+                    keyword: formattedValue
+                }
+            }));
             searchInput.value = formattedValue;
         }
-        else if (route.name === 'admin-quan-ly-nhan-vien') {
-            // Cập nhật giá trị tìm kiếm vào store cho các route khác
+        // Hóa đơn
+        else if (route.name === 'admin-quan-ly-hoa-don') {
             store.searchs = searchInput.value;
-            await store.searchNhanVien(searchInput.value, 0, 5);
-            console.log('Kết quả tìm kiếm nhân viên:', store.nhanVienSearch);
+            await store.searchHoaDon(searchInput.value, 0, 5);
+            console.log('Kết quả tìm kiếm hóa đơn:', store.hoaDonSearch);
         }
+        // Khách hàng
         else if (route.name === 'admin-quan-ly-khach-hang') {
-            // Cập nhật giá trị tìm kiếm vào store cho các route khác
             store.searchs = searchInput.value;
             await store.getAllKhachHang(0, 3, searchInput.value, null);
             console.log('Kết quả tìm kiếm khách hàng:', store.khachHangSearch);
         }
-        // Thêm các route khác nếu cần
+        // Nhân viên
+        else if (route.name === 'admin-quan-ly-nhan-vien') {
+            store.searchs = searchInput.value;
+            await store.searchNhanVien(searchInput.value, 0, 5);
+            console.log('Kết quả tìm kiếm nhân viên:', store.nhanVienSearch);
+        }
+        // Voucher
+        else if (route.name === 'admin-quan-ly-voucher') {
+            store.voucherSearchs = searchInput.value;
+            await store.searchVoucher(searchInput.value, 0, 5);
+            console.log('Kết quả tìm kiếm voucher:', store.voucherSearch);
+        }
+        // Khuyến mãi
+        else if (route.name === 'admin-quan-ly-khuyen-mai') {
+            store.khuyenMaiSearchs = searchInput.value;
+            await store.searchKhuyenMai(searchInput.value, 0, 5);
+            console.log('Kết quả tìm kiếm khuyến mãi:', store.khuyenMaiSearch);
+        }
         else {
             console.log('Chức năng tìm kiếm chưa được hỗ trợ cho route này:', route.name);
         }
     } catch (error) {
         console.error('Lỗi khi tìm kiếm:', error);
     }
-
-
 };
 
 </script>

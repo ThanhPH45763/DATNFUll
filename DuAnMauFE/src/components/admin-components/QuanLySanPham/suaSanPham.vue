@@ -116,6 +116,27 @@
                         </a-button>
                     </div>
 
+                    <!-- ✅ MOVED: Nút gạt trạng thái CTSP lên đầu -->
+                    <a-form-item label="Trạng thái" class="mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <a-switch 
+                                v-model:checked="variant.trang_thai_boolean"
+                                @change="() => handleCTSPStatusChange(variant, index)"
+                                :style="{ backgroundColor: variant.trang_thai_boolean ? '#ff6600' : '#ccc' }"
+                                class="custom-orange-switch"
+                                :checked-children="'Hoạt động'"
+                                :un-checked-children="'Không hoạt động'"
+                                :disabled="!variant.isExisting"
+                            />
+                            <span class="ms-2" :style="{ color: variant.trang_thai_boolean ? '#52c41a' : '#ff4d4f' }">
+                                {{ variant.trang_thai_boolean ? 'Hoạt động' : 'Không hoạt động' }}
+                            </span>
+                        </div>
+                        <div class="text-muted small mt-1" v-if="!variant.isExisting">
+                            * Chỉ có thể thay đổi trạng thái sau khi lưu biến thể
+                        </div>
+                    </a-form-item>
+
                     <a-form class="form-bien-the" layout="vertical">
                         <div class="row">
                             <div class="col-md-6">
@@ -160,36 +181,15 @@
                             <div class="col-md-6">
                                 <a-form-item label="Giá" :validate-status="variant.giaBanValidateStatus"
                                     :help="variant.giaBanHelp">
-                                    <a-input-number :readonly="variant.isExisting" v-model:value="variant.gia_ban"
+                                    <a-input-number v-model:value="variant.gia_ban"
                                         class="w-full" :controls="false" :formatter="formatGiaBan" :parser="parseGiaBan"
                                         placeholder="Nhập giá bán sản phẩm"
-                                        :disabled="useCommonPrice || variant.isExisting || !variant.trang_thai_boolean"
+                                        :disabled="useCommonPrice || !variant.trang_thai_boolean"
                                         @blur="validateGiaBan(variant, index)"
                                         @change="validateGiaBan(variant, index)" />
                                 </a-form-item>
                             </div>
                         </div>
-
-                        <!-- ✅ THÊM: Nút gạt trạng thái CTSP -->
-                        <a-form-item label="Trạng thái">
-                            <div class="d-flex align-items-center gap-2">
-                                <a-switch 
-                                    v-model:checked="variant.trang_thai_boolean"
-                                    @change="() => handleCTSPStatusChange(variant, index)"
-                                    :style="{ backgroundColor: variant.trang_thai_boolean ? '#ff6600' : '#ccc' }"
-                                    class="custom-orange-switch"
-                                    :checked-children="'Hoạt động'"
-                                    :un-checked-children="'Không hoạt động'"
-                                    :disabled="!variant.isExisting"
-                                />
-                                <span class="ms-2" :style="{ color: variant.trang_thai_boolean ? '#52c41a' : '#ff4d4f' }">
-                                    {{ variant.trang_thai_boolean ? 'Hoạt động' : 'Không hoạt động' }}
-                                </span>
-                            </div>
-                            <div class="text-muted small mt-1" v-if="!variant.isExisting">
-                                * Chỉ có thể thay đổi tr\u1ea1ng th\u00e1i sau khi lưu biến thể
-                            </div>
-                        </a-form-item>
 
                         <a-form-item label="Hình ảnh biến thể"
                             :rules="[{ required: true, message: 'Vui lòng chọn ít nhất 1 hình ảnh!' }]"

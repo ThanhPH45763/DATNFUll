@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -249,28 +250,51 @@ public class HoaDonController {
         LocalDateTime ngayChuyen = LocalDateTime.now();
 
         if ("Đã xác nhận".equals(newTrangThai)) {
+            System.out.println("🔍 Bắt đầu xác nhận đơn hàng: " + maHoaDon + " (ID: " + idHoaDon + ")");
+
             List<HoaDonChiTietResponse> chiTietHoaDons = hoaDonChiTietRepo.findHoaDonChiTietById(idHoaDon);
+
+            if (chiTietHoaDons == null || chiTietHoaDons.isEmpty()) {
+                System.err.println("❌ Không tìm thấy chi tiết hóa đơn cho ID: " + idHoaDon);
+                throw new RuntimeException("Không tìm thấy sản phẩm trong hóa đơn");
+            }
+
+            System.out.println("📦 Tìm thấy " + chiTietHoaDons.size() + " sản phẩm trong hóa đơn");
+
             for (HoaDonChiTietResponse chiTiet : chiTietHoaDons) {
                 Integer idCTSP = chiTiet.getId_chi_tiet_san_pham();
                 Integer soLuong = chiTiet.getSo_luong();
+                String tenSanPham = chiTiet.getTen_san_pham();
+
+                System.out.println("  → Sản phẩm: " + tenSanPham + " (ID: " + idCTSP + "), SL: " + soLuong);
 
                 Optional<ChiTietSanPham> chiTietSanPhamOpt = chiTietSanPhamRepo.findById(idCTSP);
                 if (chiTietSanPhamOpt.isPresent()) {
                     ChiTietSanPham chiTietSanPham = chiTietSanPhamOpt.get();
+                    int tonKho = chiTietSanPham.getSo_luong();
+                    System.out.println("    Tồn kho hiện tại: " + tonKho);
+
                     if (chiTietSanPham.getSo_luong() < soLuong) {
-                        throw new RuntimeException(
-                                "Số lượng tồn kho không đủ cho sản phẩm: " + chiTiet.getTen_san_pham());
+                        String errorMsg = "Số lượng tồn kho không đủ cho sản phẩm: " + tenSanPham +
+                                " (Cần: " + soLuong + ", Có: " + tonKho + ")";
+                        System.err.println("❌ " + errorMsg);
+                        throw new RuntimeException(errorMsg);
                     }
                     chiTietSanPham.setSo_luong(chiTietSanPham.getSo_luong() - soLuong);
                     chiTietSanPhamRepo.save(chiTietSanPham);
+                    System.out.println("    ✅ Đã trừ tồn kho. Còn lại: " + chiTietSanPham.getSo_luong());
+
                     Optional<HoaDon> optHD = hoaDonRepo.findById(idHoaDon);
                     HoaDon hoaDon = optHD.get();
                     hoaDon.setNgay_sua(LocalDateTime.now());
                     hoaDonRepo.save(hoaDon);
                 } else {
-                    throw new RuntimeException("Không tìm thấy sản phẩm chi tiết với ID: " + idCTSP);
+                    String errorMsg = "Không tìm thấy sản phẩm chi tiết với ID: " + idCTSP;
+                    System.err.println("❌ " + errorMsg);
+                    throw new RuntimeException(errorMsg);
                 }
             }
+            System.out.println("✅ Xác nhận đơn hàng thành công: " + maHoaDon);
         }
         // Xử lý khi trạng thái là "Hoàn thành"
         // if ("Hoàn thành".equals(newTrangThai)) {
@@ -658,8 +682,20 @@ public class HoaDonController {
                     .map(TheoDoiDonHang::getTrang_thai)
                     .orElse(null);
 
+            // ✅ MOD: Chỉ cho phép thêm sản phẩm khi trạng thái là "Chờ xác nhận"
+            if (trangThai == null || !trangThai.equals("Chờ xác nhận")) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Chỉ có thể thêm sản phẩm khi hóa đơn ở trạng thái 'Chờ xác nhận'!");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+
             int totalQuantity = 0;
             BigDecimal tienThanhToanThem = BigDecimal.ZERO;
+            // ✅ NEW: Theo dõi các sản phẩm cộng số lượng (để tính phụ thu)
+            List<Map<String, Object>> mergedProducts = new ArrayList<>(); // Sản phẩm cộng số lượng (trùng giá)
+            List<Map<String, Object>> newProducts = new ArrayList<>(); // Sản phẩm thêm mới (khác giá)
+
             for (Map<String, Object> product : products) {
                 Integer idCTSP = (Integer) product.get("idCTSP");
                 Integer soLuongMua = (Integer) product.get("soLuongMua");
@@ -673,22 +709,27 @@ public class HoaDonController {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
                 }
                 ChiTietSanPham ctsp = chiTietSanPhamOpt.get();
-                // Kiểm tra số lượng tồn kho nếu trạng thái là "Đã xác nhận" hoặc "Chờ đóng gói"
-                if (trangThai != null && (trangThai.equals("Đã xác nhận") || trangThai.equals("Chờ đóng gói"))) {
-                    int soLuongTon = ctsp.getSo_luong();
-                    if (soLuongTon < soLuongMua) {
-                        Map<String, Object> response = new HashMap<>();
-                        response.put("success", false);
-                        response.put("message", "Số lượng tồn kho không đủ!");
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-                    }
-                    ctsp.setSo_luong(soLuongTon - soLuongMua);
-                    // ⛔ KHÔNG tự động tắt trạng thái khi hết hàng
-                    // if (ctsp.getSo_luong() == 0) {
-                    // ctsp.setTrang_thai(false);
-                    // }
-                    chiTietSanPhamRepo.save(ctsp);
+
+                // ✅ VALIDATE: Kiểm tra trạng thái và tồn kho
+                if (!ctsp.getTrang_thai()) {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("success", false);
+                    response.put("message", "Sản phẩm đã ngừng kinh doanh!");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
                 }
+                if (ctsp.getSo_luong() <= 0) {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("success", false);
+                    response.put("message", "Sản phẩm đã hết hàng!");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+                }
+                if (ctsp.getSo_luong() < soLuongMua) {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("success", false);
+                    response.put("message", "Số lượng tồn kho không đủ! (Còn: " + ctsp.getSo_luong() + ")");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+                }
+
                 // Lấy giá bán gốc
                 BigDecimal giaBan = ctsp.getGia_ban();
 
@@ -712,22 +753,42 @@ public class HoaDonController {
                 // Kiểm tra và thêm/cập nhật sản phẩm trong hóa đơn chi tiết
                 Optional<HoaDon> hdOpt = hoaDonRepo.findById(idHoaDon);
                 Optional<ChiTietSanPham> ctspOpt = chiTietSanPhamRepo.findById(idCTSP);
-                Optional<HoaDonChiTiet> hoaDonChiTietOpt = hoaDonChiTietRepo.findByChiTietSanPhamIdAndHoaDonId(idCTSP,
-                        idHoaDon);
+
+                // ✅ LOGIC MỚI: Kiểm tra sản phẩm theo cả ID và đơn giá
+                BigDecimal donGiaMoi = giaSauGiam.multiply(new BigDecimal(soLuongMua));
+                Optional<HoaDonChiTiet> hoaDonChiTietOpt = hoaDonChiTietRepo.findByHoaDonAndChiTietSanPhamAndDonGia(
+                        idHoaDon, idCTSP, giaSauGiam);
+
                 if (hoaDonChiTietOpt.isPresent()) {
+                    // ✅ TRÙNG GIÁ: Cộng số lượng vào dòng hiện tại
                     HoaDonChiTiet hoaDonChiTiet = hoaDonChiTietOpt.get();
                     hoaDonChiTiet.setSo_luong(hoaDonChiTiet.getSo_luong() + soLuongMua);
                     hoaDonChiTiet.setDon_gia(giaSauGiam.multiply(new BigDecimal(hoaDonChiTiet.getSo_luong())));
                     hoaDonChiTietRepo.save(hoaDonChiTiet);
+
+                    // ✅ Theo dõi sản phẩm cộng số lượng để tính phụ thu
+                    Map<String, Object> mergedProduct = new HashMap<>();
+                    mergedProduct.put("idCTSP", idCTSP);
+                    mergedProduct.put("soLuongMua", soLuongMua);
+                    mergedProduct.put("giaSauGiam", giaSauGiam);
+                    mergedProducts.add(mergedProduct);
                 } else {
+                    // ✅ KHÁC GIÁ hoặc CHƯA TỒN TẠI: Tạo dòng mới
                     HoaDon hoaDon = hdOpt.get();
                     ChiTietSanPham chiTietSanPham = ctspOpt.get();
                     HoaDonChiTiet hoaDonChiTiet = new HoaDonChiTiet();
                     hoaDonChiTiet.setHoaDon(hoaDon);
                     hoaDonChiTiet.setChiTietSanPham(chiTietSanPham);
                     hoaDonChiTiet.setSo_luong(soLuongMua);
-                    hoaDonChiTiet.setDon_gia(giaSauGiam.multiply(new BigDecimal(soLuongMua)));
+                    hoaDonChiTiet.setDon_gia(donGiaMoi);
                     hoaDonChiTietRepo.save(hoaDonChiTiet);
+
+                    // ✅ Theo dõi sản phẩm thêm mới (không tính phụ thu)
+                    Map<String, Object> newProduct = new HashMap<>();
+                    newProduct.put("idCTSP", idCTSP);
+                    newProduct.put("soLuongMua", soLuongMua);
+                    newProduct.put("giaSauGiam", giaSauGiam);
+                    newProducts.add(newProduct);
                 }
             }
             // Tính tổng tiền sản phẩm
@@ -763,8 +824,16 @@ public class HoaDonController {
                 giamThemTuVoucher = BigDecimal.ZERO;
             }
 
+            // ✅ LOGIC MỚI: Chỉ tính phụ thu cho sản phẩm cộng số lượng (trùng giá)
+            BigDecimal tienThanhToanThemPhuThu = BigDecimal.ZERO;
+            for (Map<String, Object> mergedProduct : mergedProducts) {
+                BigDecimal giaSauGiam = (BigDecimal) mergedProduct.get("giaSauGiam");
+                Integer soLuongMua = (Integer) mergedProduct.get("soLuongMua");
+                tienThanhToanThemPhuThu = tienThanhToanThemPhuThu.add(giaSauGiam.multiply(new BigDecimal(soLuongMua)));
+            }
+
             BigDecimal phuThuFinal = isOnlineCash ? BigDecimal.ZERO
-                    : phuThu.add(tienThanhToanThem).subtract(giamThemTuVoucher);
+                    : phuThu.add(tienThanhToanThemPhuThu).subtract(giamThemTuVoucher);
 
             // Cập nhật hóa đơn
             // tong_tien_truoc_giam = Tổng SP + Ship (chưa trừ voucher)
@@ -783,6 +852,14 @@ public class HoaDonController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Thêm sản phẩm vào hóa đơn thành công!");
+
+            // ✅ NEW: Trả về thông tin chi tiết về sản phẩm đã xử lý
+            response.put("mergedProducts", mergedProducts.size()); // Số sản phẩm cộng số lượng (trùng giá)
+            response.put("newProducts", newProducts.size()); // Số sản phẩm thêm mới (khác giá)
+            response.put("hasPriceConflict", newProducts.size() > 0); // Có xung đột giá không
+            response.put("phuThuApplied", tienThanhToanThemPhuThu.compareTo(BigDecimal.ZERO) > 0); // Có tính phụ thu
+                                                                                                   // không
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
@@ -827,6 +904,12 @@ public class HoaDonController {
                     .map(TheoDoiDonHang::getTrang_thai)
                     .orElse(null);
 
+            // ✅ MOD: Chỉ cho phép xóa sản phẩm khi trạng thái là "Chờ xác nhận"
+            if (trangThai == null || !trangThai.equals("Chờ xác nhận")) {
+                return ResponseEntity.badRequest()
+                        .body("Chỉ có thể xóa sản phẩm khi hóa đơn ở trạng thái 'Chờ xác nhận'!");
+            }
+
             // Lấy số lượng hiện tại trong chi tiết hóa đơn
             Optional<HoaDonChiTiet> hoaDonChiTietOpt = hoaDonChiTietRepo.findByChiTietSanPhamIdAndHoaDonId(idCTSP,
                     idHoaDon);
@@ -848,18 +931,6 @@ public class HoaDonController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
             ChiTietSanPham chiTietSanPham = chiTietSanPhamOpt.get();
-
-            if (trangThai != null && (trangThai.equals("Đã xác nhận") || trangThai.equals("Chờ đóng gói"))) {
-                int soLuongTon = chiTietSanPham.getSo_luong();
-                if (soLuongTon == 0) {
-                    chiTietSanPham.setSo_luong(soLuongHienTai);
-                    // ⛔ KHÔNG tự động bật trạng thái khi hoàn stock
-                    // chiTietSanPham.setTrang_thai(true);
-                } else {
-                    chiTietSanPham.setSo_luong(soLuongTon + soLuongHienTai);
-                }
-                chiTietSanPhamRepo.save(chiTietSanPham);
-            }
 
             // Xóa sản phẩm
             hoaDonChiTietRepo.delete(hoaDonChiTiet);
@@ -953,6 +1024,14 @@ public class HoaDonController {
                     .map(TheoDoiDonHang::getTrang_thai)
                     .orElse(null);
 
+            // ✅ MOD: Chỉ cho phép sửa số lượng khi trạng thái là "Chờ xác nhận"
+            if (trangThai == null || !trangThai.equals("Chờ xác nhận")) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Chỉ có thể sửa số lượng khi hóa đơn ở trạng thái 'Chờ xác nhận'!");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+
             // Lấy thông tin sản phẩm
             Optional<ChiTietSanPham> chiTietSanPhamOpt = chiTietSanPhamRepo.findById(idCTSP);
             if (!chiTietSanPhamOpt.isPresent()) {
@@ -999,34 +1078,6 @@ public class HoaDonController {
                 response.put("success", false);
                 response.put("message", "Số lượng không thể âm!");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-            }
-
-            // Điều chỉnh số lượng tồn kho nếu trạng thái là "Đã xác nhận" hoặc "Chờ đóng
-            // gói"
-            if (trangThai != null && (trangThai.equals("Đã xác nhận") || trangThai.equals("Chờ đóng gói"))) {
-                int soLuongTon = chiTietSanPham.getSo_luong();
-                if (quantityChange > 0) {
-                    if (soLuongTon < quantityChange) {
-                        Map<String, Object> response = new HashMap<>();
-                        response.put("success", false);
-                        response.put("message", "Số lượng tồn kho không đủ!");
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-                    }
-                    chiTietSanPham.setSo_luong(soLuongTon - quantityChange);
-                    // ⛔ KHÔNG tự động tắt trạng thái khi hết hàng
-                    // if (chiTietSanPham.getSo_luong() == 0) {
-                    // chiTietSanPham.setTrang_thai(false);
-                    // }
-                } else if (quantityChange < 0) {
-                    if (soLuongTon == 0) {
-                        chiTietSanPham.setSo_luong(Math.abs(quantityChange));
-                        // ⛔ KHÔNG tự động bật trạng thái khi có hàng
-                        // chiTietSanPham.setTrang_thai(true);
-                    } else {
-                        chiTietSanPham.setSo_luong(soLuongTon + Math.abs(quantityChange));
-                    }
-                }
-                chiTietSanPhamRepo.save(chiTietSanPham);
             }
 
             // Tính tiền thanh toán thêm

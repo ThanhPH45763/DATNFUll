@@ -9,8 +9,8 @@
                 <div class="search-section col-sm-6">
                     <div class="search-container d-flex align-items-center">
                         <Search class="search-icon ms-3" />
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             v-model="searchKeyword"
                             @keyup.enter="handleSearch"
                             class="search-input form-control"
@@ -19,7 +19,7 @@
                     </div>
                     <TheHeaderSearchModal />
                 </div>
-                <div class="nav-icons col-sm-4 d-flex justify-content-evenly align-items-center">
+                <div class="nav-icons col-sm-4 d-y-content-evenly align-items-center">
                     <div class="nav-item text-center" @click="chuyenTrang('/cuaHang')"
                         @mouseenter="animateIcon('store')">
                         <div class="icon-container">
@@ -43,15 +43,15 @@
                         </div>
                         <span class="nav-text">Giỏ hàng</span>
                     </div>
-                    
-                    <div class="nav-item text-center" @click="chuyenTrang('/tracuudonhang-banhang')" 
+
+                    <div class="nav-item text-center" @click="chuyenTrang('/tracuudonhang-banhang')"
                         @mouseenter="animateIcon('order')">
                         <div class="icon-container">
                             <ClipboardList class="nav-icon" :class="{ 'icon-animated': animatedIcon === 'order' }" />
                         </div>
                         <span class="nav-text">Tra cứu đơn</span>
                     </div>
-                    
+
                     <div class="nav-item text-center user-nav-item" @mouseenter="animateIcon('user')"
                         @click="toggleUserMenu">
                         <div class="icon-container">
@@ -116,14 +116,14 @@ const updateDisplayName = () => {
             console.error('Error parsing khachHang:', e);
         }
     }
-    
-    // Fallback to admin check
+
+    // Fallback to amin check
     if (store.isLoggedIn && store.userDetails) {
         displayName.value = store.userDetails.tenKhachHang;
         console.log('Updated displayName from admin:', displayName.value);
         return;
     }
-    
+
     // Default
     displayName.value = store.changeLanguage.nguoiDung || 'Đăng nhập';
     console.log('Updated displayName to default:', displayName.value);
@@ -151,12 +151,12 @@ const toggleUserMenu = () => {
     // Force fresh check from storage (không dùng computed để tránh cache)
     const khachHangStr = localStorage.getItem('khachHang') || sessionStorage.getItem('khachHang');
     const hasCustomerLogin = !!khachHangStr;
-    
+
     console.log('=== Toggle User Menu Debug ===');
     console.log('Customer logged in:', hasCustomerLogin);
     console.log('Admin logged in:', store.isLoggedIn);
     console.log('khachHangStr:', khachHangStr);
-    
+
     // Check customer login OR admin login
     if (!hasCustomerLogin && !store.isLoggedIn) {
         console.log('→ Redirecting to login page');
@@ -171,10 +171,10 @@ const toggleUserMenu = () => {
 // Sửa lại hàm xử lý đăng xuất
 const handleLogout = () => {
     showMenu.value = false;
-    
+
     console.log('=== Logout Debug ===');
     console.log('Clearing all auth data...');
-    
+
     // Clear ALL customer auth data
     localStorage.removeItem('khachHang');
     localStorage.removeItem('isLoggedIn');
@@ -182,21 +182,21 @@ const handleLogout = () => {
     localStorage.removeItem('userDetails');
     localStorage.removeItem('id_roles');
     localStorage.removeItem('token');
-    
+
     sessionStorage.removeItem('khachHang');
     sessionStorage.removeItem('isLoggedIn');
     sessionStorage.removeItem('userInfo');
     sessionStorage.removeItem('userDetails');
     sessionStorage.removeItem('id_roles');
     sessionStorage.removeItem('token');
-    
+
     // Also clear store state
     store.isLoggedIn = false;
     store.userInfo = null;
     store.userDetails = null;
-    
+
     console.log('All auth data cleared. Redirecting...');
-    
+
     // Force reload to ensure clean state
     window.location.href = '/home';
 };
@@ -260,15 +260,15 @@ const handleSearch = async () => {
         store.isProductLoading = true;
         // Gọi API tìm kiếm và lưu kết quả vào store
         await store.getSanPhamByTenSP(searchKeyword.value);
-        
+
         // Đóng modal search nếu đang mở
         store.showModal(false);
-        
+
         // Điều hướng đến trang danh sách sản phẩm
         await router.push({
             path: '/danhSachSanPham',
-            query: { 
-                filter: searchKeyword.value 
+            query: {
+                filter: searchKeyword.value
             }
         });
 
@@ -285,7 +285,7 @@ const handleSearch = async () => {
 onMounted(async () => {
     // Update display name from storage on mount
     updateDisplayName();
-    
+
     await updateCartCount();
 
     // Lắng nghe sự kiện 'cart-updated' nếu có
@@ -293,7 +293,7 @@ onMounted(async () => {
 
     // Thêm lắng nghe click bên ngoài để đóng dropdown
     document.addEventListener('click', closeMenuOnOutsideClick);
-    
+
     // Listen for storage changes (e.g., login/logout in another tab)
     window.addEventListener('storage', (e) => {
         if (e.key === 'khachHang' || e.key === 'isLoggedIn') {
@@ -317,7 +317,7 @@ const checkCartInterval = setInterval(updateCartCount, 5000);
 <style scoped>
 /* ===================================================
    HEADER COMPONENT - Elegant Menswear Design
-   =================================================== 
+   ===================================================
    Philosophy: Clean, Professional, Timeless
 */
 
@@ -561,7 +561,7 @@ const checkCartInterval = setInterval(updateCartCount, 5000);
     .nav-text {
         display: none;
     }
-    
+
     .nav-item {
         padding: var(--space-sm);
     }
@@ -571,28 +571,28 @@ const checkCartInterval = setInterval(updateCartCount, 5000);
     .header-container {
         padding: 0 1rem;
     }
-    
+
     .headers {
         height: 64px;
     }
-    
+
     .logo-section {
         min-width: 120px;
     }
-    
+
     .logo-image {
         height: 2.5rem;
     }
-    
+
     .search-section {
         max-width: none;
     }
-    
+
     .search-container {
         height: 2.5rem;
         padding: 0 1rem;
     }
-    
+
     .nav-icons {
         gap: var(--space-xs);
     }

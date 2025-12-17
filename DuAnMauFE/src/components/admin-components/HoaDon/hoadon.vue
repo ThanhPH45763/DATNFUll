@@ -37,10 +37,6 @@
     </div>
     <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
         <h5 class="fw-bold mb-0" style="color: #ff6600;">📋 Danh sách đơn hàng</h5>
-        <div class="search-container">
-            <input type="text" class="form-control" placeholder="Tìm kiếm hóa đơn..." v-model="searchKeyword"
-                @input="handleSearch" />
-        </div>
     </div>
 
     <div class="table-responsive mt-4">
@@ -123,10 +119,10 @@
 
     <div class="d-flex justify-content-center align-items-center mt-3">
         <button class="btn buttonPT p-0" @click="fetchData(store.currentHoaDon - 1)"
-            :disabled="store.currentHoaDon === 0">Previous</button>
-        <span class="mx-3">Trang {{ store.currentHoaDon + 1 }} / {{ store.totalHoaDon }}</span>
+            :disabled="store.currentHoaDon === 0 || store.totalHoaDon === 0">Previous</button>
+        <span class="mx-3">Trang {{ store.totalHoaDon === 0 ? 0 : (store.currentHoaDon ?? 0) + 1 }} / {{ store.totalHoaDon }}</span>
         <button class="btn buttonPT" @click="fetchData(store.currentHoaDon + 1)"
-            :disabled="store.currentHoaDon >= store.totalHoaDon - 1">Next</button>
+            :disabled="store.totalHoaDon === 0 || store.currentHoaDon >= store.totalHoaDon - 1">Next</button>
     </div>
     <!-- </div> -->
 </template>

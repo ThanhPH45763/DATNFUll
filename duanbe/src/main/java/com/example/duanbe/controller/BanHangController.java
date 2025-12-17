@@ -94,7 +94,7 @@ public class BanHangController {
     // model.addAttribute("slgh", ct);
     // }
     // }
-
+    //  
     @PostMapping("/addKhHD")
     public ResponseEntity<?> addKhHd(
             @RequestParam(value = "idKH", required = false) String idKHStr,
@@ -159,7 +159,9 @@ public class BanHangController {
                 hoaDon.setPhi_van_chuyen(BigDecimal.ZERO);
             }
 
+
             // Lấy chi tiết hóa đơn
+
             List<HoaDonChiTiet> chiTietList = hoaDonChiTietRepo.findByIdHoaDon(idHD);
 
             // Tính tổng tiền hàng (chưa bao gồm phí vận chuyển)
@@ -1224,7 +1226,24 @@ public class BanHangController {
         if (hoaDon.getVoucher() != null) {
             Voucher voucher = hoaDon.getVoucher();
             if (tongTienTruocGiam.compareTo(voucher.getGiaTriToiThieu()) >= 0) {
-                giamGia = voucher.getGiaTriGiam();
+                // Check voucher type before calculation
+                if ("Phần trăm".equals(voucher.getKieuGiamGia())) {
+                    // Calculate percentage discount
+                    giamGia = tongTienTruocGiam.multiply(voucher.getGiaTriGiam())
+                                             .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+                    
+                    // Apply maximum discount limit if specified
+                    if (voucher.getGiaTriToiDa() != null && voucher.getGiaTriToiDa().compareTo(BigDecimal.ZERO) > 0) {
+                        if (giamGia.compareTo(voucher.getGiaTriToiDa()) > 0) {
+                            giamGia = voucher.getGiaTriToiDa();
+                        }
+                    }
+                } else {
+                    // Fixed amount discount
+                    giamGia = voucher.getGiaTriGiam();
+                }
+                
+                // Ensure discount doesn't exceed total amount
                 if (giamGia.compareTo(tongTienTruocGiam) > 0) {
                     giamGia = tongTienTruocGiam;
                 }

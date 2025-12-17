@@ -296,11 +296,22 @@
                             row-key="id_chi_tiet_san_pham">
                             <template #bodyCell="{ column, record, index }">
                                 <template v-if="column.key === 'san_pham'">
-                                    <img :src="record.hinh_anh || '/images/default.jpg'" alt="Product"
-                                        class="product-image">
-                                    {{ record.ten_san_pham || 'N/A' }} <br>
-                                    Kích thước: {{ record.kich_thuoc || 'N/A' }},
-                                    Màu: {{ record.ten_mau_sac || 'N/A' }}
+                                    <div class="product-info">
+                                        <img :src="record.hinh_anh || '/images/default.jpg'" alt="Product"
+                                            class="product-image">
+                                        <div class="product-details">
+                                            <div class="product-name">
+                                                {{ record.ten_san_pham || 'N/A' }}
+                                                <a-tag v-if="hasMultiplePrices(record)" color="orange" size="small">
+                                                    <i class="fas fa-exclamation-triangle"></i> Đa giá
+                                                </a-tag>
+                                            </div>
+                                            <div class="product-specs">
+                                                Kích thước: {{ record.kich_thuoc || 'N/A' }},
+                                                Màu: {{ record.ten_mau_sac || 'N/A' }}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </template>
                                 <template v-if="column.key === 'don_gia'">
                                     <div>
@@ -797,6 +808,79 @@
                 </div>
             </a-modal>
 
+            <!-- ✅ NEW: Modal xác nhận thay đổi giá -->
+            <a-modal v-model:visible="showPriceChangeModal" title="⚠️ Thông báo thay đổi giá" 
+                     :maskClosable="false" width="500px">
+                <div class="price-change-content">
+                    <p><strong>{{ priceChangeInfo.productName }}</strong> có sự thay đổi giá so với lần trước:</p>
+                    
+                    <div class="price-comparison">
+                        <div class="price-item old-price">
+                            <span>Giá cũ trong hóa đơn:</span>
+                            <span class="price-value">{{ formatCurrency(priceChangeInfo.oldPrice) }}</span>
+                        </div>
+                        <div class="price-item new-price">
+                            <span>Giá hiện tại:</span>
+                            <span class="price-value">{{ formatCurrency(priceChangeInfo.newPrice) }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="price-change-info">
+                        <p><i class="fas fa-info-circle"></i> Sản phẩm sẽ được thêm vào hóa đơn với mức giá mới.</p>
+                        <p><i class="fas fa-exclamation-triangle"></i> Phụ thu chỉ được tính khi cộng vào sản phẩm có cùng giá.</p>
+                    </div>
+                </div>
+                
+                <template #footer>
+                    <a-button @click="cancelPriceChange" size="large">
+                        <i class="fas fa-times"></i> Hủy
+                    </a-button>
+                    <a-button type="primary" @click="confirmPriceChange" size="large">
+                        <i class="fas fa-check"></i> Đồng ý thêm
+                    </a-button>
+                </template>
+            </a-modal>
+
+            <!-- ✅ NEW: Modal thông báo kết quả xử lý -->
+            <a-modal v-model:visible="showProcessingResultModal" title="📋 Kết quả xử lý" 
+                     :footer="null" width="450px">
+                <div class="processing-result-content">
+                    <div class="result-item">
+                        <a-tag color="green" size="large">
+                            <i class="fas fa-plus-circle"></i> 
+                            {{ processingResult.mergedProducts }} sản phẩm cộng số lượng
+                        </a-tag>
+                    </div>
+                    
+                    <div class="result-item">
+                        <a-tag color="blue" size="large">
+                            <i class="fas fa-file-alt"></i> 
+                            {{ processingResult.newProducts }} sản phẩm thêm mới
+                        </a-tag>
+                    </div>
+                    
+                    <div v-if="processingResult.hasPriceConflict" class="result-item">
+                        <a-tag color="orange" size="large">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Có thay đổi giá
+                        </a-tag>
+                    </div>
+                    
+                    <div v-if="processingResult.phuThuApplied" class="result-item">
+                        <a-tag color="purple" size="large">
+                            <i class="fas fa-coins"></i> 
+                            Đã tính phụ thu
+                        </a-tag>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <a-button type="primary" @click="closeProcessingResult" block size="large">
+                        <i class="fas fa-check"></i> Đã hiểu
+                    </a-button>
+                </div>
+            </a-modal>
+
             <div class="notification">
                 <template v-if="store.hoaDonDetail.trang_thai?.toLowerCase() === 'trả hàng'">
                     HOÀN THÀNH ĐƠN HÀNG {{
@@ -1270,7 +1354,8 @@ const cannotEditProduct = computed(() => {
         return !['Chờ xác nhận'].includes(effectiveStatus);
     }
 
-    return !['Chờ xác nhận', 'Đã xác nhận', 'Chờ đóng gói'].includes(effectiveStatus);
+    // Mod: Chỉ cho phép sửa khi trạng thái là "Chờ xác nhận"
+    return !['Chờ xác nhận'].includes(effectiveStatus);
 });
 
 const cannotEdit = computed(() => {
@@ -1549,17 +1634,37 @@ const addSelectedProducts = async () => {
         }
     }
     // Gửi yêu cầu thêm sản phẩm vào hóa đơn
-    await store.addProductsToInvoice(store.hoaDonDetail.ma_hoa_don, selectedProducts);
-    // Gọi lại API để cập nhật danh sách sản phẩm
-    await store.getAllCTSP_HD(0, 100, searchKeyword.value);
-    // Reset số lượng và đóng popup
-    quantities.value = new Array(store.listCTSP_HD.length).fill(0);
-    // Tính phí vận chuyển
-    const phiVanChuyen = await calculatePhiVanChuyen();
-    console.log('Phí vận chuyển tính được khi thêm sản phẩm:', phiVanChuyen);
-    await hoaDonService.updatePhiShip(store.hoaDonDetail.ma_hoa_don, phiVanChuyen);
-    await store.getHoaDonDetail(store.hoaDonDetail.ma_hoa_don);
-    closeAddProductPopup();
+    const response = await store.addProductsToInvoice(store.hoaDonDetail.ma_hoa_don, selectedProducts);
+    
+    // ✅ NEW: Xử lý kết quả từ backend
+    if (response && response.success) {
+        // Hiển thị kết quả xử lý nếu có thay đổi
+        if (response.hasPriceConflict || response.mergedProducts > 0 || response.newProducts > 0) {
+            showProcessingResult({
+                mergedProducts: response.mergedProducts,
+                newProducts: response.newProducts,
+                hasPriceConflict: response.hasPriceConflict,
+                phuThuApplied: response.phuThuApplied
+            });
+        } else {
+            toast.success('Thêm sản phẩm thành công!');
+        }
+        
+        // Gọi lại API để cập nhật danh sách sản phẩm
+        await store.getAllCTSP_HD(0, 100, searchKeyword.value);
+        
+        // Reset số lượng và đóng popup
+        quantities.value = new Array(store.listCTSP_HD.length).fill(0);
+        
+        // Tính phí vận chuyển
+        const phiVanChuyen = await calculatePhiVanChuyen();
+        console.log('Phí vận chuyển tính được khi thêm sản phẩm:', phiVanChuyen);
+        await hoaDonService.updatePhiShip(store.hoaDonDetail.ma_hoa_don, phiVanChuyen);
+        await store.getHoaDonDetail(store.hoaDonDetail.ma_hoa_don);
+        closeAddProductPopup();
+    } else {
+        toast.error(response.message || 'Thêm sản phẩm thất bại!');
+    }
 };
 
 // Xóa sản phẩm khỏi hóa đơn
@@ -1918,6 +2023,24 @@ const showRevertButton = computed(() => {
 // Trạng thái modal xác nhận in hóa đơn
 const showPrintConfirm = ref(false);
 
+// ✅ NEW: Modal xác nhận thay đổi giá
+const showPriceChangeModal = ref(false);
+const priceChangeInfo = ref({
+    productName: '',
+    oldPrice: 0,
+    newPrice: 0,
+    idCTSP: 0
+});
+
+// ✅ NEW: Modal kết quả xử lý
+const showProcessingResultModal = ref(false);
+const processingResult = ref({
+    mergedProducts: 0,
+    newProducts: 0,
+    hasPriceConflict: false,
+    phuThuApplied: false
+});
+
 // Hàm mở modal xác nhận in
 const openPrintConfirm = () => {
     showPrintConfirm.value = true;
@@ -2185,7 +2308,7 @@ const validateProductsInInvoice = async () => {
     const currentStatus = store.hoaDonDetail?.trang_thai;
 
     // Nếu trạng thái là các trạng thái đã chốt đơn, bỏ qua kiểm tra
-    if (['Chờ xác nhận', 'Đã xác nhận', 'Chờ đóng gói', 'Đang giao', 'Hoàn thành', 'Đã hủy', 'Trả hàng'].includes(currentStatus)) {
+    if (['Chờ xác nhận', 'Đã cập nhật', 'Đã xác nhận', 'Chờ đóng gói', 'Đang giao', 'Hoàn thành', 'Đã hủy', 'Trả hàng'].includes(currentStatus)) {
         return;
     }
 
@@ -2353,6 +2476,36 @@ const getUpdatedStatuses = computed(() => {
     return store.trangThaiHistory.filter(history => history.trang_thai === 'Đã cập nhật');
 });
 
+// ✅ NEW: Computed property để kiểm tra sản phẩm có đa giá không
+const productsWithMultiplePrices = computed(() => {
+    if (!store.chiTietHoaDons) return new Set();
+    
+    // Nhóm sản phẩm theo id_chi_tiet_san_pham
+    const productGroups = {};
+    store.chiTietHoaDons.forEach(item => {
+        const idCTSP = item.id_chi_tiet_san_pham;
+        if (!productGroups[idCTSP]) {
+            productGroups[idCTSP] = new Set();
+        }
+        productGroups[idCTSP].add(item.don_gia / item.so_luong); // Đơn giá mỗi sản phẩm
+    });
+    
+    // Lấy ra các sản phẩm có nhiều hơn 1 giá
+    const multiplePriceIds = new Set();
+    Object.keys(productGroups).forEach(idCTSP => {
+        if (productGroups[idCTSP].size > 1) {
+            multiplePriceIds.add(parseInt(idCTSP));
+        }
+    });
+    
+    return multiplePriceIds;
+});
+
+// ✅ NEW: Helper function để kiểm tra sản phẩm có đa giá không
+const hasMultiplePrices = (record) => {
+    return productsWithMultiplePrices.value.has(record.id_chi_tiet_san_pham);
+};
+
 // Check if a status is completed (past status)
 const isStatusCompleted = (status) => {
     if (!store.trangThaiHistory || store.trangThaiHistory.length === 0) return false;
@@ -2474,6 +2627,41 @@ const getUpdatePosition = (update) => {
   }
 
   return 50;
+};
+
+// ✅ NEW: Methods xử lý modal thay đổi giá
+const showPriceChangeConfirmation = (productData) => {
+    priceChangeInfo.value = {
+        productName: productData.ten_san_pham,
+        oldPrice: productData.oldPrice,
+        newPrice: productData.newPrice,
+        idCTSP: productData.idCTSP
+    };
+    showPriceChangeModal.value = true;
+};
+
+const confirmPriceChange = () => {
+    showPriceChangeModal.value = false;
+    // Backend đã xử lý rồi, chỉ cần đóng modal
+};
+
+const cancelPriceChange = () => {
+    showPriceChangeModal.value = false;
+    // Có thể thêm logic để xóa sản phẩm khỏi danh sách chọn nếu cần
+};
+
+const showProcessingResult = (result) => {
+    processingResult.value = {
+        mergedProducts: result.mergedProducts || 0,
+        newProducts: result.newProducts || 0,
+        hasPriceConflict: result.hasPriceConflict || false,
+        phuThuApplied: result.phuThuApplied || false
+    };
+    showProcessingResultModal.value = true;
+};
+
+const closeProcessingResult = () => {
+    showProcessingResultModal.value = false;
 };
 </script>
 
@@ -3337,4 +3525,134 @@ const getUpdatePosition = (update) => {
         top: 32px;
     }
 } */
+
+/* ✅ NEW: CSS cho modal thay đổi giá */
+.price-change-content {
+    padding: 20px 0;
+}
+
+.price-comparison {
+    margin: 20px 0;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    font-size: 14px;
+}
+
+.price-item.old-price {
+    background-color: #fff2f0;
+    border-bottom: 1px solid #d9d9d9;
+}
+
+.price-item.new-price {
+    background-color: #f6ffed;
+}
+
+.price-value {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.old-price .price-value {
+    color: #ff4d4f;
+}
+
+.new-price .price-value {
+    color: #52c41a;
+}
+
+.price-change-info {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f0f7ff;
+    border-radius: 6px;
+    border-left: 4px solid #1890ff;
+}
+
+.price-change-info p {
+    margin: 8px 0;
+    font-size: 13px;
+    color: #595959;
+}
+
+.price-change-info i {
+    margin-right: 8px;
+    color: #1890ff;
+}
+
+/* ✅ NEW: CSS cho modal kết quả xử lý */
+.processing-result-content {
+    padding: 20px 0;
+}
+
+.result-item {
+    margin: 12px 0;
+    text-align: center;
+}
+
+.result-item .ant-tag {
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* ✅ NEW: CSS cho sản phẩm hiển thị */
+.product-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.product-details {
+    flex: 1;
+}
+
+.product-name {
+    font-weight: 500;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.product-specs {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+}
+
+.product-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e8e8e8;
+}
+
+/* Hiệu ứng hover cho tag đa giá */
+.product-name .ant-tag {
+    transition: all 0.3s ease;
+}
+
+.product-name .ant-tag:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
 </style>

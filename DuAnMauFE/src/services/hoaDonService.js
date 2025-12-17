@@ -53,7 +53,8 @@ const filterByDate = async (tuNgay, denNgay, page = 0, size = 5) => {
 // Tìm kiếm hóa đơn
 const searchHoaDon = async (keyword, page = 0, size = 5) => {
     try {
-        const { data } = await axiosInstance.get(qlhd + `tim_kiem?keyword=${keyword}&page=${page}&size=${size}`);
+        // Sử dụng API loc_hoa_don với keyword, các params khác để trống
+        const { data } = await axiosInstance.get(qlhd + `loc_hoa_don?keyword=${keyword || ''}&tuNgay=&denNgay=&trangThai=&loaiHoaDon=&page=${page}&size=${size}`);
         return data;
     } catch (error) {
         console.error('Lỗi API tìm kiếm hóa đơn:', error);
@@ -81,11 +82,12 @@ const getCTHD = async (maHoaDon) => {
 };
 const getCTTH = async (maHoaDon) => {
     try {
-        const { data } = await axiosInstance.get(qlhd + `ctth?id=${maHoaDon}`);
+        const { data } = await axiosInstance.get(qlhd + `${maHoaDon}/chi-tiet-tra-hang`);
         return data;
     } catch (error) {
-        console.error('Lỗi API lấy chi tiết hóa đơn:', error);
-        return { error: true };
+        console.error('Lỗi API lấy chi tiết trả hàng:', error);
+        // Return empty data structure instead of error to prevent breaking the flow
+        return { chiTietTraHangs: [], traHangs: [] };
     }
 };
 // Thay đổi trạng thái hóa đơn

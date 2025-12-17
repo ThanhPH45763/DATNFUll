@@ -1414,9 +1414,16 @@ export const useGbStore = defineStore('gbStore', {
         if (response.error) {
           throw new Error(response.message || 'Không thể lấy dữ liệu hóa đơn.');
         }
+        console.log('📊 Pagination Debug - Response:', {
+          number: response.number,
+          totalPages: response.totalPages,
+          content: response.content?.length,
+          requestedPage: page
+        });
         this.getAllHoaDonArr = response.content;
-        this.currentHoaDon = response.number;
+        this.currentHoaDon = response.number ?? page;  // Fallback to page if response.number is undefined
         this.totalHoaDon = response.totalPages;
+        console.log('📊 Store Updated - currentHoaDon:', this.currentHoaDon, 'totalHoaDon:', this.totalHoaDon);
       } catch (error) {
         console.error('Lỗi khi tìm kiếm hóa đơn:', error);
         toast.error('Có lỗi xảy ra')
@@ -1459,7 +1466,7 @@ export const useGbStore = defineStore('gbStore', {
     async getHoaDonDetail(maHoaDon) {
       try {
         const response = await hoaDonService.getCTHD(maHoaDon);
-        const response1 = await hoaDonService.getCTTH(maHoaDon);
+        // const response1 = await hoaDonService.getCTTH(maHoaDon); // ⛔ REMOVED: Chức năng trả hàng đã bỏ
         console.log('Dữ liệu từ getCTHD:', response.chiTietHoaDons); // Kiểm tra dữ liệu
         if (response.error) {
           toast.error(response.message || 'Không lấy được chi tiết hóa đơn');
@@ -1478,8 +1485,8 @@ export const useGbStore = defineStore('gbStore', {
         }
         this.chiTietHoaDons = uniqueChiTietHoaDons;
         this.trangThaiHistory = response.trangThaiHistory || [];
-        this.chiTietTraHangs = response1.chiTietTraHangs || [];
-        this.traHangs = response1.traHangs || [];
+        // this.chiTietTraHangs = response1.chiTietTraHangs || []; // ⛔ REMOVED: Chức năng trả hàng đã bỏ
+        // this.traHangs = response1.traHangs || []; // ⛔ REMOVED: Chức năng trả hàng đã bỏ
       } catch (error) {
         console.error('Lỗi trong getHoaDonDetail:', error);
         toast.error('Có lỗi xảy ra khi lấy chi tiết hóa đơn');
@@ -1584,14 +1591,16 @@ export const useGbStore = defineStore('gbStore', {
         const nhanVienDoi = this.userDetails?.tenNhanVien || this.userInfo?.ten_dang_nhap || ''
         const response = await hoaDonService.addProductsToInvoice(maHoaDon, products, nhanVienDoi)
         if (response.error) {
-          toast.error('Thêm sản phẩm vào hóa đơn thất bại')
-          return
+          toast.error(response.message || 'Thêm sản phẩm vào hóa đơn thất bại')
+          return { success: false, error: true }
         }
         toast.success('Thêm sản phẩm vào hóa đơn thành công')
         await this.getHoaDonDetail(maHoaDon)
+        return response
       } catch (error) {
         console.error(error)
-        toast.error('Có lỗi xảy ra khi thêm sản phẩm')
+        toast.error(error.message || 'Có lỗi xảy ra khi thêm sản phẩm')
+        return { success: false, error: true }
       }
     },
     async removeProductFromInvoice(maHoaDon, idCTSP) {

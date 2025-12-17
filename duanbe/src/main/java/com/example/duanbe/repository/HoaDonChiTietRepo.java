@@ -481,4 +481,27 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
             @Param("idHoaDon") Integer idHoaDon,
             @Param("idChiTietSanPham") Integer idChiTietSanPham);
 
+    // ✅ NEW: Tìm sản phẩm theo cả ID và đơn giá để xử lý trường hợp đa giá
+    @Query(value = """
+            SELECT * FROM hoa_don_chi_tiet
+            WHERE id_hoa_don = :idHoaDon
+            AND id_chi_tiet_san_pham = :idChiTietSanPham
+            AND don_gia = :donGia
+            """, nativeQuery = true)
+    Optional<HoaDonChiTiet> findByHoaDonAndChiTietSanPhamAndDonGia(
+            @Param("idHoaDon") Integer idHoaDon,
+            @Param("idChiTietSanPham") Integer idChiTietSanPham,
+            @Param("donGia") BigDecimal donGia);
+
+    // ✅ NEW: Lấy tất cả các dòng của cùng một sản phẩm trong hóa đơn
+    @Query(value = """
+            SELECT * FROM hoa_don_chi_tiet
+            WHERE id_hoa_don = :idHoaDon
+            AND id_chi_tiet_san_pham = :idChiTietSanPham
+            ORDER BY id_hoa_don_chi_tiet
+            """, nativeQuery = true)
+    List<HoaDonChiTiet> findAllByHoaDonAndChiTietSanPham(
+            @Param("idHoaDon") Integer idHoaDon,
+            @Param("idChiTietSanPham") Integer idChiTietSanPham);
+
 }

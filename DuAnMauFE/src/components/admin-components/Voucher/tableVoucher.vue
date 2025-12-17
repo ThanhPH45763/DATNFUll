@@ -32,10 +32,6 @@
 
     <!-- Tìm kiếm và lọc theo giá, ngày -->
     <div class="row mt-3 g-2 align-items-center">
-      <div class="col-md-8 d-flex align-items-center">
-        <label class="me-2" style="white-space: nowrap;">Tìm kiếm:</label>
-        <input type="text" class="form-control" v-model="store.voucherSearchs" placeholder="Nhập mã hoặc tên voucher">
-      </div>
       <div class="col-md-3 d-flex align-items-center mt-2">
         <label class="me-2" style="white-space: nowrap;">Kiểu giảm giá:</label>
         <select class="form-select" v-model="selectedKieuGiamGia" @change="fetchData(0)">

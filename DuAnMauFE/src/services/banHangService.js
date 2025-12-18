@@ -170,6 +170,16 @@ const addKhHD = async (idHoaDon, idKhachHang, diaChi, tenKhachHang, sdt, email) 
     }
 }
 
+const removeCustomerFromInvoice = async (idHoaDon) => {
+    try {
+        const { data } = await axiosInstance.post(banHang + `removeCustomerFromInvoice?idHD=${idHoaDon}`);
+        return data;
+    } catch (error) {
+        console.error('Lỗi API bỏ chọn khách hàng:', error);
+        return { error: true };
+    }
+}
+
 const setTrangThaiNhanHang = async (idHoaDon, phuongThucNhanHang, phiVanChuyen) => {
     try {
         const { data } = await axiosInstance.post(banHang + `setTrangThaiNhanHang?idHD=${idHoaDon}&phuongThucNhanHang=${phuongThucNhanHang}&phiVanChuyen=${phiVanChuyen}`);
@@ -201,8 +211,19 @@ const tinhPhiShip = async (pickProvince, pickDistrict, province, district, weigh
             weight: weight.toString(),
             value: tongTienHoaDon.toString()
         });
+
         const { data } = await axiosInstance.get(`api/ghtk/fee?${params.toString()}`);
-        return data.fee;
+
+        // Backend trả về string JSON từ GHTK
+        // Response format: {"success":true,"message":"...","fee":{"name":"...","fee":35000,"ship_fee_only":35000,...}}
+        const ghtkResponse = typeof data === 'string' ? JSON.parse(data) : data;
+
+        if (ghtkResponse.success && ghtkResponse.fee && ghtkResponse.fee.ship_fee_only) {
+            return ghtkResponse.fee.ship_fee_only; // Trả về số tiền
+        }
+
+        console.error('GHTK response không hợp lệ:', ghtkResponse);
+        return { error: true, message: ghtkResponse.message || 'Không tính được phí' };
     } catch (error) {
         console.error('Lỗi API tính phí ship:', error);
         return { error: true };
@@ -264,6 +285,7 @@ export const banHangService = {
     xoaSPHD,
     getHoaDonByIdHoaDon,
     addKhHD,
+    removeCustomerFromInvoice,
     setTrangThaiNhanHang,
     thanhToanMomo,
     setSPHD,

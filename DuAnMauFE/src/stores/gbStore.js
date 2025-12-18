@@ -2401,6 +2401,21 @@ export const useGbStore = defineStore('gbStore', {
       }
     },
 
+    async removeCustomerFromHD(idHoaDon) {
+      try {
+        const result = await banHangService.removeCustomerFromInvoice(idHoaDon)
+        if (result.error) {
+          toast.error(result.message || 'Không thể bỏ chọn khách hàng')
+          return null
+        }
+        return result
+      } catch (error) {
+        console.error('Lỗi khi bỏ chọn khách hàng:', error)
+        toast.error('Có lỗi xảy ra khi bỏ chọn khách hàng')
+        throw error
+      }
+    },
+
     async setTrangThaiNhanHang(idHoaDon, phuongThucNhanHang, phiVanChuyen) {
       try {
         const result = await banHangService.setTrangThaiNhanHang(idHoaDon, phuongThucNhanHang, phiVanChuyen)
@@ -2458,6 +2473,27 @@ export const useGbStore = defineStore('gbStore', {
         console.error(error)
         toast.error('Có lị xảy ra')
         throw error
+      }
+    },
+
+    async tinhPhiShip(pickProvince, pickDistrict, province, district, weight, tongTienHoaDon) {
+      try {
+        const result = await banHangService.tinhPhiShip(pickProvince, pickDistrict, province, district, weight, tongTienHoaDon)
+
+        // Service trả về số tiền (number) hoặc { error: true }
+        if (result && result.error) {
+          return { error: true, message: 'Không tính được phí vận chuyển' }
+        }
+
+        // Nếu là số thì trả về object với fee
+        if (typeof result === 'number') {
+          return { fee: result }
+        }
+
+        return { error: true, message: 'Dữ liệu không hợp lệ' }
+      } catch (error) {
+        console.error('Lỗi khi tính phí ship:', error)
+        return { error: true, message: error.message || 'Có lỗi xảy ra' }
       }
     },
 

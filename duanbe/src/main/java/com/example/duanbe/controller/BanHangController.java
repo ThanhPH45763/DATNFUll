@@ -94,7 +94,7 @@ public class BanHangController {
     // model.addAttribute("slgh", ct);
     // }
     // }
-    //  
+    //
     @PostMapping("/addKhHD")
     public ResponseEntity<?> addKhHd(
             @RequestParam(value = "idKH", required = false) String idKHStr,
@@ -141,6 +141,35 @@ public class BanHangController {
         }
     }
 
+    @PostMapping("/removeCustomerFromInvoice")
+    public ResponseEntity<?> removeCustomerFromInvoice(@RequestParam("idHD") Integer idHD) {
+        try {
+            HoaDon hoaDon = hoaDonRepo.findById(idHD)
+                    .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
+
+            // Reset thông tin khách hàng về khách lẻ
+            hoaDon.setKhachHang(null);
+            hoaDon.setHo_ten("Khách lẻ");
+            hoaDon.setSdt(null);
+            hoaDon.setDia_chi(null);
+            hoaDon.setEmail(null);
+
+            // Reset phương thức nhận hàng về nhận tại cửa hàng
+            hoaDon.setPhuong_thuc_nhan_hang("Nhận tại cửa hàng");
+            hoaDon.setPhi_van_chuyen(BigDecimal.ZERO);
+
+            hoaDonRepo.save(hoaDon);
+
+            // Cập nhật lại tổng tiền sau khi bỏ phí vận chuyển
+            updateTongTienHoaDon(idHD);
+
+            return ResponseEntity.ok("Đã bỏ chọn khách hàng và reset về khách lẻ!");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi bỏ chọn khách hàng: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/setTrangThaiNhanHang")
     public ResponseEntity<?> setTrangThaiNhanHang(
             @RequestParam("idHD") Integer idHD,
@@ -158,7 +187,6 @@ public class BanHangController {
                 hoaDon.setDia_chi(null);
                 hoaDon.setPhi_van_chuyen(BigDecimal.ZERO);
             }
-
 
             // Lấy chi tiết hóa đơn
 
@@ -1230,8 +1258,8 @@ public class BanHangController {
                 if ("Phần trăm".equals(voucher.getKieuGiamGia())) {
                     // Calculate percentage discount
                     giamGia = tongTienTruocGiam.multiply(voucher.getGiaTriGiam())
-                                             .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
-                    
+                            .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+
                     // Apply maximum discount limit if specified
                     if (voucher.getGiaTriToiDa() != null && voucher.getGiaTriToiDa().compareTo(BigDecimal.ZERO) > 0) {
                         if (giamGia.compareTo(voucher.getGiaTriToiDa()) > 0) {
@@ -1242,7 +1270,7 @@ public class BanHangController {
                     // Fixed amount discount
                     giamGia = voucher.getGiaTriGiam();
                 }
-                
+
                 // Ensure discount doesn't exceed total amount
                 if (giamGia.compareTo(tongTienTruocGiam) > 0) {
                     giamGia = tongTienTruocGiam;

@@ -3,14 +3,9 @@
         <!-- Search Combo Box -->
         <div class="search-section">
             <a-dropdown v-model:open="dropdownVisible" :trigger="['click']" overlayClassName="product-dropdown">
-                <a-input-search 
-                    v-model:value="searchQuery" 
-                    class="product-search-bar"
-                    placeholder="Tìm kiếm sản phẩm theo tên..."
-                    @focus="handleSearchFocus"
-                    @search="performSearch" 
-                    size="large"
-                    style="width: 320px">
+                <a-input-search v-model:value="searchQuery" class="product-search-bar"
+                    placeholder="Tìm kiếm sản phẩm theo tên..." @focus="handleSearchFocus" @search="performSearch"
+                    size="large" style="width: 320px">
                     <template #enterButton>
                         <search-outlined style="font-size: 18px;" />
                     </template>
@@ -22,13 +17,10 @@
                             Không tìm thấy sản phẩm phù hợp.
                         </div>
                         <div v-if="filteredProducts.length > 0">
-                            <div v-for="(product) in filteredProducts" :key="product.id" 
-                                class="product-option"
-                                :class="{
-                                    'out-of-stock-item': product.so_luong <= 0 && product.trang_thai !== false,
-                                    'inactive-item': product.trang_thai === false || product.trang_thai === 0
-                                }"
-                                @click="handleDropdownClick(product)">
+                            <div v-for="(product) in filteredProducts" :key="product.id" class="product-option" :class="{
+                                'out-of-stock-item': product.so_luong <= 0 && product.trang_thai !== false,
+                                'inactive-item': product.trang_thai === false || product.trang_thai === 0
+                            }" @click="handleDropdownClick(product)">
 
                                 <img :src="product.hinh_anh || 'default-product.png'" alt="Product"
                                     class="product-image" />
@@ -37,10 +29,12 @@
                                         <div class="product-name">
                                             {{ product.ten_san_pham }}
                                             <!-- Status badges -->
-                                            <a-tag v-if="product.trang_thai === false || product.trang_thai === 0" color="red" style="margin-left: 8px;">
+                                            <a-tag v-if="product.trang_thai === false || product.trang_thai === 0"
+                                                color="red" style="margin-left: 8px;">
                                                 Ngừng hoạt động
                                             </a-tag>
-                                            <a-tag v-else-if="product.so_luong <= 0" color="orange" style="margin-left: 8px;">
+                                            <a-tag v-else-if="product.so_luong <= 0" color="orange"
+                                                style="margin-left: 8px;">
                                                 Hết hàng
                                             </a-tag>
                                         </div>
@@ -54,19 +48,23 @@
                                             <!-- Nếu có khuyến mãi: hiển thị giá gốc gạch ngang + giá sau giảm -->
                                             <template v-if="product.giaGoc && product.gia_ban < product.giaGoc">
                                                 <div class="price-with-discount">
-                                                    <span class="original-price">{{ formatCurrency(product.giaGoc) }} VNĐ</span>
+                                                    <span class="original-price">{{ formatCurrency(product.giaGoc) }}
+                                                        VNĐ</span>
                                                     <span class="discount-badge">SALE</span>
                                                 </div>
-                                                <div class="current-price">{{ formatCurrency(product.gia_ban) }} VNĐ</div>
+                                                <div class="current-price">{{ formatCurrency(product.gia_ban) }} VNĐ
+                                                </div>
                                             </template>
                                             <!-- Nếu không có khuyến mãi: chỉ hiển thị giá bình thường -->
                                             <template v-else>
-                                                <div class="product-price">{{ formatCurrency(product.gia_ban) }} VNĐ</div>
+                                                <div class="product-price">{{ formatCurrency(product.gia_ban) }} VNĐ
+                                                </div>
                                             </template>
                                         </div>
                                         <div class="product-stock">
-                                            Tồn kho: <span :class="product.so_luong > 5 ? 'in-stock' : (product.so_luong > 0 ? 'low-stock' : 'no-stock')">{{
-                                                product.so_luong }}</span>
+                                            Tồn kho: <span
+                                                :class="product.so_luong > 5 ? 'in-stock' : (product.so_luong > 0 ? 'low-stock' : 'no-stock')">{{
+                                                    product.so_luong }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -76,11 +74,7 @@
                 </template>
             </a-dropdown>
             <!-- Thêm nút QR Code bên ngoài kính lúp -->
-            <a-button 
-                type="primary" 
-                class="qr-scan-button"
-                @click="showQrScanner" 
-                size="large"
+            <a-button type="primary" class="qr-scan-button" @click="showQrScanner" size="large"
                 style="margin-left: 10px;">
                 <template #icon>
                     <qrcode-outlined style="font-size: 18px;" />
@@ -100,7 +94,8 @@
                 <a-tab-pane v-for="pane in activeInvoices" :key="pane.key" :closable="pane.closable">
                     <template #tab>
                         <div class="invoice-tab-label">
-                            <span class="product-count-badge" :class="{ 'has-products': getInvoiceProductCount(pane) > 0 }">
+                            <span class="product-count-badge"
+                                :class="{ 'has-products': getInvoiceProductCount(pane) > 0 }">
                                 {{ getInvoiceProductCount(pane) }}
                             </span>
                             <span class="tab-title">{{ pane.title }}</span>
@@ -109,7 +104,7 @@
                     {{ pane.content }}
                 </a-tab-pane>
             </a-tabs>
-            
+
             <!-- Dropdown cho hóa đơn treo - ngay sau dấu + -->
             <a-dropdown v-if="suspendedInvoices.length > 0" :trigger="['click']" placement="bottomRight">
                 <a-button type="dashed" style="margin-left: 8px; white-space: nowrap;">
@@ -118,38 +113,29 @@
                 </a-button>
                 <template #overlay>
                     <a-menu>
-                        <a-menu-item 
-                            v-for="(invoice, index) in suspendedInvoices" 
-                            :key="invoice.key"
-                            @click="activateSuspendedInvoice(invoice.hd.id_hoa_don)"
-                        >
-                            <div style="display: flex; justify-content: space-between; align-items: center; min-width: 250px; position: relative;">
+                        <a-menu-item v-for="(invoice, index) in suspendedInvoices" :key="invoice.key"
+                            @click="activateSuspendedInvoice(invoice.hd.id_hoa_don)">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; min-width: 250px; position: relative;">
                                 <!-- Badge số lượng sản phẩm ở góc trái -->
-                                <a-badge 
-                                    :count="getInvoiceProductCount(invoice)"
-                                    :show-zero="true"
-                                    :number-style="{ 
-                                        backgroundColor: getInvoiceProductCount(invoice) > 0 ? '#52c41a' : '#d9d9d9',
-                                        fontSize: '10px',
-                                        minWidth: '18px',
-                                        height: '18px',
-                                        lineHeight: '18px'
-                                    }"
-                                    style="margin-right: 8px;"
-                                >
-                                    <a-tooltip :title="getInvoiceProductCount(invoice) > 0 ? `${getInvoiceProductCount(invoice)} sản phẩm` : 'Chưa có sản phẩm'">
+                                <a-badge :count="getInvoiceProductCount(invoice)" :show-zero="true" :number-style="{
+                                    backgroundColor: getInvoiceProductCount(invoice) > 0 ? '#52c41a' : '#d9d9d9',
+                                    fontSize: '10px',
+                                    minWidth: '18px',
+                                    height: '18px',
+                                    lineHeight: '18px'
+                                }" style="margin-right: 8px;">
+                                    <a-tooltip
+                                        :title="getInvoiceProductCount(invoice) > 0 ? `${getInvoiceProductCount(invoice)} sản phẩm` : 'Chưa có sản phẩm'">
                                         <span style="display: inline-block; width: 8px;"></span>
                                     </a-tooltip>
                                 </a-badge>
                                 <span style="flex: 1;">
                                     <strong>{{ invoice.title }}</strong> - {{ invoice.hd.ma_hoa_don }}
                                 </span>
-                                <a-badge 
-                                    :count="`${getRemainingMinutes(invoice.hd.id_hoa_don)}p`" 
-                                    :number-style="{ 
-                                        backgroundColor: getRemainingMinutes(invoice.hd.id_hoa_don) <= 5 ? '#ff4d4f' : '#faad14'
-                                    }"
-                                />
+                                <a-badge :count="`${getRemainingMinutes(invoice.hd.id_hoa_don)}p`" :number-style="{
+                                    backgroundColor: getRemainingMinutes(invoice.hd.id_hoa_don) <= 5 ? '#ff4d4f' : '#faad14'
+                                }" />
                             </div>
                         </a-menu-item>
                     </a-menu>
@@ -198,13 +184,8 @@
                             <!-- ✅ Warning banner for invalid items -->
                             <tr v-if="activeTabData && hasInvalidItems(activeTabData)" class="invalid-items-banner">
                                 <td colspan="7">
-                                    <a-alert
-                                        type="warning"
-                                        message="Có sản phẩm không hợp lệ trong giỏ hàng!"
-                                        :description="getInvalidItemsMessage(activeTabData)"
-                                        show-icon
-                                        closable
-                                    />
+                                    <a-alert type="warning" message="Có sản phẩm không hợp lệ trong giỏ hàng!"
+                                        :description="getInvalidItemsMessage(activeTabData)" show-icon closable />
                                 </td>
                             </tr>
                             <tr v-if="!activeTabData || !currentInvoiceItems || currentInvoiceItems.length === 0">
@@ -212,13 +193,12 @@
                                     {{ !activeTabData ? 'Vui lòng chọn hoặc tạo hóa đơn.' : 'Chưa có sản phẩm nào.' }}
                                 </td>
                             </tr>
-                            <tr v-for="(item, index) in currentInvoiceItems" 
-                                :key="item.id_chi_tiet_san_pham"
+                            <tr v-for="(item, index) in currentInvoiceItems" :key="item.id_chi_tiet_san_pham"
                                 :class="{ 'inactive-product-row': isProductInactive(item) }">
                                 <td class="text-center cart-index">{{ index + 1 }}</td>
                                 <td class="text-center">
-                                    <img class="cart-product-image"
-                                        :src="item.hinh_anh || 'default-product.png'" alt="Item" />
+                                    <img class="cart-product-image" :src="item.hinh_anh || 'default-product.png'"
+                                        alt="Item" />
                                 </td>
                                 <td>
                                     {{ item.ten_san_pham }} <br />
@@ -227,20 +207,16 @@
                                     <div v-if="isItemInvalid(item)" class="item-status-badges">
                                         <a-tag v-if="isItemInactive(item)" color="red">Ngưng hoạt động</a-tag>
                                         <a-tag v-else-if="isItemOutOfStock(item)" color="orange">Hết hàng</a-tag>
-                                        <a-tag v-else-if="isItemInsufficientStock(item)" color="gold">Không đủ hàng</a-tag>
+                                        <a-tag v-else-if="isItemInsufficientStock(item)" color="gold">Không đủ
+                                            hàng</a-tag>
                                     </div>
                                 </td>
                                 <td>
                                     <a-space direction="vertical">
-                                    <a-input-number 
-                                            v-model:value="item.so_luong" 
-                                            :min="1"
-                                            :max="getItemMaxQuantity(item)"
-                                            :disabled="isItemInvalid(item)"
-                                            @blur="handleQuantityBlur(item)"
-                                            @change="handleQuantityChange(item)"
-                                            style="width: 80px;" 
-                                        />
+                                        <a-input-number v-model:value="item.so_luong" :min="1"
+                                            :max="getItemMaxQuantity(item)" :disabled="isItemInvalid(item)"
+                                            @blur="handleQuantityBlur(item)" @change="handleQuantityChange(item)"
+                                            style="width: 80px;" />
                                     </a-space>
                                 </td>
                                 <td class="cart-price-cell">{{ formatCurrency(item.gia_ban) }} đ</td>
@@ -257,13 +233,16 @@
                 </div>
 
                 <div v-if="ptnh === 'Giao hàng'">
-                    <FormKhachHangBH :triggerUpdate="triggerUpdate" />
+                    <FormKhachHangBH 
+                        :triggerUpdate="triggerUpdate" 
+                        @shippingFeeCalculated="handleShippingFeeCalculated" 
+                    />
                 </div>
             </div>
             <div class="col-4">
                 <form v-if="activeTabData && activeTabData.hd" @submit.prevent="handlePayment">
                     <input type="hidden" v-model="activeTabData.hd.id_hoa_don">
-                    
+
                     <!-- Mã hóa đơn -->
                     <div class="invoice-info-card mb-3">
                         <div class="info-item">
@@ -274,7 +253,7 @@
                             </div>
                         </div>
                     </div>
-                   
+
                     <!-- Tên khách hàng -->
                     <div class="invoice-info-card mb-3">
                         <div class="info-item">
@@ -282,19 +261,26 @@
                             <div class="info-content">
                                 <span class="info-label">Tên khách hàng</span>
                                 <span class="info-value">
-                                    {{activeTabData.hd.ten_khach_hang||activeTabData.hd.ho_ten||'Khách lẻ'}}
+                                    {{ activeTabData.hd.ten_khach_hang || activeTabData.hd.ho_ten || 'Khách lẻ' }}
                                 </span>
                             </div>
-                            <a-button 
-                                type="primary" 
-                                size="small"
-                                class="select-customer-btn"
-                                @click="showModal">
-                                <template #icon>
-                                    <edit-outlined />
-                                </template>
-                                Chọn
-                            </a-button>
+                            <a-space>
+                                <a-button type="primary" size="small" class="select-customer-btn" @click="showModal">
+                                    <template #icon>
+                                        <edit-outlined />
+                                    </template>
+                                    Chọn
+                                </a-button>
+                                <a-button
+                                    v-if="activeTabData.hd.ten_khach_hang && activeTabData.hd.ten_khach_hang !== 'Khách lẻ'"
+                                    type="default" danger size="small" class="remove-customer-btn"
+                                    @click="confirmBoChonKhachHang">
+                                    <template #icon>
+                                        <close-circle-outlined />
+                                    </template>
+                                    Bỏ chọn
+                                </a-button>
+                            </a-space>
                         </div>
                     </div> <!-- Closing invoice-info-card for customer -->
 
@@ -305,33 +291,25 @@
                             Phương thức nhận hàng
                         </label>
                         <div class="shipping-methods">
-                            <label class="shipping-radio-card" :class="{ 'active': activeTabData.hd.phuong_thuc_nhan_hang === 'Nhận tại cửa hàng' }">
-                                <input 
-                                    class="form-check-input" 
-                                    type="radio" 
-                                    :name="'phuongThucNhanHang_' + activeKey"
-                                    :id="'nhanTaiCuahang_' + activeKey" 
-                                    value="Nhận tại cửa hàng"
-                                    v-model="activeTabData.hd.phuong_thuc_nhan_hang" 
-                                    @change="handlePhuongThucChange" />
+                            <label class="shipping-radio-card"
+                                :class="{ 'active': activeTabData.hd.phuong_thuc_nhan_hang === 'Nhận tại cửa hàng' }">
+                                <input class="form-check-input" type="radio" :name="'phuongThucNhanHang_' + activeKey"
+                                    :id="'nhanTaiCuahang_' + activeKey" value="Nhận tại cửa hàng"
+                                    v-model="activeTabData.hd.phuong_thuc_nhan_hang" @change="handlePhuongThucChange" />
                                 <shop-outlined class="radio-icon" />
                                 <span class="radio-text">Nhận tại cửa hàng</span>
                             </label>
-                            
-                            <label class="shipping-radio-card" :class="{ 'active': activeTabData.hd.phuong_thuc_nhan_hang === 'Giao hàng' }">
-                                <input 
-                                    class="form-check-input" 
-                                    type="radio" 
-                                    :name="'phuongThucNhanHang_' + activeKey"
-                                    :id="'giaoHang_' + activeKey" 
-                                    value="Giao hàng"
-                                    v-model="activeTabData.hd.phuong_thuc_nhan_hang" 
-                                    @change="handlePhuongThucChange" />
+
+                            <label class="shipping-radio-card"
+                                :class="{ 'active': activeTabData.hd.phuong_thuc_nhan_hang === 'Giao hàng' }">
+                                <input class="form-check-input" type="radio" :name="'phuongThucNhanHang_' + activeKey"
+                                    :id="'giaoHang_' + activeKey" value="Giao hàng"
+                                    v-model="activeTabData.hd.phuong_thuc_nhan_hang" @change="handlePhuongThucChange" />
                                 <car-outlined class="radio-icon" />
                                 <span class="radio-text">Giao hàng</span>
                             </label>
                         </div>
-                        
+
                         <div v-if="activeTabData.hd.phuong_thuc_nhan_hang === 'Giao hàng'" class="mt-3">
                             <div class="form-label-with-logo">
                                 <label class="form-label">Phí vận chuyển (VNĐ)</label>
@@ -345,26 +323,20 @@
                     </div> <!-- Closing invoice-info-card -->
                     <div class="mb-3">
                         <label class="form-label">Tổng tiền hàng:</label>
-                        <input type="text" class="form-control"
-                            :value="formatCurrency(fe_tongTienHang) +' '+ 'đ'" disabled>
+                        <input type="text" class="form-control" :value="formatCurrency(fe_tongTienHang) + ' ' + 'đ'"
+                            disabled>
                     </div>
                     <div class="mb-3" v-if="activeTabData.hd.phuong_thuc_nhan_hang === 'Giao hàng'">
                         <label class="form-label">Phí vận chuyển:</label>
-                        <input type="text" class="form-control"
-                            :value="formatCurrency(fe_phiVanChuyen) + 'đ'" disabled>
+                        <input type="text" class="form-control" :value="formatCurrency(fe_phiVanChuyen) + 'đ'" disabled>
                     </div>
                     <div class="mb-3">
                         <label for="idVoucher" class="form-label voucher-label">
                             <gift-outlined style="margin-right: 8px; color: #ff6600;" />
                             Voucher
                         </label>
-                        <a-select
-                            v-model:value="activeTabData.hd.id_voucher"
-                            class="voucher-select"
-                            size="large"
-                            placeholder="Chọn voucher giảm giá"
-                            @change="updateVoucher(true)"
-                            style="width: 100%"
+                        <a-select v-model:value="activeTabData.hd.id_voucher" class="voucher-select" size="large"
+                            placeholder="Chọn voucher giảm giá" @change="updateVoucher(true)" style="width: 100%"
                             :options="voucherOptions">
                             <template #suffixIcon>
                                 <gift-outlined style="color: #ff6600;" />
@@ -374,17 +346,18 @@
                     <div class="mb-3" v-if="fe_giamGia > 0">
                         <label class="form-label">Giảm từ Voucher:</label>
                         <input type="text" class="form-control text-success fw-bold"
-                            :value="'-' + formatCurrency(fe_giamGia) +' '+ 'đ'" disabled>
+                            :value="'-' + formatCurrency(fe_giamGia) + ' ' + 'đ'" disabled>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Tổng thanh toán:</label>
                         <input type="text" class="form-control fw-bold fs-5"
-                            :value="formatCurrency(fe_tongThanhToan) +' '+ 'đ'" disabled>
+                            :value="formatCurrency(fe_tongThanhToan) + ' ' + 'đ'" disabled>
                     </div>
                     <div class="mb-3">
                         <label class="form-label d-block mb-2">Hình thức thanh toán</label>
                         <div class="payment-methods-grid">
-                            <div class="payment-method-option" :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'Tiền mặt' }">
+                            <div class="payment-method-option"
+                                :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'Tiền mặt' }">
                                 <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
                                     :id="'tienMat_' + activeKey" value="Tiền mặt"
                                     v-model="activeTabData.hd.hinh_thuc_thanh_toan" @change="updateHinhThucThanhToan" />
@@ -393,7 +366,8 @@
                                     <div class="payment-text">Tiền mặt</div>
                                 </label>
                             </div>
-                            <div class="payment-method-option" :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'PayOS' }">
+                            <div class="payment-method-option"
+                                :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'PayOS' }">
                                 <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
                                     :id="'payos_' + activeKey" value="PayOS"
                                     v-model="activeTabData.hd.hinh_thuc_thanh_toan" @change="updateHinhThucThanhToan" />
@@ -402,7 +376,8 @@
                                     <div class="payment-text">PayOS</div>
                                 </label>
                             </div>
-                            <div class="payment-method-option" :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'ZaloPay' }">
+                            <div class="payment-method-option"
+                                :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'ZaloPay' }">
                                 <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
                                     :id="'zalopay_' + activeKey" value="ZaloPay"
                                     v-model="activeTabData.hd.hinh_thuc_thanh_toan" @change="updateHinhThucThanhToan" />
@@ -412,7 +387,7 @@
                                 </label>
                             </div>
                         </div>
-                        
+
                         <div v-if="activeTabData.hd.hinh_thuc_thanh_toan === 'Tiền mặt'" class="mt-2">
                             <label class="form-label">Tiền khách đưa (VNĐ)</label>
                             <a-input-number v-model:value="tienKhachDua" :min="0"
@@ -439,20 +414,15 @@
                         Thanh toán
                     </button>
                     <!-- Modal 1: Xác nhận thanh toán -->
-                    <a-modal 
-                        v-model:open="showPaymentConfirm" 
-                        :closable="false"
-                        :maskClosable="false"
-                        width="450px"
-                        centered
-                    >
+                    <a-modal v-model:open="showPaymentConfirm" :closable="false" :maskClosable="false" width="450px"
+                        centered>
                         <template #title>
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <ExclamationCircleOutlined style="color: #faad14; font-size: 24px;" />
                                 <span style="font-size: 18px; font-weight: 600;">Xác nhận thanh toán</span>
                             </div>
                         </template>
-                        
+
                         <div style="padding: 20px 0;">
                             <p style="font-size: 15px; margin-bottom: 16px;">
                                 Bạn có chắc chắn muốn thanh toán đơn hàng này?
@@ -464,113 +434,94 @@
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                     <span style="color: #666;">Tổng tiền:</span>
-                                    <strong style="color: #ff6600; font-size: 16px;">{{ formatCurrency(fe_tongThanhToan) }}</strong>
+                                    <strong style="color: #ff6600; font-size: 16px;">{{ formatCurrency(fe_tongThanhToan)
+                                        }}</strong>
                                 </div>
-                                <div v-if="activeTabData?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt'" style="display: flex; justify-content: space-between;">
+                                <div v-if="activeTabData?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt'"
+                                    style="display: flex; justify-content: space-between;">
                                     <span style="color: #666;">Tiền trả khách:</span>
                                     <strong style="color: #52c41a;">{{ formatCurrency(calculatedChange) }}</strong>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <template #footer>
                             <a-button key="cancel" size="large" @click="cancelPayment" style="height: 40px;">
                                 Hủy
                             </a-button>
-                            <a-button 
-                                key="ok" 
-                                type="primary" 
-                                size="large"
-                                @click="proceedToPayment" 
-                                style="height: 40px; background: #ff6600; border-color: #ff6600;"
-                            >
+                            <a-button key="ok" type="primary" size="large" @click="proceedToPayment"
+                                style="height: 40px; background: #ff6600; border-color: #ff6600;">
                                 Xác nhận thanh toán
                             </a-button>
                         </template>
                     </a-modal>
 
                     <!-- Modal 2: Xác nhận in hóa đơn (sau khi thanh toán) -->
-                    <a-modal 
-                        v-model:open="showPrintConfirm" 
-                        :closable="false"
-                        :maskClosable="false"
-                        width="450px"
-                        centered
-                    >
+                    <a-modal v-model:open="showPrintConfirm" :closable="false" :maskClosable="false" width="450px"
+                        centered>
                         <template #title>
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <PrinterOutlined style="color: #1890ff; font-size: 24px;" />
                                 <span style="font-size: 18px; font-weight: 600;">In hóa đơn</span>
                             </div>
                         </template>
-                        
+
                         <div style="padding: 20px 0;">
                             <p style="font-size: 15px; margin-bottom: 16px;">
                                 Thanh toán thành công! Bạn có muốn in hóa đơn không?
                             </p>
-                            <div style="background: #e6f7ff; padding: 16px; border-radius: 8px; border: 1px solid #91d5ff;">
+                            <div
+                                style="background: #e6f7ff; padding: 16px; border-radius: 8px; border: 1px solid #91d5ff;">
                                 <div style="display: flex; align-items: center; gap: 8px; color: #1890ff;">
                                     <CheckCircleOutlined style="font-size: 18px;" />
-                                    <span style="font-weight: 500;">Đơn hàng {{ activeTabData?.hd?.ma_hoa_don }} đã được thanh toán</span>
+                                    <span style="font-weight: 500;">Đơn hàng {{ activeTabData?.hd?.ma_hoa_don }} đã được
+                                        thanh toán</span>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <template #footer>
                             <a-button key="cancel" size="large" @click="confirmPrint(false)" style="height: 40px;">
                                 Không in
                             </a-button>
-                            <a-button 
-                                key="ok" 
-                                type="primary" 
-                                size="large"
-                                @click="confirmPrint(true)" 
-                                style="height: 40px; background: #52c41a; border-color: #52c41a;"
-                            >
+                            <a-button key="ok" type="primary" size="large" @click="confirmPrint(true)"
+                                style="height: 40px; background: #52c41a; border-color: #52c41a;">
                                 In hóa đơn
                             </a-button>
                         </template>
                     </a-modal>
                 </form>
-                
+
                 <div v-else class="text-center text-muted mt-5">
                     Vui lòng chọn hoặc tạo một hóa đơn.
                 </div>
-                
+
                 <!-- Modal chọn khách hàng - đặt ngoài v-if/v-else -->
-                <a-modal 
-                    v-model:open="open" 
-                    class="customer-select-modal"
-                    width="1100px"
-                    :footer="null">
+                <a-modal v-model:open="open" class="customer-select-modal" width="1100px" :footer="null">
                     <template #title>
                         <div class="modal-custom-title">
                             <team-outlined class="title-icon" />
                             <span>Danh sách khách hàng</span>
                         </div>
                     </template>
-                    
+
                     <!-- Thanh tìm kiếm đẹp -->
                     <div class="customer-search-section mb-4">
-                        <a-input-search
-                            v-model:value="searchQueryKH"
-                            class="customer-search-input"
-                            size="large"
-                            placeholder="Tìm kiếm theo tên hoặc số điện thoại..."
-                            @input="handleSearch">
+                        <a-input-search v-model:value="searchQueryKH" class="customer-search-input" size="large"
+                            placeholder="Tìm kiếm theo tên hoặc số điện thoại..." @input="handleSearch">
                             <template #prefix>
                                 <search-outlined style="color: #ff6600;" />
                             </template>
                         </a-input-search>
                     </div>
-                    
+
                     <div v-if="filteredKhachHang.length === 0" class="text-center py-5">
                         <a-empty :image="simpleImage" description="Không tìm thấy khách hàng" />
                     </div>
-                    
+
                     <div v-else class="customer-table-wrapper">
-                        <div class="table-responsive" ref="scrollContainer"
-                            style="max-height: 450px; overflow-y: auto" @scroll="handleScroll">
+                        <div class="table-responsive" ref="scrollContainer" style="max-height: 450px; overflow-y: auto"
+                            @scroll="handleScroll">
                             <table class="table customer-table">
                                 <thead>
                                     <tr>
@@ -588,12 +539,12 @@
                                             <environment-outlined style="margin-right: 6px;" />
                                             Địa chỉ
                                         </th>
-                                        <th scope="col" class="text-center" style="width: 110px; padding-right: 20px !important;">Thao tác</th>
+                                        <th scope="col" class="text-center"
+                                            style="width: 110px; padding-right: 20px !important;">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="(khachHang, index) in filteredKhachHang"
-                                        :key="khachHang.idKhachHang"
+                                    <tr v-for="(khachHang, index) in filteredKhachHang" :key="khachHang.idKhachHang"
                                         class="customer-row">
                                         <td class="text-center">{{ index + 1 }}</td>
                                         <td class="customer-name">{{ khachHang.hoTen }}</td>
@@ -605,10 +556,7 @@
                                         <td class="text-center">{{ khachHang.soDienThoai }}</td>
                                         <td class="customer-address">{{ khachHang.diaChi }}</td>
                                         <td class="text-center">
-                                            <a-button 
-                                                type="primary" 
-                                                size="small"
-                                                class="select-btn"
+                                            <a-button type="primary" size="small" class="select-btn"
                                                 @click="chonKhachHang(khachHang)">
                                                 <template #icon>
                                                     <check-circle-outlined />
@@ -816,7 +764,7 @@ const chonKhachHang = async (khachHang) => {
         if (!activeTabData.value.hd.isKhachLe) {
             handlePhuongThucChange();
         }
-        
+
         await refreshHoaDon(activeTabData.value.hd.id_hoa_don);
 
         localStorage.setItem('khachHangBH', JSON.stringify(khachHang));
@@ -830,7 +778,71 @@ const chonKhachHang = async (khachHang) => {
     }
 };
 
+// Hàm xác nhận bỏ chọn khách hàng
+const confirmBoChonKhachHang = () => {
+    Modal.confirm({
+        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+            h(CloseCircleOutlined, { style: 'color: #ff4d4f; font-size: 22px;' }),
+            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Bỏ chọn khách hàng')
+        ]),
+        content: () => h('div', { style: 'padding: 8px 0;' }, [
+            h('p', { style: 'margin: 0; font-size: 14px;' }, 'Bạn có chắc chắn muốn bỏ chọn khách hàng này không?'),
+            h('p', { style: 'margin: 8px 0 0 0; font-size: 13px; color: #666;' }, 'Hóa đơn sẽ được chuyển về trạng thái "Khách lẻ" và bỏ phí vận chuyển.')
+        ]),
+        okText: 'Bỏ chọn',
+        cancelText: 'Hủy',
+        okButtonProps: { danger: true, size: 'large', style: { height: '38px' } },
+        cancelButtonProps: { size: 'large', style: { height: '38px' } },
+        centered: true,
+        width: 450,
+        onOk: () => {
+            boChonKhachHang();
+        },
+    });
+};
 
+// Hàm bỏ chọn khách hàng
+const boChonKhachHang = async () => {
+    try {
+        const idHoaDon = activeTabData.value.hd.id_hoa_don;
+
+        // Gọi API để reset khách hàng về khách lẻ
+        await store.removeCustomerFromHD(idHoaDon);
+
+        // Cập nhật UI
+        Object.assign(activeTabData.value.hd, {
+            ten_khach_hang: 'Khách lẻ',
+            ho_ten: 'Khách lẻ',
+            so_dien_thoai: null,
+            dia_chi: null,
+            email: null,
+            id_khach_hang: null,
+            phuong_thuc_nhan_hang: 'Nhận tại cửa hàng',
+            phi_van_chuyen: 0
+        });
+
+        // Xóa localStorage
+        localStorage.removeItem('khachHangBH');
+        localStorage.removeItem('chonKH');
+        localStorage.removeItem('luuTTKHBH');
+        localStorage.removeItem('shippingFeeUpdated');
+
+        // Reload hóa đơn để cập nhật tổng tiền
+        await refreshHoaDon(idHoaDon);
+
+        message.success('Đã bỏ chọn khách hàng và chuyển về khách lẻ');
+
+        // Trigger update cho form khách hàng
+        triggerUpdate.value = Date.now();
+
+        // Reset ptnh về nhận tại cửa hàng
+        ptnh.value = 'Nhận tại cửa hàng';
+
+    } catch (error) {
+        console.error('Lỗi khi bỏ chọn khách hàng:', error);
+        message.error('Không thể bỏ chọn khách hàng. Vui lòng thử lại!');
+    }
+};
 
 // --- State cho tìm kiếm và dropdown ---
 const dropdownVisible = ref(false);
@@ -921,11 +933,11 @@ const filteredProducts = computed(() => {
         console.log('⚠️ allProducts is empty!');
         return [];
     }
-    
+
     // ✅ Filter out zero-stock products FIRST
     let availableProducts = allProducts.value.filter(product => product.so_luong > 0);
     console.log('📦 Available products (stock > 0):', availableProducts.length);
-    
+
     if (!searchQuery.value) {
         console.log('✅ Returning all available products:', availableProducts.length);
         return availableProducts;
@@ -979,18 +991,18 @@ const getCTSPRealtime = async (idCTSP) => {
 const getMaxQuantity = async (item) => {
     // Gọi API để lấy stock mới nhất
     const realtimeData = await getCTSPRealtime(item.id_chi_tiet_san_pham);
-    
+
     if (!realtimeData) {
         console.warn(`⚠️ Cannot get realtime data for ${item.ten_san_pham}`);
         return item.so_luong || 1; // Fallback to current quantity
     }
-    
+
     // Max = Stock hiện tại trong DB + Số lượng hiện tại trong giỏ
     // Lưu ý: Stock trong DB đã bị trừ khi thêm vào giỏ, nên cần cộng lại
     const currentStock = realtimeData.so_luong || 0;
     const cartQuantity = item.so_luong || 0;
     const maxQty = currentStock + cartQuantity;
-    
+
     console.log(`📊 Max for ${item.ten_san_pham}: stock=${currentStock}, cart=${cartQuantity}, max=${maxQty}`);
     return maxQty > 0 ? maxQty : cartQuantity; // Nếu stock = 0, giữ nguyên số lượng hiện tại
 };
@@ -1005,16 +1017,16 @@ const getItemMaxQuantity = (item) => {
         console.log(`📊 getItemMaxQuantity (cached): max=${item._originalMax}`);
         return item._originalMax;
     }
-    
+
     const stockInDB = item.so_luong_ton ?? item.so_luong_ton_kho ?? 0;
     const cartQty = item.so_luong || 0;
-    
+
     // Max = Stock còn lại + số đang trong giỏ (tính 1 lần)
     const max = stockInDB + cartQty;
-    
+
     // Cache lại để không tính lại
     item._originalMax = max > 0 ? max : 1;
-    
+
     console.log(`📊 getItemMaxQuantity (new): stock=${stockInDB}, cart=${cartQty}, max=${item._originalMax}`);
     return item._originalMax;
 };
@@ -1022,17 +1034,17 @@ const getItemMaxQuantity = (item) => {
 // ✅ Validate và auto-correct quantity khi user thay đổi
 const validateAndCorrectQuantity = (item) => {
     console.log(`🔍 Validating quantity for ${item.ten_san_pham}:`, item.so_luong);
-    
+
     const maxQty = getItemMaxQuantity(item);
     console.log(`📊 Max allowed: ${maxQty}, Current: ${item.so_luong}`);
-    
+
     // Nếu số lượng vượt quá max, tự động chuyển về max
     if (item.so_luong > maxQty) {
         const oldQuantity = item.so_luong;
         item.so_luong = maxQty;
-        
+
         console.log(`⚠️ EXCEEDED! Auto-correcting ${oldQuantity} → ${maxQty}`);
-        
+
         message.warning(
             `Không thể tăng quá ${maxQty} sản phẩm! Đã tự động điều chỉnh về ${maxQty}.`,
             4
@@ -1047,7 +1059,7 @@ const validateAndCorrectQuantity = (item) => {
     } else {
         console.log(`✅ Quantity OK: ${item.so_luong} <= ${maxQty}`);
     }
-    
+
     // Cập nhật tổng tiền
     updateItemTotal(item);
 };
@@ -1057,15 +1069,15 @@ let quantityChangeTimer = null;
 const handleQuantityChange = async (item) => {
     // Debounce: chờ 300ms sau khi user ngừng nhập
     if (quantityChangeTimer) clearTimeout(quantityChangeTimer);
-    
+
     quantityChangeTimer = setTimeout(async () => {
         const maxQty = getItemMaxQuantity(item);
-        
+
         if (item.so_luong > maxQty) {
             item.so_luong = maxQty;
             message.warning(`Số lượng tối đa: ${maxQty}`);
         }
-        
+
         if (!item.so_luong || item.so_luong < 1) {
             item.so_luong = 1;
         }
@@ -1076,23 +1088,23 @@ const handleQuantityChange = async (item) => {
 const handleQuantityBlur = async (item) => {
     // Lấy max từ sync function (nhanh hơn)
     const maxQty = getItemMaxQuantity(item);
-    
+
     // Validate min
     if (!item.so_luong || item.so_luong < 1) {
         item.so_luong = 1;
         message.info('Số lượng tối thiểu là 1');
     }
-    
+
     // Validate max
     if (item.so_luong > maxQty) {
         item.so_luong = maxQty;
         message.warning(`Đã điều chỉnh về số lượng tối đa: ${maxQty}`);
     }
-    
+
     try {
         // Gọi API update
         const result = await store.setSPHD(item.id_hoa_don, item.id_chi_tiet_san_pham, item.so_luong);
-        
+
         if (!result || result.error) {
             message.error(result?.message || 'Cập nhật số lượng thất bại');
         }
@@ -1124,7 +1136,7 @@ const isItemInactive = (item) => {
     if (item.trang_thai_san_pham === false || item.trang_thai_san_pham === 0) {
         return true;
     }
-    
+
     return false;
 };
 
@@ -1134,14 +1146,14 @@ const isItemOutOfStock = (item) => {
     if (item.so_luong_ton_kho !== undefined && item.so_luong_ton_kho <= 0) {
         return true;
     }
-    
+
     // Cách 2: Nếu không tìm thấy trong allProducts (do query filter stock > 0), coi như hết hàng
     const product = allProducts.value.find(p => p.id_chi_tiet_san_pham === item.id_chi_tiet_san_pham);
     if (!product) {
         // Sản phẩm không có trong allProducts = stock = 0 (đã thêm hết vào giỏ)
         return true;
     }
-    
+
     // Cách 3: Check stock từ allProducts
     return product.so_luong <= 0;
 };
@@ -1150,7 +1162,7 @@ const isItemOutOfStock = (item) => {
 const isItemInsufficientStock = (item) => {
     const product = allProducts.value.find(p => p.id_chi_tiet_san_pham === item.id_chi_tiet_san_pham);
     if (!product) return true; // Không có trong list = không đủ
-    
+
     return product.so_luong < item.so_luong;
 };
 
@@ -1163,15 +1175,15 @@ const hasInvalidItems = (tab) => {
 // ✅ Get message describing invalid items
 const getInvalidItemsMessage = (tab) => {
     if (!tab?.items?.value) return '';
-    
+
     const invalidItems = tab.items.value.filter(item => isItemInvalid(item));
     const inactiveCount = invalidItems.filter(item => isItemInactive(item)).length;
     const outOfStockCount = invalidItems.filter(item => isItemOutOfStock(item)).length;
-    
+
     let messages = [];
     if (inactiveCount > 0) messages.push(`${inactiveCount} sản phẩm ngưng hoạt động`);
     if (outOfStockCount > 0) messages.push(`${outOfStockCount} sản phẩm hết hàng`);
-    
+
     return `${messages.join(', ')}. Vui lòng xóa để tiếp tục thanh toán.`;
 };
 
@@ -1186,9 +1198,9 @@ const formatCurrency = (value) => {
 // Bắt đầu timer cho hóa đơn suspended
 const startInvoiceTimer = (invoiceId, invoiceCode) => {
     console.log(`⏰ Starting timer for invoice ${invoiceCode} (ID: ${invoiceId})`);
-    
+
     const now = Date.now();
-    
+
     // Set timeout cho cảnh báo (5 phút)
     const warningTimeoutId = setTimeout(() => {
         const timerData = invoiceTimers.value.get(invoiceId);
@@ -1197,12 +1209,12 @@ const startInvoiceTimer = (invoiceId, invoiceCode) => {
             timerData.warningShown = true;
         }
     }, EXPIRY_WARNING_TIME);
-    
+
     // Set timeout cho tự động xóa (10 phút)
     const expiryTimeoutId = setTimeout(async () => {
         await deleteExpiredInvoice(invoiceId, invoiceCode);
     }, EXPIRY_TIME);
-    
+
     // Lưu timer data
     invoiceTimers.value.set(invoiceId, {
         createdAt: now,
@@ -1227,7 +1239,7 @@ const clearInvoiceTimer = (invoiceId) => {
 const getRemainingMinutes = (invoiceId) => {
     const timerData = invoiceTimers.value.get(invoiceId);
     if (!timerData) return null;
-    
+
     const elapsed = Date.now() - timerData.createdAt;
     const remaining = EXPIRY_TIME - elapsed;
     return Math.ceil(remaining / 60000); // Convert to minutes
@@ -1244,19 +1256,19 @@ const getInvoiceProductCount = (invoice) => {
 const deleteExpiredInvoice = async (invoiceId, invoiceCode) => {
     try {
         console.log(`🗑️ Deleting expired invoice ${invoiceCode}`);
-        
+
         // Xóa hóa đơn qua API
         await store.deleteHoaDon(invoiceId);
-        
+
         // Xóa khỏi panes
         const index = panes.value.findIndex(p => p.hd.id_hoa_don === invoiceId);
         if (index !== -1) {
             panes.value.splice(index, 1);
         }
-        
+
         // Clear timer
         clearInvoiceTimer(invoiceId);
-        
+
         // Thông báo
         message.error(`Hóa đơn ${invoiceCode} đã hết hạn và bị xóa tự động.`, 5);
     } catch (error) {
@@ -1268,28 +1280,28 @@ const deleteExpiredInvoice = async (invoiceId, invoiceCode) => {
 const activateSuspendedInvoice = (invoiceId) => {
     const suspendedIndex = panes.value.findIndex(p => p.hd.id_hoa_don === invoiceId);
     if (suspendedIndex === -1 || suspendedIndex < MAX_ACTIVE_INVOICES) return;
-    
+
     // Lấy hóa đơn suspended
     const suspendedInvoice = panes.value[suspendedIndex];
-    
+
     // Xóa khỏi vị trí hiện tại
     panes.value.splice(suspendedIndex, 1);
-    
+
     // Thêm vào đầu danh sách (làm active)
     panes.value.unshift(suspendedInvoice);
-    
+
     // Clear timer vì đã active
     clearInvoiceTimer(invoiceId);
-    
+
     // Set làm active key
     activeKey.value = suspendedInvoice.key;
-    
+
     // Kiểm tra xem có hóa đơn nào mới vào suspended không
     if (panes.value.length > MAX_ACTIVE_INVOICES) {
         const newSuspendedInvoice = panes.value[MAX_ACTIVE_INVOICES];
         startInvoiceTimer(newSuspendedInvoice.hd.id_hoa_don, newSuspendedInvoice.hd.ma_hoa_don);
     }
-    
+
     message.success(`Đã kích hoạt hóa đơn ${suspendedInvoice.hd.ma_hoa_don}`);
 };
 // Xử lý khi người dùng gõ vào ô tìm kiếm
@@ -1366,26 +1378,26 @@ const isProductInactive = (item) => {
     const isInactive = (status) => {
         // null/undefined = không có data, coi như active (không block)
         if (status === null || status === undefined) return false;
-        
+
         // Boolean: false = inactive, true = active
         if (typeof status === 'boolean') return status === false;
-        
+
         // String: "false" hoặc "0" = inactive
         if (typeof status === 'string') {
             const lower = status.toLowerCase();
             return lower === 'false' || lower === '0';
         }
-        
+
         // Number: 0 = inactive
         if (typeof status === 'number') return status === 0;
-        
+
         return false; // default: active
     };
-    
+
     // Product inactive nếu CTSP HOẶC Product inactive
     const ctspInactive = isInactive(item.trang_thai_ctsp);
     const productInactive = isInactive(item.trang_thai_san_pham);
-    
+
     // Debug log
     if (ctspInactive || productInactive) {
         console.log('🔴 Inactive product detected:', {
@@ -1396,7 +1408,7 @@ const isProductInactive = (item) => {
             productInactive
         });
     }
-    
+
     return ctspInactive || productInactive;
 };
 
@@ -1404,21 +1416,21 @@ const isProductInactive = (item) => {
 // Thêm sản phẩm vào hóa đơn chi tiết của tab hiện tại
 const handleDropdownClick = async (product) => {
     if (!dropdownVisible.value) return; // Ngăn nếu dropdown đang ẩn
-    
+
     // ✅ Block sản phẩm ngừng hoạt động
     if (product.trang_thai === false || product.trang_thai === 0) {
         message.error('Sản phẩm này đã ngừng hoạt động!');
         return;
     }
-    
+
     // ✅ Block sản phẩm hết hàng
     if (product.so_luong <= 0) {
         message.warning('Sản phẩm này đã hết hàng!');
         return;
     }
-    
+
     await addToBill(product);
-    
+
     // ✅ QUY TẮC MỚI: Reload dữ liệu sau khi chọn sản phẩm
     await handleSearchFocus();
 };
@@ -1477,8 +1489,8 @@ const addToBill = async (product) => {
     try {
         // ✅ REFACTORED: GỌI API TRƯỚC - KHÔNG optimistic UI
         const result = await store.themSPHDMoi(
-            currentTab.hd.id_hoa_don, 
-            product.id_chi_tiet_san_pham, 
+            currentTab.hd.id_hoa_don,
+            product.id_chi_tiet_san_pham,
             1
         );
 
@@ -1527,7 +1539,7 @@ const hasInactiveProducts = computed(() => {
             if (typeof status === 'number') return status === 0;
             return false;
         };
-        
+
         return isInactive(item.trang_thai_ctsp) || isInactive(item.trang_thai_san_pham);
     });
 });
@@ -1535,16 +1547,16 @@ const hasInactiveProducts = computed(() => {
 const isPaymentDisabled = computed(() => {
     if (!activeTabData.value?.hd?.id_hoa_don) return true;
     if (currentInvoiceItems.value.length === 0) return true;
-    
+
     // ✅ NEW: Block payment if has inactive products
     if (hasInactiveProducts.value) return true;
-    
+
     // Nếu là tiền mặt, kiểm tra tiền khách đưa
     if (activeTabData.value?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt') {
         if (!tienKhachDua.value) return true;
         if (calculatedChange.value < 0) return true;
     }
-    
+
     return false;
 });
 
@@ -1600,14 +1612,14 @@ const voucherOptions = computed(() => {
             label: '-- Không dùng voucher --'
         }
     ];
-    
+
     availableVouchers.value.forEach(voucher => {
         options.push({
             value: voucher.id_voucher,
             label: `🎁 ${voucher.ten_voucher} - Giảm ${formatCurrency(voucher.so_tien_giam)}đ`
         });
     });
-    
+
     return options;
 });
 
@@ -1625,10 +1637,10 @@ const updateVoucher = async (isManualAction = false) => {
 
     // Gọi API mới để áp dụng voucher
     const updatedInvoice = await store.applyVoucherToInvoice(
-        currentTab.hd.id_hoa_don, 
+        currentTab.hd.id_hoa_don,
         currentTab.hd.id_voucher
     );
-    
+
     if (updatedInvoice) {
         // Cập nhật hóa đơn với dữ liệu mới từ backend
         Object.assign(currentTab.hd, updatedInvoice);
@@ -1643,7 +1655,7 @@ watch(fe_tongTienHang, async (newTotal) => {
     // Lấy danh sách voucher phù hợp từ API mới
     const vouchers = newTotal > 0 ? await store.getSuitableVouchersForInvoice(newTotal) : [];
     availableVouchers.value = (vouchers && Array.isArray(vouchers)) ? vouchers : [];
-    
+
     const currentVoucherId = currentTab.hd.id_voucher;
 
     // Nếu người dùng đã chủ động chọn "không dùng", thì dừng lại
@@ -1663,7 +1675,7 @@ watch(fe_tongTienHang, async (newTotal) => {
         // Reset flag để cho phép tự động áp dụng lại sau
         userHasManuallyDeselectedVoucher.value = false;
         await updateVoucher(false); // false = không phải manual action
-    } 
+    }
     // Kịch bản 2: Chưa có voucher, nhưng giờ đã đủ điều kiện cho voucher tốt nhất
     else if (!currentVoucherId && bestVoucher) {
         currentTab.hd.id_voucher = bestVoucher.id_voucher; // Tự động áp dụng trên giao diện
@@ -1686,7 +1698,7 @@ const updateItemTotal = (item) => {
             console.log(`✅ Updated quantity for ${item.ten_san_pham} to ${item.so_luong} on backend.`);
             // Sau khi backend cập nhật thành công, làm mới lại dữ liệu của hóa đơn
             refreshHoaDon(item.id_hoa_don);
-            
+
             // ✅ Reload allProducts để cập nhật stock trong search bar
             store.getAllCTSPKM().then(p => {
                 allProducts.value = p;
@@ -1715,7 +1727,7 @@ const removeFromBill = (productId) => {
     // --- Optimistic UI Update ---
     const removedItem = { ...itemsArray[itemIndex] }; // Sao chép item để có thể hoàn tác
     itemsArray.splice(itemIndex, 1);
-    
+
     message.info(`Đã xóa "${removedItem.ten_san_pham}" khỏi hóa đơn.`);
     // --- Kết thúc Optimistic UI Update ---
 
@@ -1746,7 +1758,7 @@ const add = async () => {
     if (panes.value.length >= MAX_TOTAL_INVOICES) {
         const activeCount = Math.min(panes.value.length, MAX_ACTIVE_INVOICES);
         const suspendedCount = panes.value.length - activeCount;
-        
+
         message.warning({
             content: `Đã đạt giới hạn ${MAX_TOTAL_INVOICES} hóa đơn! (${activeCount} đang hiển thị + ${suspendedCount} hóa đơn treo). Vui lòng thanh toán hoặc xóa hóa đơn cũ trước khi tạo mới.`,
             duration: 6,
@@ -1757,7 +1769,7 @@ const add = async () => {
         });
         return;
     }
-    
+
     try {
         const response = await store.createHoaDon();
         if (!response || response.error) {
@@ -1847,7 +1859,7 @@ const performRemove = async (tabToRemove, targetKey) => {
         if (tabToRemove.hd?.id_hoa_don) {
             // Clear timer nếu hóa đơn này đang có timer
             clearInvoiceTimer(tabToRemove.hd.id_hoa_don);
-            
+
             const result = await store.deleteHoaDon(tabToRemove.hd.id_hoa_don);
             if (result.error || !result.success) {
                 message.error(result.message || 'Xóa hóa đơn thất bại');
@@ -2000,7 +2012,7 @@ const printInvoice = async () => {
     y += 10;
     doc.setFontSize(12);
     doc.setFont("Roboto", "normal");
-    
+
     // Tổng tiền sản phẩm (chưa có ship)
     const tongTienSanPham = (activeTabData.value.hd.tong_tien_truoc_giam || 0) - (activeTabData.value.hd.phi_van_chuyen || 0);
     doc.text(`Tổng tiền hàng:`, 115, y, { align: "left" });
@@ -2077,7 +2089,7 @@ const handlePayment = async () => {
         const tenKH = currentTab.hd.ten_khach_hang || currentTab.hd.ho_ten || '';
         const sdt = currentTab.hd.so_dien_thoai || currentTab.hd.sdt || currentTab.hd.sdt_nguoi_nhan || '';
         const diaChi = currentTab.hd.dia_chi || '';
-        
+
         if (!tenKH?.trim() || !sdt?.trim() || !diaChi?.trim()) {
             message.error("Vui lòng nhập đầy đủ thông tin giao hàng (Tên, SĐT, Địa chỉ) hoặc chọn khách hàng");
             return;
@@ -2116,9 +2128,9 @@ const cancelPayment = () => {
 // Bước 2: Xác nhận thanh toán -> Thực hiện thanh toán -> Hiển thị modal in hóa đơn
 const proceedToPayment = async () => {
     showPaymentConfirm.value = false;
-    
+
     const hinhThuc = activeTabData.value.hd.hinh_thuc_thanh_toan;
-    
+
     // Thực hiện thanh toán
     try {
         if (hinhThuc === "Tiền mặt") {
@@ -2128,7 +2140,7 @@ const proceedToPayment = async () => {
         } else if (hinhThuc === "PayOS") {
             // Validate payment amount - USE computed property!
             const paymentAmount = fe_tongThanhToan.value;
-            
+
             if (paymentAmount <= 0) {
                 message.error('Số tiền thanh toán không hợp lệ. Vui lòng thêm sản phẩm vào hóa đơn!');
                 console.error('Invalid payment amount:', paymentAmount);
@@ -2137,7 +2149,7 @@ const proceedToPayment = async () => {
                 console.log('Debug - Phí ship:', fe_phiVanChuyen.value);
                 return;
             }
-            
+
             // PayOS payment
             const payment_info = {
                 productName: "Đơn hàng " + `R-${activeTabData.value.hd.id_hoa_don}-${new Date().getTime()}`,
@@ -2146,34 +2158,34 @@ const proceedToPayment = async () => {
                 price: paymentAmount,
                 cancelUrl: window.location.origin + "/admin/banhang"
             };
-            
+
             console.log('PayOS Payment Info:', payment_info);
-            
+
             localStorage.setItem('checkPaymentStatus', 'true');
             localStorage.setItem('idHDPayMent', JSON.stringify(activeTabData.value.hd.id_hoa_don));
             localStorage.setItem('paymentMethod', 'PayOS');
             localStorage.removeItem('khachHangBH');
-            
+
             await thanhToanService.handlePayOSPayment(payment_info);
-            
+
         } else if (hinhThuc === "ZaloPay") {
             // Validate payment amount
             const paymentAmount = fe_tongThanhToan.value;
-            
+
             if (paymentAmount <= 0) {
                 message.error('Số tiền thanh toán không hợp lệ. Vui lòng thêm sản phẩm vào hóa đơn!');
                 console.error('Invalid payment amount:', paymentAmount);
                 return;
             }
-            
+
             console.log('ZaloPay Payment - ID Hóa đơn:', activeTabData.value.hd.id_hoa_don);
             console.log('ZaloPay Payment - Số tiền:', paymentAmount);
-            
+
             localStorage.setItem('checkPaymentStatus', 'true');
             localStorage.setItem('idHDPayMent', JSON.stringify(activeTabData.value.hd.id_hoa_don));
             localStorage.setItem('paymentMethod', 'ZaloPay');
             localStorage.removeItem('khachHangBH');
-            
+
             await thanhToanService.handleZaloPayPayment(activeTabData.value.hd.id_hoa_don);
         }
     } catch (error) {
@@ -2185,19 +2197,19 @@ const proceedToPayment = async () => {
 // Bước 3: Xác nhận in hóa đơn
 const confirmPrint = async (shouldPrint) => {
     showPrintConfirm.value = false;
-    
+
     if (shouldPrint) {
         printInvoice();
     }
-    
+
     // Thông báo thành công và reload
     message.success({
         content: `✅ Thanh toán thành công đơn hàng ${activeTabData.value.hd.ma_hoa_don}!`,
         duration: 3
     });
-    
+
     localStorage.removeItem('khachHangBH');
-    
+
     setTimeout(() => {
         router.push('/admin/banhang');
         window.location.reload();
@@ -2227,7 +2239,7 @@ onMounted(async () => {
 
     const checkPaymentStatus = localStorage.getItem('checkPaymentStatus');
     const paymentMethod = localStorage.getItem('paymentMethod'); // 'PayOS' or 'ZaloPay'
-    
+
     if (checkPaymentStatus === 'true') {
         if (paymentMethod === 'ZaloPay') {
             // ZaloPay Polling Mechanism
@@ -2235,52 +2247,52 @@ onMounted(async () => {
             let pollCount = 0;
             const maxPolls = 20; // Poll tối đa 20 lần (60 giây)
             const pollInterval = 3000; // Poll mỗi 3 giây
-            
+
             console.log('🔄 Starting ZaloPay payment status polling...');
-            
+
             // Show initial notification
             const loadingMessage = message.loading({
                 content: '⏳ Đang kiểm tra trạng thái thanh toán ZaloPay...',
                 duration: 0 // Keep showing until we close it
             });
-            
+
             const pollPaymentStatus = setInterval(async () => {
                 pollCount++;
                 console.log(`🔍 Poll #${pollCount}: Checking ZaloPay status for invoice ${idhdpay}...`);
-                
+
                 try {
                     const zaloStatus = await thanhToanService.checkZaloPayStatus(idhdpay);
                     console.log('ZaloPay Status Response:', zaloStatus);
-                    
+
                     if (zaloStatus && zaloStatus.return_code === 1) {
                         // ✅ Payment successful!
                         clearInterval(pollPaymentStatus);
                         loadingMessage();
-                        
+
                         message.success({
                             content: '✅ Thanh toán ZaloPay thành công!',
                             duration: 5
                         });
-                        
+
                         await refreshHoaDon(idhdpay);
                         showPrintConfirm.value = true;
-                        
+
                         // Cleanup
                         localStorage.removeItem('checkPaymentStatus');
                         localStorage.removeItem('paymentMethod');
                         localStorage.removeItem('zaloPayResponse');
                         localStorage.removeItem('idHDPayMent');
-                        
+
                     } else if (pollCount >= maxPolls) {
                         // ⏱️ Timeout - stop polling
                         clearInterval(pollPaymentStatus);
                         loadingMessage();
-                        
+
                         message.warning({
                             content: '⚠️ Không thể xác nhận trạng thái thanh toán. Vui lòng kiểm tra lại hóa đơn!',
                             duration: 6
                         });
-                        
+
                         // Cleanup
                         localStorage.removeItem('checkPaymentStatus');
                         localStorage.removeItem('paymentMethod');
@@ -2292,16 +2304,16 @@ onMounted(async () => {
                     }
                 } catch (error) {
                     console.error('Error checking ZaloPay status:', error);
-                    
+
                     if (pollCount >= maxPolls) {
                         clearInterval(pollPaymentStatus);
                         loadingMessage();
-                        
+
                         message.error({
                             content: '❌ Lỗi khi kiểm tra trạng thái thanh toán ZaloPay!',
                             duration: 5
                         });
-                        
+
                         // Cleanup
                         localStorage.removeItem('checkPaymentStatus');
                         localStorage.removeItem('paymentMethod');
@@ -2310,18 +2322,18 @@ onMounted(async () => {
                     }
                 }
             }, pollInterval);
-            
+
         } else if (paymentMethod === 'PayOS') {
             // PayOS status check (one-time)
             try {
                 const idhdpay = JSON.parse(localStorage.getItem('idHDPayMent'));
                 const paymentResponse = JSON.parse(localStorage.getItem('paymentResponse'));
-                
+
                 console.log('🔍 Checking PayOS payment status for invoice:', idhdpay);
-                
+
                 if (paymentResponse && paymentResponse.data && paymentResponse.data.orderCode) {
                     const paystatus = await thanhToanService.checkStatusPayment(paymentResponse.data.orderCode);
-                    
+
                     if (paystatus.status === "PAID") {
                         await store.trangThaiDonHang(idhdpay);
                         message.success({
@@ -2458,21 +2470,21 @@ watch(() => activeKey.value, async (newKey) => {
     const currentTab = panes.value.find(p => p.key === newKey);
     if (currentTab && currentTab.hd.id_hoa_don) {
         console.log('📡 WATCH: GỌI API getAllSPHD cho hóa đơn:', currentTab.hd.id_hoa_don);
-        
+
         // ✅ QUY TẮC MỚI: Reload products để lấy status mới nhất
         await handleSearchFocus();
-        
+
         // Reload cart items
         await store.getAllSPHD(currentTab.hd.id_hoa_don);
-        
+
         console.log('📦 WATCH: Dữ liệu từ server:', store.getAllSPHDArr.length, 'items');
-        
+
         // ✅ NEW: Kiểm tra stock và hiển thị thông báo nếu có items không hợp lệ
         const stockCheck = await store.checkCartStock(currentTab.hd.id_hoa_don);
         if (stockCheck.has_invalid_items) {
             message.warning(`⚠️ Có ${stockCheck.invalid_item_names.length} sản phẩm không hợp lệ: ${stockCheck.invalid_item_names.join(', ')}. Vui lòng kiểm tra giỏ hàng!`, 5);
         }
-        
+
         // Map items với validation
         const mappedItems = store.getAllSPHDArr.map(item => ({
             id_hoa_don: item.id_hoa_don,
@@ -2490,9 +2502,9 @@ watch(() => activeKey.value, async (newKey) => {
             trang_thai_san_pham: item.trang_thai_san_pham,
             so_luong_ton_kho: item.so_luong_ton_kho
         }));
-        
+
         console.log('🎨 WATCH: Mapped items:', mappedItems.length, 'items');
-        
+
         // ✅ Validate và auto-adjust nếu cần
         // KHÔNG auto-adjust nếu sản phẩm inactive - để nguyên số lượng
         for (const item of mappedItems) {
@@ -2502,7 +2514,7 @@ watch(() => activeKey.value, async (newKey) => {
                 console.log(`⏭️ Skipping inactive product: ${item.ten_san_pham}`);
                 continue;
             }
-            
+
             // Chỉ check nếu stock thay đổi VÀ sản phẩm còn active
             const stockAvailable = item.so_luong_ton_kho ?? 0;
             if (item.so_luong > stockAvailable + item.so_luong) {
@@ -2511,7 +2523,7 @@ watch(() => activeKey.value, async (newKey) => {
                 // Chỉ notify user thay vì auto-adjust
             }
         }
-        
+
         // Reload again sau khi adjust
         await store.getAllSPHD(currentTab.hd.id_hoa_don);
         currentTab.items.value = store.getAllSPHDArr.map(item => ({
@@ -2529,7 +2541,7 @@ watch(() => activeKey.value, async (newKey) => {
             trang_thai_san_pham: item.trang_thai_san_pham,
             so_luong_ton_kho: item.so_luong_ton_kho
         }));
-        
+
         // Cập nhật các giá trị liên quan
         ptnh.value = currentTab.hd.phuong_thuc_nhan_hang;
         // checkForSuspendedInvoiceOverflow(); // Function đã bị xóa - không cần nữa
@@ -2547,12 +2559,12 @@ const checkAndApplyLocalData = async () => {
     const customerData = JSON.parse(localStorage.getItem('luuTTKHBH'));
     if (customerData && customerData.saved) {
         console.log('📥 Đọc thông tin khách hàng từ localStorage:', customerData);
-        
+
         isLoading.value = true;
         await new Promise(resolve => setTimeout(resolve, 500));
         try {
             const idHoaDon = activeTabData.value.hd.id_hoa_don;
-            
+
             // ✅ Cập nhật thông tin khách hàng vào hóa đơn hiện tại
             Object.assign(activeTabData.value.hd, {
                 ten_khach_hang: customerData.ten_khach_hang,
@@ -2560,13 +2572,13 @@ const checkAndApplyLocalData = async () => {
                 dia_chi: customerData.dia_chi,
                 email: customerData.email
             });
-            
+
             console.log('✅ Đã cập nhật thông tin vào hóa đơn:', {
                 ten_khach_hang: customerData.ten_khach_hang,
                 so_dien_thoai: customerData.so_dien_thoai,
                 dia_chi: customerData.dia_chi
             });
-            
+
             await refreshHoaDon(idHoaDon);
         } catch (error) {
             console.error("Lỗi khi làm mới dữ liệu:", error);
@@ -2583,12 +2595,12 @@ const checkAndApplyShippingFee = async () => {
     const shippingData = JSON.parse(localStorage.getItem('shippingFeeUpdated'));
     if (shippingData) {
         const currentIdHoaDon = activeTabData.value?.hd?.id_hoa_don;
-        
+
         if (currentIdHoaDon === shippingData.idHoaDon) {
             console.log('📦 Cập nhật phí vận chuyển:', shippingData.phiVanChuyen);
-            
+
             activeTabData.value.hd.phi_van_chuyen = shippingData.phiVanChuyen;
-            
+
             await refreshHoaDon(currentIdHoaDon);
             localStorage.removeItem('shippingFeeUpdated');
         }
@@ -2612,60 +2624,64 @@ function tachDiaChi(addressString) {
 }
 
 
-const handlePhuongThucChange = async () => {
-    const idHD = activeTabData.value.hd.id_hoa_don;
-    const diaChiNhan = activeTabData.value.hd.dia_chi;
-    let phiShip = 0;
-    const weight = 500;
-    const tongTienHoaDon = activeTabData.value.hd.tong_tien_sau_giam;
-    
-    if (activeTabData.value.hd.phuong_thuc_nhan_hang === 'Nhận tại cửa hàng') {
-        ptnh.value = 'Nhận tại cửa hàng';
-        await store.setTrangThaiNhanHang(idHD, 'Nhận tại cửa hàng', 0);
-    } else {
-        ptnh.value = 'Giao hàng';
-        if (activeTabData.value.hd.tong_tien_truoc_giam >= 2000000) {
-            phiShip = 0;
-            await store.setTrangThaiNhanHang(idHD, 'Giao hàng', phiShip);
-            refreshHoaDon(idHD);
-            return;
-        }
-        const diaChi = tachDiaChi(diaChiNhan);
-        if (diaChi) {
-            const result = await banHangService.tinhPhiShip(
-                "Hà Nội",
-                "Nam Từ Liêm",
-                diaChi.province,
-                diaChi.district,
-                weight,
-                tongTienHoaDon
-            );
-            phiShip = result.fee;
-            activeTabData.value.hd.phi_van_chuyen = phiShip;
-        } else {
-            activeTabData.value.hd.phi_van_chuyen = 0;
-        }
-        await store.setTrangThaiNhanHang(idHD, 'Giao hàng', phiShip);
+// ✅ Nhận phí vận chuyển từ FormKhachHangBH và cập nhật vào input
+const handleShippingFeeCalculated = (fee) => {
+    if (activeTabData.value?.hd && fee) {
+        activeTabData.value.hd.phi_van_chuyen = fee;
+        console.log(`✅ Đã cập nhật phí vận chuyển từ form: ${fee}`);
     }
 };
+
+const handlePhuongThucChange = async () => {
+    console.log('🔄 Phương thức nhận hàng đã thay đổi:', activeTabData.value.hd.phuong_thuc_nhan_hang);
+    ptnh.value = activeTabData.value.hd.phuong_thuc_nhan_hang;
+    
+    if (activeTabData.value.hd.phuong_thuc_nhan_hang === 'Nhận tại cửa hàng') {
+        activeTabData.value.hd.phi_van_chuyen = 0;
+    }
+    
+    // Trigger update cho formKhachHangBH khi chuyển sang 'Giao hàng'
+    if (activeTabData.value.hd.phuong_thuc_nhan_hang === 'Giao hàng') {
+        triggerUpdate.value = Date.now();
+    }
+};
+
+// ✅ Watch localStorage để tự động cập nhật phí vận chuyển
+const updateShippingFeeFromStorage = () => {
+    const shippingData = localStorage.getItem('shippingFeeUpdated');
+    if (shippingData && activeTabData.value?.hd) {
+        try {
+            const { idHoaDon, phiVanChuyen } = JSON.parse(shippingData);
+            if (idHoaDon === activeTabData.value.hd.id_hoa_don && phiVanChuyen) {
+                activeTabData.value.hd.phi_van_chuyen = phiVanChuyen;
+                console.log(`💰 Đã cập nhật phí vận chuyển vào input: ${phiVanChuyen}`);
+            }
+        } catch (e) {
+            console.error('Lỗi parse shippingFeeUpdated:', e);
+        }
+    }
+};
+
+// Chạy mỗi 500ms để check localStorage
+setInterval(updateShippingFeeFromStorage, 500);
 
 // ✅ ZALOPAY - Hiển thị QR Code
 const showZaloPayQR = async () => {
     try {
         isLoadingZaloPay.value = true;
-        
+
         // Kiểm tra dữ liệu hóa đơn
         if (!activeTabData.value || !activeTabData.value.hd || !activeTabData.value.hd.id_hoa_don) {
             message.error('Vui lòng chọn hóa đơn cần thanh toán');
             return;
         }
-        
+
         const idHoaDon = activeTabData.value.hd.id_hoa_don;
         console.log('Tạo QR ZaloPay cho hóa đơn ID:', idHoaDon);
-        
+
         const result = await store.createZaloPayOrder(idHoaDon);
         console.log('ZaloPay Response:', result);
-        
+
         if (result.return_code === 1) {
             // ZaloPay trả về order_url string, cần convert sang image
             if (result.order_url) {
@@ -2690,10 +2706,10 @@ const showZaloPayQR = async () => {
                 message.error('Không nhận được mã QR từ ZaloPay');
                 return;
             }
-            
+
             showZaloPayModal.value = true;
             paymentStatus.value = 'checking';
-            
+
             // Bắt đầu kiểm tra trạng thái thanh toán mỗi 3 giây
             startCheckingPaymentStatus();
         } else {
@@ -2712,21 +2728,21 @@ const startCheckingPaymentStatus = () => {
     checkPaymentInterval = setInterval(async () => {
         try {
             const result = await store.checkZaloPayStatus(activeTabData.value.hd.id_hoa_don);
-            
+
             if (result.return_code === 1) {
                 // Thanh toán thành công
                 paymentStatus.value = 'success';
                 clearInterval(checkPaymentInterval);
-                
+
                 setTimeout(() => {
                     showZaloPayModal.value = false;
                     message.success('Thanh toán ZaloPay thành công!');
-                    
+
                     // Refresh hóa đơn
                     refreshHoaDon(activeTabData.value.hd.id_hoa_don);
                     closeZaloPayModal();
                 }, 2000);
-                
+
             } else if (result.return_code === 2) {
                 // Đang xử lý
                 paymentStatus.value = 'checking';
@@ -2889,9 +2905,12 @@ const closeZaloPayModal = () => {
 }
 
 @keyframes priceGlow {
-    0%, 100% {
+
+    0%,
+    100% {
         text-shadow: 0 0 5px rgba(255, 102, 0, 0.3);
     }
+
     50% {
         text-shadow: 0 0 10px rgba(255, 102, 0, 0.5);
     }
@@ -2966,9 +2985,11 @@ const closeZaloPayModal = () => {
     0% {
         box-shadow: 0 0 0 2px #fff;
     }
+
     50% {
         box-shadow: 0 0 0 2px #fff, 0 0 4px 2px rgba(107, 255, 34, 0.4);
     }
+
     100% {
         box-shadow: 0 0 0 2px #fff;
     }
@@ -3168,6 +3189,11 @@ const closeZaloPayModal = () => {
 }
 
 .select-customer-btn {
+    border-radius: 8px !important;
+    height: 36px !important;
+}
+
+.remove-customer-btn {
     border-radius: 8px !important;
     height: 36px !important;
 }
@@ -4181,5 +4207,4 @@ label.form-label {
 .invalid-items-banner :deep(.ant-alert-close-icon:hover) {
     color: #ff6600 !important;
 }
-
 </style>

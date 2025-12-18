@@ -5,7 +5,7 @@
             <team-outlined class="header-icon" />
             <h2 class="header-title">Thông tin khách hàng</h2>
         </div>
-        
+
         <form @submit.prevent="themKhachHang" @reset.prevent="resetForm" class="customer-form">
             <a-form :model="formData" :label-col="{ span: 24 }" :wrapper-col="{ span: 24 }">
                 <!-- Thông tin cơ bản -->
@@ -14,31 +14,23 @@
                         <a-col :span="8">
                             <a-form-item label="Họ tên khách hàng" :validate-status="errors.tenKhachHang ? 'error' : ''"
                                 :help="errors.tenKhachHang">
-                                <a-input 
-                                    v-model:value="formData.tenKhachHang" 
-                                    placeholder="Nhập tên khách hàng"
-                                    class="custom-input" 
-                                    size="large" />
+                                <a-input v-model:value="formData.tenKhachHang" placeholder="Nhập tên khách hàng"
+                                    class="custom-input" size="large" />
                             </a-form-item>
                         </a-col>
 
                         <a-col :span="8">
                             <a-form-item label="Số điện thoại" :validate-status="errors.soDienThoai ? 'error' : ''"
                                 :help="errors.soDienThoai">
-                                <a-input 
-                                    v-model:value="formData.soDienThoai" 
-                                    placeholder="Nhập số điện thoại"
-                                    class="custom-input" 
-                                    size="large" />
+                                <a-input v-model:value="formData.soDienThoai" placeholder="Nhập số điện thoại"
+                                    class="custom-input" size="large" />
                             </a-form-item>
                         </a-col>
 
                         <a-col :span="8">
-                            <a-form-item label="Email" :validate-status="errors.email ? 'error' : ''" :help="errors.email">
-                                <a-input 
-                                    v-model:value="formData.email" 
-                                    placeholder="Nhập email"
-                                    class="custom-input" 
+                            <a-form-item label="Email" :validate-status="errors.email ? 'error' : ''"
+                                :help="errors.email">
+                                <a-input v-model:value="formData.email" placeholder="Nhập email" class="custom-input"
                                     size="large" />
                             </a-form-item>
                         </a-col>
@@ -51,18 +43,14 @@
                         <environment-outlined class="address-icon" />
                         <span class="address-title">Địa chỉ giao hàng</span>
                     </div>
-                    
+
                     <a-row :gutter="16">
                         <a-col :span="6">
                             <a-form-item label="Tỉnh/Thành phố"
                                 :validate-status="errors.diaChiErrors[index]?.tinhThanhPho ? 'error' : ''"
                                 :help="errors.diaChiErrors[index]?.tinhThanhPho">
-                                <a-select 
-                                    v-model:value="diaChi.tinhThanhPho" 
-                                    placeholder="Chọn Tỉnh/Thành phố"
-                                    class="custom-select"
-                                    size="large"
-                                    @change="() => handleProvinceChange(index)">
+                                <a-select v-model:value="diaChi.tinhThanhPho" placeholder="Chọn Tỉnh/Thành phố"
+                                    class="custom-select" size="large" @change="() => handleProvinceChange(index)">
                                     <a-select-option v-for="province in provinces" :key="province.code"
                                         :value="province.name">
                                         {{ province.name }}
@@ -75,12 +63,8 @@
                             <a-form-item label="Quận/Huyện"
                                 :validate-status="errors.diaChiErrors[index]?.quanHuyen ? 'error' : ''"
                                 :help="errors.diaChiErrors[index]?.quanHuyen">
-                                <a-select 
-                                    v-model:value="diaChi.quanHuyen" 
-                                    placeholder="Chọn Quận/Huyện"
-                                    class="custom-select"
-                                    size="large"
-                                    :disabled="!diaChi.tinhThanhPho" 
+                                <a-select v-model:value="diaChi.quanHuyen" placeholder="Chọn Quận/Huyện"
+                                    class="custom-select" size="large" :disabled="!diaChi.tinhThanhPho"
                                     @change="() => handleDistrictChange(index)">
                                     <a-select-option v-for="district in districts[index]" :key="district.code"
                                         :value="district.name">
@@ -94,12 +78,9 @@
                             <a-form-item label="Phường/Xã"
                                 :validate-status="errors.diaChiErrors[index]?.xaPhuong ? 'error' : ''"
                                 :help="errors.diaChiErrors[index]?.xaPhuong">
-                                <a-select 
-                                    v-model:value="diaChi.xaPhuong" 
-                                    placeholder="Chọn Phường/Xã"
-                                    class="custom-select"
-                                    size="large"
-                                    :disabled="!diaChi.quanHuyen">
+                                <a-select v-model:value="diaChi.xaPhuong" placeholder="Chọn Phường/Xã"
+                                    class="custom-select" size="large" :disabled="!diaChi.quanHuyen"
+                                    @change="() => handleWardChange(index)">
                                     <a-select-option v-for="ward in wards[index]" :key="ward.code" :value="ward.name">
                                         {{ ward.name }}
                                     </a-select-option>
@@ -111,30 +92,22 @@
                             <a-form-item label="Số nhà, tên đường"
                                 :validate-status="errors.diaChiErrors[index]?.soNha ? 'error' : ''"
                                 :help="errors.diaChiErrors[index]?.soNha">
-                                <a-input 
-                                    v-model:value="diaChi.soNha" 
-                                    placeholder="Số nhà, tên đường..."
-                                    class="custom-input" 
-                                    size="large" />
+                                <a-input v-model:value="diaChi.soNha" placeholder="Số nhà, tên đường..."
+                                    class="custom-input" size="large" />
                             </a-form-item>
                         </a-col>
                     </a-row>
-                    
+
                     <!-- Hiển thị phí vận chuyển dự tính -->
-                    <div v-if="calculatedShippingFee > 0" class="shipping-fee-card">
-                        <div class="shipping-fee-header">
-                            <dollaroutlined class="shipping-fee-icon" />
-                            <span class="shipping-fee-title">Phí vận chuyển dự tính</span>
-                        </div>
-                        <div class="shipping-fee-amount">
-                            {{ formatVND(calculatedShippingFee) }}
+                    <div v-if="calculatedShippingFee > 0" class="shipping-fee-display">
+                        <div class="shipping-fee-content">
+                            <DollarOutlined class="shipping-fee-icon" />
+                            <span class="shipping-fee-label">Phí vận chuyển dự tính:</span>
+                            <span class="shipping-fee-amount">{{ formatVND(calculatedShippingFee) }}</span>
                         </div>
                     </div>
-                    
-                    <button 
-                        type="button" 
-                        class="btn-remove-address" 
-                        @click="xoaDiaChi(index)"
+
+                    <button type="button" class="btn-remove-address" @click="xoaDiaChi(index)"
                         v-if="formData.diaChiList.length > 1">
                         <delete-outlined />
                         Xóa địa chỉ
@@ -143,32 +116,21 @@
 
                 <!-- Nút hành động -->
                 <div class="action-buttons-wrapper">
-                    <a-button 
-                        type="default"
-                        size="large"
-                        class="btn-add-customer"
-                        @click="confirmThemKhachHang">
+                    <a-button type="default" size="large" class="btn-add-customer" @click="confirmThemKhachHang">
                         <template #icon>
                             <user-add-outlined />
                         </template>
                         Thêm khách mới
                     </a-button>
-                    
-                    <a-button 
-                        type="primary"
-                        size="large"
-                        class="btn-save-info"
-                        @click="luuThongTinKhachHang">
+
+                    <a-button type="primary" size="large" class="btn-save-info" @click="luuThongTinKhachHang">
                         <template #icon>
                             <save-outlined />
                         </template>
                         Lưu thông tin khách hàng
                     </a-button>
-                    
-                    <a-button 
-                        size="large"
-                        class="btn-reset"
-                        @click="resetForm">
+
+                    <a-button size="large" class="btn-reset" @click="resetForm">
                         <template #icon>
                             <redo-outlined />
                         </template>
@@ -185,8 +147,8 @@ import { ref, onMounted, reactive, computed, watch, onUnmounted, h } from 'vue';
 import { useGbStore } from '@/stores/gbStore';
 import { toast } from 'vue3-toastify';
 import { Modal as AModal } from 'ant-design-vue';
-import { 
-    UserAddOutlined, 
+import {
+    UserAddOutlined,
     SaveOutlined,
     TeamOutlined,
     EnvironmentOutlined,
@@ -195,6 +157,8 @@ import {
     RedoOutlined
 } from '@ant-design/icons-vue';
 import { calculateShippingFee, formatVND } from '@/utils/shippingFeeCalculator';
+
+const emit = defineEmits(['shippingFeeCalculated']);
 
 const gbStore = useGbStore();
 const calculatedShippingFee = ref(0);
@@ -302,14 +266,14 @@ const validateForm = () => {
 };
 
 const validatePhoneNumber = (phone) => {
-  const cleanedPhone = phone.replace(/\s+/g, '');
-  const regex = /^(0)(3[2-9]|5[2689]|7[06-9]|8[1-9]|9[0-9])[0-9]{7}$/;
-  return regex.test(cleanedPhone);
+    const cleanedPhone = phone.replace(/\s+/g, '');
+    const regex = /^(0)(3[2-9]|5[2689]|7[06-9]|8[1-9]|9[0-9])[0-9]{7}$/;
+    return regex.test(cleanedPhone);
 };
 
 const validateEmail = (email) => {
-  const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-  return regex.test(email);
+    const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    return regex.test(email);
 };
 
 const loadProvinces = async () => {
@@ -324,62 +288,191 @@ const loadProvinces = async () => {
 const handleProvinceChange = async (index) => {
     if (formData.diaChiList[index].tinhThanhPho) {
         try {
-            const provinceCode = provinces.value.find(p => p.name === formData.diaChiList[index].tinhThanhPho)?.code;
+            console.log(`🏙️ Đang tải quận/huyện cho tỉnh: ${formData.diaChiList[index].tinhThanhPho}`);
+            const province = provinces.value.find(p => p.name === formData.diaChiList[index].tinhThanhPho);
+
+            if (!province) {
+                console.error(`❌ Không tìm thấy mã tỉnh cho: ${formData.diaChiList[index].tinhThanhPho}`);
+                console.log('Danh sách tỉnh có sẵn:', provinces.value.map(p => p.name));
+                districts.value[index] = [];
+                wards.value[index] = [];
+                return;
+            }
+
+            const provinceCode = province.code;
+            console.log(`📍 Mã tỉnh: ${provinceCode}`);
+
             const response = await fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`);
             const data = await response.json();
-            districts.value[index] = data.districts;
-            formData.diaChiList[index].quanHuyen = '';
-            wards.value[index] = [];
+
+            if (data && data.districts) {
+                districts.value[index] = data.districts;
+                console.log(`✅ Đã tải ${data.districts.length} quận/huyện`);
+            } else {
+                console.error('❌ API không trả về dữ liệu districts');
+                districts.value[index] = [];
+            }
+
+            // Không reset quận/huyện nếu đang load dữ liệu từ localStorage
+            if (!formData.diaChiList[index]._isLoading) {
+                formData.diaChiList[index].quanHuyen = '';
+                wards.value[index] = [];
+            }
         } catch (error) {
-            console.error('Lỗi khi tải quận/huyện:', error);
+            console.error('❌ Lỗi khi tải quận/huyện:', error);
+            districts.value[index] = [];
+            wards.value[index] = [];
         }
+    } else {
+        console.log(`⚠️ Chưa chọn tỉnh/thành phố cho index ${index}`);
+        districts.value[index] = [];
+        wards.value[index] = [];
     }
 };
 
 const handleDistrictChange = async (index) => {
     if (formData.diaChiList[index].quanHuyen) {
         try {
-            const districtCode = districts.value[index].find(d => d.name === formData.diaChiList[index].quanHuyen)?.code;
+            console.log(`🏘️ Đang tải phường/xã cho quận/huyện: ${formData.diaChiList[index].quanHuyen}`);
+
+            if (!districts.value[index] || districts.value[index].length === 0) {
+                console.error('❌ Chưa có dữ liệu quận/huyện');
+                wards.value[index] = [];
+                return;
+            }
+
+            const district = districts.value[index].find(d => d.name === formData.diaChiList[index].quanHuyen);
+
+            if (!district) {
+                console.error(`❌ Không tìm thấy mã quận/huyện cho: ${formData.diaChiList[index].quanHuyen}`);
+                console.log('Danh sách quận/huyện có sẵn:', districts.value[index].map(d => d.name));
+                wards.value[index] = [];
+                return;
+            }
+
+            const districtCode = district.code;
+            console.log(`📍 Mã quận/huyện: ${districtCode}`);
+
             const response = await fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`);
             const data = await response.json();
-            wards.value[index] = data.wards;
-            formData.diaChiList[index].xaPhuong = '';
-            
+
+            if (data && data.wards) {
+                wards.value[index] = data.wards;
+                console.log(`✅ Đã tải ${data.wards.length} phường/xã`);
+            } else {
+                console.error('❌ API không trả về dữ liệu wards');
+                wards.value[index] = [];
+            }
+
+            // Không reset phường/xã nếu đang load dữ liệu từ localStorage
+            if (!formData.diaChiList[index]._isLoading) {
+                formData.diaChiList[index].xaPhuong = '';
+            }
+
             // Tính phí vận chuyển khi chọn quận/huyện
             updateShippingFee(index);
         } catch (error) {
-            console.error('Lỗi khi tải phường/xã:', error);
+            console.error('❌ Lỗi khi tải phường/xã:', error);
+            wards.value[index] = [];
         }
+    } else {
+        console.log(`⚠️ Chưa chọn quận/huyện cho index ${index}`);
+        wards.value[index] = [];
+    }
+};
+
+const handleWardChange = async (index) => {
+    // Khi chọn phường/xã, tính phí vận chuyển
+    const diaChi = formData.diaChiList[index];
+    if (diaChi.tinhThanhPho && diaChi.quanHuyen && diaChi.xaPhuong) {
+        console.log(`🏘️ Đã chọn phường/xã: ${diaChi.xaPhuong}`);
+        updateShippingFee(index);
     }
 };
 
 const updateShippingFee = async (index) => {
     const diaChi = formData.diaChiList[index];
     if (diaChi.tinhThanhPho && diaChi.quanHuyen) {
-        calculatedShippingFee.value = calculateShippingFee(diaChi.tinhThanhPho, diaChi.quanHuyen);
-        
-        console.log(`📦 Phí vận chuyển: ${formatVND(calculatedShippingFee.value)}`);
-        
-        // Cập nhật phí vận chuyển vào hóa đơn hiện tại
-        const idHoaDon = gbStore.getCurrentHoaDonId();
-        if (idHoaDon && calculatedShippingFee.value > 0) {
-            try {
-                await gbStore.setTrangThaiNhanHang(idHoaDon, 'Giao hàng', calculatedShippingFee.value);
+        console.log(`📦 Đang tính phí vận chuyển qua GHTK API...`);
+
+        try {
+            // Lấy tổng tiền hóa đơn hiện tại (nếu có)
+            const idHoaDon = gbStore.getCurrentHoaDonId();
+            const hoaDonHienTai = idHoaDon ? gbStore.getAllHoaDonCTTArr.find(hd => hd.id_hoa_don === idHoaDon) : null;
+            const tongTienHoaDon = Math.round(hoaDonHienTai?.tong_tien_truoc_giam || 150000); // Convert to integer
+            
+            // ✅ Chuẩn bị tham số cho GHTK API
+            // GHTK yêu cầu tên tỉnh/quận KHÔNG có tiền tố "Tỉnh"/"Quận"
+            const cleanProvince = diaChi.tinhThanhPho.replace(/^(Tỉnh|Thành phố)\s+/i, '');
+            const cleanDistrict = diaChi.quanHuyen.replace(/^(Quận|Huyện|Thị xã|Thành phố)\s+/i, '');
+            
+            console.log(`🎯 GHTK params:`, {
+                from: 'Hà Nội - Đống Đa',
+                to: `${cleanProvince} - ${cleanDistrict}`,
+                weight: 500,
+                value: tongTienHoaDon
+            });
+            
+            // ✅ LUÔN gọi API GHTK để tính phí (không cần idHoaDon)
+            const result = await gbStore.tinhPhiShip(
+                'Hà Nội',              // GHTK yêu cầu bỏ "Tỉnh"
+                'Đống Đa',             // GHTK yêu cầu bỏ "Quận"
+                cleanProvince,         // Tỉnh khách (đã bỏ tiền tố)
+                cleanDistrict,         // Quận khách (đã bỏ tiền tố)
+                500,                   // 500 gram
+                tongTienHoaDon         // Tổng tiền (integer)
+            );
+
+            if (result && !result.error && result.fee) {
+                calculatedShippingFee.value = result.fee;
+                console.log(`✅ Phí vận chuyển từ GHTK: ${formatVND(calculatedShippingFee.value)}`);
                 
-                // Lưu vào localStorage để component cha cập nhật
+                // ✅ Emit event để parent cập nhật ngay
+                emit('shippingFeeCalculated', calculatedShippingFee.value);
+                
+                // Chỉ cập nhật vào backend NẾU có hóa đơn
+                if (idHoaDon) {
+                    await gbStore.setTrangThaiNhanHang(idHoaDon, 'Giao hàng', calculatedShippingFee.value);
+
+                    localStorage.setItem('shippingFeeUpdated', JSON.stringify({
+                        idHoaDon,
+                        phiVanChuyen: calculatedShippingFee.value,
+                        timestamp: Date.now()
+                    }));
+
+                    toast.success(`Phí vận chuyển GHTK: ${formatVND(calculatedShippingFee.value)}`, {
+                        autoClose: 2000,
+                        position: 'top-right'
+                    });
+                } else {
+                    // Chưa có hóa đơn - vẫn lưu vào localStorage để khi tạo hóa đơn sẽ dùng
+                    localStorage.setItem('calculatedShippingFee', calculatedShippingFee.value);
+                    console.log(`ℹ️ Phí vận chuyển dự kiến (chưa có hóa đơn): ${formatVND(calculatedShippingFee.value)}`);
+                }
+            } else {
+                throw new Error('Không nhận được phí vận chuyển từ GHTK');
+            }
+        } catch (error) {
+            console.error('❌ Lỗi khi gọi API GHTK:', error);
+            // Fallback về tính phí cố định
+            calculatedShippingFee.value = calculateShippingFee(diaChi.tinhThanhPho, diaChi.quanHuyen);
+            console.log(`📦 Sử dụng phí dự kiến: ${formatVND(calculatedShippingFee.value)}`);
+
+            const idHoaDon = gbStore.getCurrentHoaDonId();
+            if (idHoaDon) {
+                await gbStore.setTrangThaiNhanHang(idHoaDon, 'Giao hàng', calculatedShippingFee.value);
+
                 localStorage.setItem('shippingFeeUpdated', JSON.stringify({
                     idHoaDon,
                     phiVanChuyen: calculatedShippingFee.value,
                     timestamp: Date.now()
                 }));
-                
-                toast.success(`Phí vận chuyển: ${formatVND(calculatedShippingFee.value)}`, {
-                    autoClose: 2000,
-                    position: 'top-right'
-                });
-            } catch (error) {
-                console.error('Lỗi khi cập nhật phí vận chuyển:', error);
             }
+
+            toast.warning(`Dùng phí dự kiến: ${formatVND(calculatedShippingFee.value)}. GHTK tạm thời không khả dụng.`, {
+                autoClose: 3000,
+                position: 'top-right'
+            });
         }
     }
 };
@@ -432,49 +525,49 @@ const resetForm = () => {
 };
 
 const themKhachHang = async () => {
-  if (!validateForm()) {
-    toast.error('Vui lòng điền đầy đủ và chính xác thông tin!');
-    return;
-  }
+    if (!validateForm()) {
+        toast.error('Vui lòng điền đầy đủ và chính xác thông tin!');
+        return;
+    }
 
-  const dataToSend = { ...formData };
-  console.log("datagui:", dataToSend);
-  try {
-    const result = await gbStore.themKhachHangBH(dataToSend);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const idHoaDon = gbStore.getCurrentHoaDonId();
-    const diaChiList = formData.diaChiList.map(diaChi => {
-      return `${diaChi.soNha}, ${diaChi.xaPhuong}, ${diaChi.quanHuyen}, ${diaChi.tinhThanhPho}`;
-    });
-    const newKhachHang = await gbStore.getLatestKhachHang();
-    const idKH = newKhachHang ? newKhachHang.idKhachHang : null;
-    await gbStore.addKHHD(idHoaDon, idKH, diaChiList, formData.tenKhachHang, formData.soDienThoai, formData.email);
-    localStorage.setItem('luuTTKHBH', JSON.stringify(true));
-    localStorage.setItem('khachHangBH', JSON.stringify(dataToSend));
-    if (result) {
-      toast.success('Thêm khách hàng thành công!', {
-        autoClose: 2000,
-        position: 'top-right'
-      });
+    const dataToSend = { ...formData };
+    console.log("datagui:", dataToSend);
+    try {
+        const result = await gbStore.themKhachHangBH(dataToSend);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const idHoaDon = gbStore.getCurrentHoaDonId();
+        const diaChiList = formData.diaChiList.map(diaChi => {
+            return `${diaChi.soNha}, ${diaChi.xaPhuong}, ${diaChi.quanHuyen}, ${diaChi.tinhThanhPho}`;
+        });
+        const newKhachHang = await gbStore.getLatestKhachHang();
+        const idKH = newKhachHang ? newKhachHang.idKhachHang : null;
+        await gbStore.addKHHD(idHoaDon, idKH, diaChiList, formData.tenKhachHang, formData.soDienThoai, formData.email);
+        localStorage.setItem('luuTTKHBH', JSON.stringify(true));
+        localStorage.setItem('khachHangBH', JSON.stringify(dataToSend));
+        if (result) {
+            toast.success('Thêm khách hàng thành công!', {
+                autoClose: 2000,
+                position: 'top-right'
+            });
+        }
+    } catch (error) {
+        console.error('Lỗi khi thêm khách hàng:', error);
+        console.log('Error object:', error);
+        console.log('Response:', error.response);
+        console.log('Message:', error.message);
+        if (error.response && error.response.data && error.response.data.error) {
+            if (error.response.data.error.includes('Email đã được sử dụng')) {
+                errors.email = 'Email đã được sử dụng!';
+                toast.error('Email đã được sử dụng!');
+            } else if (error.response.data.error.includes('Mã khách hàng đã tồn tại')) {
+                toast.error('Mã khách hàng đã tồn tại!');
+            } else {
+                toast.error(error.response.data.error);
+            }
+        } else {
+            toast.error(`Có lỗi xảy ra: ${error.message || 'Không thể kết nối đến server'}`);
+        }
     }
-  } catch (error) {
-    console.error('Lỗi khi thêm khách hàng:', error);
-    console.log('Error object:', error);
-    console.log('Response:', error.response);
-    console.log('Message:', error.message);
-    if (error.response && error.response.data && error.response.data.error) {
-      if (error.response.data.error.includes('Email đã được sử dụng')) {
-        errors.email = 'Email đã được sử dụng!';
-        toast.error('Email đã được sử dụng!');
-      } else if (error.response.data.error.includes('Mã khách hàng đã tồn tại')) {
-        toast.error('Mã khách hàng đã tồn tại!');
-      } else {
-        toast.error(error.response.data.error);
-      }
-    } else {
-      toast.error(`Có lỗi xảy ra: ${error.message || 'Không thể kết nối đến server'}`);
-    }
-  }
 };
 const luuThongTin = async () => {
     if (!validateForm()) {
@@ -502,12 +595,12 @@ const luuThongTin = async () => {
     console.log('Lưu thông tin khách hàng:', idHoaDon, null, diaChiList, formData.tenKhachHang, formData.soDienThoai, formData.email);
 
     const khachHangList = await gbStore.getAllKhachHangNoPage();
-    const existingKhachHang = khachHangList?.find(kh => 
-        kh.tenKhachHang === formData.tenKhachHang && 
+    const existingKhachHang = khachHangList?.find(kh =>
+        kh.tenKhachHang === formData.tenKhachHang &&
         kh.soDienThoai === formData.soDienThoai
     );
     const idKH = existingKhachHang ? existingKhachHang.idKhachHang : null;
-    
+
     await gbStore.addKHHD(idHoaDon, idKH, diaChiList, formData.tenKhachHang, formData.soDienThoai, formData.email);
 
     // ✅ Lưu thông tin vào localStorage để component cha đọc được
@@ -518,7 +611,7 @@ const luuThongTin = async () => {
         dia_chi: diaChiList[0], // Lấy địa chỉ đầu tiên
         email: formData.email
     }));
-    
+
     toast.success('Lưu thông tin khách hàng thành công!', {
         autoClose: 2000,
         position: 'top-right'
@@ -591,7 +684,7 @@ const tachDiaChi = (diaChiDayDu) => {
     return result;
 };
 
-const timTenGanDung = (tenTuClient, cap) => {
+const timTenGanDung = (tenTuClient, cap, index = 0) => {
     const normalize = str => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
     const normalizedInput = normalize(tenTuClient);
@@ -600,9 +693,9 @@ const timTenGanDung = (tenTuClient, cap) => {
     if (cap === 'province') {
         danhSach = provinces.value || [];
     } else if (cap === 'district') {
-        danhSach = districts.value[0] || []; // chỉ lấy theo index 0 (vì lúc này chưa phân index)
+        danhSach = districts.value[index] || [];
     } else if (cap === 'ward') {
-        danhSach = wards.value[0] || [];
+        danhSach = wards.value[index] || [];
     }
 
     const matched = danhSach.find(item => normalize(item.name).includes(normalizedInput));
@@ -624,14 +717,6 @@ onMounted(async () => {
         await handleAllAddressLevels();
     }
 });
-
-watch(() => props.triggerUpdate, async () => {
-    if (localStorage.getItem('chonKH') === 'true') {
-        await loadKhachHangTuLocalStorage();
-        await handleAllAddressLevels();
-        localStorage.setItem('chonKH', 'false');
-    }
-}, { immediate: true });
 
 // Cleanup scroll lock khi component unmount
 onUnmounted(() => {
@@ -681,20 +766,68 @@ const loadKhachHangTuLocalStorage = async () => {
 const handleAllAddressLevels = async () => {
     if (formData.diaChiList.length === 0) return;
 
+    console.log('🔄 Bắt đầu xử lý tất cả các cấp địa chỉ...');
+
     for (let index = 0; index < formData.diaChiList.length; index++) {
         const diaChi = formData.diaChiList[index];
-        console.log(`Đang xử lý địa chỉ tại index ${index}:`, diaChi);
+        console.log(`📍 Đang xử lý địa chỉ tại index ${index}:`, diaChi);
 
-        // Gọi API tỉnh
-        await handleProvinceChange(index);
-        formData.diaChiList[index].quanHuyen = timTenGanDung(diaChi.quanHuyen, 'district');
+        // Đánh dấu đang load để không reset dữ liệu
+        formData.diaChiList[index]._isLoading = true;
 
-        // Gọi API huyện
-        await handleDistrictChange(index);
-        formData.diaChiList[index].xaPhuong = timTenGanDung(diaChi.xaPhuong, 'ward');
+        // Bước 1: Gọi API tỉnh và đợi hoàn thành
+        if (diaChi.tinhThanhPho) {
+            console.log(`1️⃣ Tải danh sách quận/huyện cho: ${diaChi.tinhThanhPho}`);
+            await handleProvinceChange(index);
+
+            // Đợi một chút để API hoàn thành
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Sau khi có danh sách quận/huyện, tìm tên chính xác
+            if (districts.value[index] && districts.value[index].length > 0) {
+                const matchedDistrict = timTenGanDung(diaChi.quanHuyen, 'district', index);
+                formData.diaChiList[index].quanHuyen = matchedDistrict;
+                console.log(`✅ Quận/Huyện đã map: ${matchedDistrict}`);
+            }
+        }
+
+        // Bước 2: Gọi API huyện và đợi hoàn thành
+        if (formData.diaChiList[index].quanHuyen) {
+            console.log(`2️⃣ Tải danh sách phường/xã cho: ${formData.diaChiList[index].quanHuyen}`);
+            await handleDistrictChange(index);
+
+            // Đợi một chút để API hoàn thành
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Sau khi có danh sách phường/xã, tìm tên chính xác
+            if (wards.value[index] && wards.value[index].length > 0) {
+                const matchedWard = timTenGanDung(diaChi.xaPhuong, 'ward', index);
+                formData.diaChiList[index].xaPhuong = matchedWard;
+                console.log(`✅ Phường/Xã đã map: ${matchedWard}`);
+            }
+        }
+
+        // Gỡ cờ loading
+        delete formData.diaChiList[index]._isLoading;
+
+        // ✅ Tính phí vận chuyển sau khi load xong địa chỉ
+        if (formData.diaChiList[index].tinhThanhPho && formData.diaChiList[index].quanHuyen) {
+            console.log(`💰 Tính phí vận chuyển cho địa chỉ đã load`);
+            await updateShippingFee(index);
+        }
     }
+
+    console.log('✅ Hoàn thành xử lý tất cả các cấp địa chỉ');
 };
 
+// Watch triggerUpdate để reload khi component cha yêu cầu (đặt sau khi function được định nghĩa)
+watch(
+    () => props.triggerUpdate,
+    async () => {
+        await loadKhachHangTuLocalStorage();
+    },
+    { immediate: true }
+);
 
 </script>
 

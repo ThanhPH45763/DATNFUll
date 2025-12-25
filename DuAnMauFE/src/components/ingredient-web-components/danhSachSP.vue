@@ -14,50 +14,46 @@
       <!-- Sidebar: Bộ lọc -->
       <aside class="sidebar">
         <div class="filter-header">
-          <h3><filter-outlined /> BỘ LỌC SẢN PHẨM</h3>
+          <h3>
+            <filter-outlined /> BỘ LỌC SẢN PHẨM
+            <!-- ✅ Badge tổng số bộ lọc active -->
+            <a-badge v-if="totalActiveFilters > 0" :count="totalActiveFilters"
+              :number-style="{ backgroundColor: '#ff6600' }" style="margin-left: 8px;" />
+          </h3>
         </div>
 
-        <!-- Giới tính -->
+        <!-- Loại sản phẩm (Danh mục) -->
         <div class="filter-group">
-          <h4>Giới tính</h4>
-          <div class="gender-buttons">
-            <a-button :class="{ 'active-gender': selectedGender === 'nam' }"
-              @click="selectedGender = selectedGender === 'nam' ? null : 'nam'">
-              <man-outlined /> Nam
-            </a-button>
-            <a-button :class="{ 'active-gender': selectedGender === 'nu' }"
-              @click="selectedGender = selectedGender === 'nu' ? null : 'nu'">
-              <woman-outlined /> Nữ
-            </a-button>
-            <a-button :class="{ 'active-gender': selectedGender === 'unisex' }"
-              @click="selectedGender = selectedGender === 'unisex' ? null : 'unisex'">
-              <team-outlined /> Unisex
-            </a-button>
-          </div>
-        </div>
-
-        <!-- Thương hiệu -->
-        <div class="filter-group">
-          <h4>Thương hiệu</h4>
-          <div class="brand-container">
-            <a-checkbox-group v-model:value="selectedBrands">
-              <div class="brand-checkbox" v-for="brand in brands" :key="brand">
-                <a-checkbox :value="brand">
-                  {{ brand }}
+          <h4>
+            Loại sản phẩm
+            <a-badge v-if="selectedTypes.length > 0" :count="selectedTypes.length"
+              :number-style="{ backgroundColor: '#52c41a', fontSize: '10px' }" />
+          </h4>
+          <div class="product-type-container">
+            <a-spin v-if="loadingCategories" />
+            <a-checkbox-group v-else v-model:value="selectedTypes">
+              <div class="type-checkbox" v-for="category in categories" :key="category.id_danh_muc">
+                <a-checkbox :value="category.ten_danh_muc">
+                  {{ category.ten_danh_muc }}
                 </a-checkbox>
               </div>
             </a-checkbox-group>
           </div>
         </div>
 
-        <!-- Loại sản phẩm -->
+        <!-- Thương hiệu -->
         <div class="filter-group">
-          <h4>Loại sản phẩm</h4>
-          <div class="product-type-container">
-            <a-checkbox-group v-model:value="selectedTypes">
-              <div class="type-checkbox" v-for="type in productTypes" :key="type.value">
-                <a-checkbox :value="type.value">
-                  {{ type.label }} <span class="count-tag">({{ type.count }})</span>
+          <h4>
+            Thương hiệu
+            <a-badge v-if="selectedBrands.length > 0" :count="selectedBrands.length"
+              :number-style="{ backgroundColor: '#52c41a', fontSize: '10px' }" />
+          </h4>
+          <div class="brand-container">
+            <a-spin v-if="loadingBrands" />
+            <a-checkbox-group v-else v-model:value="selectedBrands">
+              <div class="brand-checkbox" v-for="brand in brands" :key="brand.id_thuong_hieu">
+                <a-checkbox :value="brand.ten_thuong_hieu">
+                  {{ brand.ten_thuong_hieu }}
                 </a-checkbox>
               </div>
             </a-checkbox-group>
@@ -66,12 +62,17 @@
 
         <!-- Chất liệu -->
         <div class="filter-group">
-          <h4>Chất liệu</h4>
+          <h4>
+            Chất liệu
+            <a-badge v-if="selectedMaterials.length > 0" :count="selectedMaterials.length"
+              :number-style="{ backgroundColor: '#52c41a', fontSize: '10px' }" />
+          </h4>
           <div class="material-container">
-            <a-checkbox-group v-model:value="selectedMaterials">
-              <div class="material-checkbox" v-for="material in materials" :key="material">
-                <a-checkbox :value="material">
-                  {{ material }}
+            <a-spin v-if="loadingMaterials" />
+            <a-checkbox-group v-else v-model:value="selectedMaterials">
+              <div class="material-checkbox" v-for="material in materials" :key="material.id_chat_lieu">
+                <a-checkbox :value="material.ten_chat_lieu">
+                  {{ material.ten_chat_lieu }}
                 </a-checkbox>
               </div>
             </a-checkbox-group>
@@ -80,30 +81,50 @@
 
         <!-- Kích thước -->
         <div class="filter-group">
-          <h4>Kích thước</h4>
+          <h4>
+            Kích thước
+            <a-badge v-if="selectedSizes.length > 0" :count="selectedSizes.length"
+              :number-style="{ backgroundColor: '#52c41a', fontSize: '10px' }" />
+          </h4>
           <div class="size-options">
-            <a-tag v-for="size in sizes" :key="size" :class="{ 'size-tag-active': selectedSizes.includes(size) }"
-              @click="toggleSize(size)">
-              {{ size }}
-            </a-tag>
+            <a-spin v-if="loadingSizes" />
+            <template v-else>
+              <a-tag v-for="size in sizes" :key="size.id_kich_thuoc"
+                :class="{ 'size-tag-active': selectedSizes.includes(size.gia_tri + ' ' + size.don_vi) }"
+                @click="toggleSize(size.gia_tri + ' ' + size.don_vi)">
+                {{ size.gia_tri }} {{ size.don_vi }}
+              </a-tag>
+            </template>
           </div>
         </div>
 
         <!-- Màu sắc -->
         <div class="filter-group">
-          <h4>Màu sắc</h4>
+          <h4>
+            Màu sắc
+            <a-badge v-if="selectedColors.length > 0" :count="selectedColors.length"
+              :number-style="{ backgroundColor: '#52c41a', fontSize: '10px' }" />
+          </h4>
           <div class="color-options">
-            <div v-for="color in colors" :key="color.value" class="color-option"
-              :class="{ 'active': selectedColors.includes(color.value) }" @click="toggleColor(color.value)">
-              <span class="color-dot" :style="{ backgroundColor: color.value }"></span>
-              <span class="color-name">{{ color.name }}</span>
-            </div>
+            <a-spin v-if="loadingColors" />
+            <template v-else>
+              <div v-for="color in colors" :key="color.id_mau_sac" class="color-option"
+                :class="{ 'active': selectedColors.includes(color.ten_mau_sac) }"
+                @click="toggleColor(color.ten_mau_sac)">
+                <span class="color-dot" :style="{ backgroundColor: color.ma_mau_sac }"></span>
+                <span class="color-name">{{ color.ten_mau_sac }}</span>
+              </div>
+            </template>
           </div>
         </div>
 
         <!-- Giá -->
         <div class="filter-group">
-          <h4>Khoảng giá</h4>
+          <h4>
+            Khoảng giá
+            <a-badge v-if="selectedPrice[0] !== minPrice || selectedPrice[1] !== maxPrice" :count="1"
+              :number-style="{ backgroundColor: '#52c41a', fontSize: '10px' }" />
+          </h4>
           <a-slider v-model:value="selectedPrice" :min="minPrice" :max="maxPrice" range
             :tip-formatter="formatCurrency" />
           <div class="price-range">
@@ -115,10 +136,23 @@
 
         <!-- Nút áp dụng và làm mới -->
         <div class="filter-actions">
-          <a-button type="primary" block @click="applyFilters">
+          <!-- Preview count -->
+          <div v-if="totalActiveFilters > 0" class="preview-count mb-2">
+            <a-tag color="#ff6600">
+              <template v-if="previewFilterCount > 0">
+                <strong>{{ previewFilterCount }}</strong> sản phẩm sẽ được hiển thị
+              </template>
+              <template v-else>
+                Không có sản phẩm phù hợp
+              </template>
+            </a-tag>
+          </div>
+
+          <a-button type="primary" block @click="applyFilters" :loading="store.isProductLoading" size="large"
+            :disabled="totalActiveFilters === 0 || previewFilterCount === 0">
             <filter-filled /> Áp dụng bộ lọc
           </a-button>
-          <a-button block @click="resetFilters" class="reset-button">
+          <a-button block @click="resetFilters" class="reset-button" size="large" :disabled="totalActiveFilters === 0">
             <clear-outlined /> Làm mới bộ lọc
           </a-button>
         </div>
@@ -168,7 +202,7 @@
                   <div class="product-price-row">
                     <span class="product-price">{{ formatCurrency(product.price) }}</span>
                     <span class="product-old-price" v-if="product.oldPrice">{{ formatCurrency(product.oldPrice)
-                      }}</span>
+                    }}</span>
                     <span class="product-discount" v-if="product.oldPrice">
                       -{{ Math.round(100 * (1 - product.price / product.oldPrice)) }}%
                     </span>
@@ -232,47 +266,29 @@ const router = useRouter();
 
 const categoryImage = 'https://contents.mediadecathlon.com/p2159822/k$e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2/ao-khong-tay.jpg?format=auto&quality=70&f=650x0';
 
-const productTypes = [
-  { value: 'tank', label: 'Áo Không Tay', count: 43 },
-  { value: 'shirt', label: 'Áo Thun', count: 65 },
-  { value: 'pants', label: 'Quần Thể Thao', count: 38 },
-  { value: 'jacket', label: 'Áo Khoác', count: 27 }
-];
-const genders = [
-  { value: 'nam', label: 'NAM', count: 43 },
-  { value: 'nu', label: 'NỮ', count: 38 },
-  { value: 'unisex', label: 'UNISEX', count: 15 }
-];
-const brands = ['Nike', 'Adidas', 'Puma', 'Decathlon', 'Under Armour', 'New Balance', 'Reebok'];
-const colors = [
-  { value: '#000000', name: 'Đen' },
-  { value: '#FFFFFF', name: 'Trắng' },
-  { value: '#FF0000', name: 'Đỏ' },
-  { value: '#0000FF', name: 'Xanh dương' },
-  { value: '#008000', name: 'Xanh lá' },
-  { value: '#FFFF00', name: 'Vàng' },
-  { value: '#FFA500', name: 'Cam' },
-  { value: '#800080', name: 'Tím' },
-  { value: '#A52A2A', name: 'Nâu' },
-  { value: '#808080', name: 'Xám' }
-];
+// ✅ State cho dữ liệu từ API
+const categories = ref([]); // Danh mục
+const brands = ref([]); // Thương hiệu
+const materials = ref([]); // Chất liệu
+const sizes = ref([]); // Kích thước
+const colors = ref([]); // Màu sắc
 
-// Thêm dữ liệu cho chất liệu
-const materials = ['Cotton', 'Polyester', 'Nylon', 'Spandex', 'Vải thể thao co giãn', 'Len', 'Lông cừu'];
-
-// Thêm dữ liệu cho kích thước
-const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '28', '30', '32', '34', '36'];
+// ✅ Loading states
+const loadingCategories = ref(false);
+const loadingBrands = ref(false);
+const loadingMaterials = ref(false);
+const loadingSizes = ref(false);
+const loadingColors = ref(false);
 
 const minPrice = 0;
 const maxPrice = 1000000;
 
-const selectedTypes = ref([]);
-const selectedGender = ref(null);
-const selectedBrands = ref([]);
+const selectedTypes = ref([]); // Danh mục đã chọn
+const selectedBrands = ref([]); // Thương hiệu đã chọn
 const selectedPrice = ref([minPrice, maxPrice]);
-const selectedColors = ref([]);
-const selectedMaterials = ref([]);
-const selectedSizes = ref([]);
+const selectedColors = ref([]); // Tên màu đã chọn
+const selectedMaterials = ref([]); // Chất liệu đã chọn
+const selectedSizes = ref([]); // Kích thước đã chọn
 const sortBy = ref('default');
 
 const searchQuery = ref('');
@@ -304,7 +320,6 @@ watch(
         store.isProductLoading = true;
         // Reset các filter khi có tìm kiếm mới
         selectedTypes.value = [];
-        selectedGender.value = null;
         selectedBrands.value = [];
         selectedPrice.value = [minPrice, maxPrice];
         selectedColors.value = [];
@@ -332,7 +347,6 @@ watch(
         store.isProductLoading = true;
         // Reset các filter hiện tại
         selectedTypes.value = [];
-        selectedGender.value = null;
         selectedBrands.value = [];
         selectedPrice.value = [minPrice, maxPrice];
         selectedColors.value = [];
@@ -363,7 +377,6 @@ watch(() => store.listSanPhamBanHang, (newProducts) => {
     filterKeywords.value = [];
     // Reset các bộ lọc khi có kết quả tìm kiếm mới
     selectedTypes.value = [];
-    selectedGender.value = null;
     selectedBrands.value = [];
     selectedPrice.value = [minPrice, maxPrice];
     selectedColors.value = [];
@@ -389,6 +402,62 @@ function toggleColor(color) {
     selectedColors.value.push(color);
   }
 }
+
+// ✅ Helper function: Transform CTSP response thành product list
+const transformCTSPToProducts = (ctspList) => {
+  if (!ctspList || !Array.isArray(ctspList)) return [];
+
+  // Group CTSP by id_san_pham
+  const productMap = new Map();
+
+  ctspList.forEach(ctsp => {
+    const productId = ctsp.id_san_pham;
+
+    if (!productMap.has(productId)) {
+      // Tạo sản phẩm mới
+      productMap.set(productId, {
+        id: productId,
+        id_san_pham: productId,
+        name: ctsp.ten_san_pham,
+        ten_san_pham: ctsp.ten_san_pham,
+        image: ctsp.hinh_anh,
+        hinh_anh: ctsp.hinh_anh,
+        price: ctsp.gia_ban, // Giá của CTSP đầu tiên
+        gia_ban: ctsp.gia_ban,
+        oldPrice: null, // Có thể tính từ giá gốc nếu có
+        type: ctsp.ten_danh_muc || '',
+        brand: ctsp.ten_thuong_hieu || '',
+        rating: 0,
+        reviews: 0,
+        // Thông tin tổng hợp từ các CTSP
+        totalQuantity: 0,
+        variants: [] // Lưu các biến thể
+      });
+    }
+
+    // Cập nhật thông tin sản phẩm
+    const product = productMap.get(productId);
+    product.totalQuantity += ctsp.so_luong || 0;
+
+    // Tìm giá thấp nhất
+    if (ctsp.gia_ban < product.price) {
+      product.price = ctsp.gia_ban;
+      product.gia_ban = ctsp.gia_ban;
+    }
+
+    // Lưu variant
+    product.variants.push({
+      id_chi_tiet_san_pham: ctsp.id_chi_tiet_san_pham,
+      mau_sac: ctsp.ten_mau,
+      size: `${ctsp.gia_tri} ${ctsp.don_vi}`,
+      so_luong: ctsp.so_luong,
+      gia_ban: ctsp.gia_ban
+    });
+  });
+
+  // Convert Map to Array
+  return Array.from(productMap.values());
+};
 
 // Lọc sản phẩm từ store theo nhiều keyword
 const filteredProducts = computed(() => {
@@ -526,9 +595,69 @@ function fetchProductsByFilter(filter) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // ✅ Load tiêu chí lọc từ database
+  await loadFilterCriteria();
+
+  // Load products theo filter
   fetchProductsByFilter(route.query.filter);
 });
+
+// ✅ Load tất cả tiêu chí lọc từ API
+const loadFilterCriteria = async () => {
+  try {
+    // Load danh mục
+    loadingCategories.value = true;
+    const categoriesData = await store.getDanhMucList();
+    if (categoriesData && !categoriesData.error) {
+      categories.value = categoriesData.filter(dm => dm.trang_thai === true || dm.trang_thai === 1);
+    }
+    loadingCategories.value = false;
+
+    // Load thương hiệu
+    loadingBrands.value = true;
+    const brandsData = await store.getThuongHieuList();
+    if (brandsData && !brandsData.error) {
+      brands.value = brandsData.filter(th => th.trang_thai === true || th.trang_thai === 1);
+    }
+    loadingBrands.value = false;
+
+    // Load chất liệu
+    loadingMaterials.value = true;
+    const materialsData = await store.getChatLieuList();
+    if (materialsData && !materialsData.error) {
+      materials.value = materialsData.filter(cl => cl.trang_thai === true || cl.trang_thai === 1);
+    }
+    loadingMaterials.value = false;
+
+    // Load kích thước
+    loadingSizes.value = true;
+    const sizesData = await store.getSizeList();
+    if (sizesData && !sizesData.error) {
+      sizes.value = sizesData.filter(kt => kt.trang_thai === true || kt.trang_thai === 1);
+    }
+    loadingSizes.value = false;
+
+    // Load màu sắc
+    loadingColors.value = true;
+    const colorsData = await store.getMauSacList();
+    if (colorsData && !colorsData.error) {
+      colors.value = colorsData.filter(ms => ms.trang_thai === true || ms.trang_thai === 1);
+    }
+    loadingColors.value = false;
+
+    console.log('✅ Loaded filter criteria:', {
+      categories: categories.value.length,
+      brands: brands.value.length,
+      materials: materials.value.length,
+      sizes: sizes.value.length,
+      colors: colors.value.length
+    });
+  } catch (error) {
+    console.error('Lỗi khi load tiêu chí lọc:', error);
+    message.error('Không thể tải tiêu chí lọc');
+  }
+};
 
 watch(() => route.query.filter, (newFilter) => {
   fetchProductsByFilter(newFilter);
@@ -547,6 +676,18 @@ const hasMoreProducts = computed(() => {
   return displayedProducts.value.length < sortedAndFilteredProducts.value.length;
 });
 
+// ✅ Tính tổng số bộ lọc đang active
+const totalActiveFilters = computed(() => {
+  let count = 0;
+  if (selectedBrands.value.length > 0) count++;
+  if (selectedTypes.value.length > 0) count++;
+  if (selectedMaterials.value.length > 0) count++;
+  if (selectedSizes.value.length > 0) count++;
+  if (selectedColors.value.length > 0) count++;
+  if (selectedPrice.value[0] !== minPrice || selectedPrice.value[1] !== maxPrice) count++;
+  return count;
+});
+
 const loadMore = () => {
   const totalProducts = sortedAndFilteredProducts.value.length;
   const currentlyShowing = currentPage.value * itemsPerPage;
@@ -559,7 +700,6 @@ const loadMore = () => {
 watch([
   () => route.query.filter,
   selectedTypes,
-  selectedGender,
   selectedBrands,
   selectedPrice,
   selectedColors,
@@ -576,31 +716,133 @@ const nextProducts = computed(() => {
   return sortedAndFilteredProducts.value.slice(startIndex, endIndex);
 });
 
-const applyFilters = () => {
-  // Lọc sản phẩm dựa trên các tiêu chí đã chọn
-  currentPage.value = 1; // Reset trang về đầu tiên khi lọc
+// ✅ Preview số lượng sản phẩm sẽ lọc được
+const previewFilterCount = ref(0);
 
-  // Có thể thêm logic tìm kiếm API hoặc lọc tại đây
+// Hàm tính preview (được gọi khi user thay đổi bộ lọc)
+watch([
+  selectedTypes,
+  selectedBrands,
+  selectedPrice,
+  selectedColors,
+  selectedMaterials,
+  selectedSizes
+], async () => {
+  if (totalActiveFilters.value > 0) {
+    try {
+      const keyword = searchQuery.value || '';
+      const giaBanMin = selectedPrice.value[0];
+      const giaBanMax = selectedPrice.value[1];
 
-  // Thông báo kết quả lọc
-  const totalFilteredProducts = filteredProducts.value.length;
-  if (totalFilteredProducts > 0) {
-    message.success(`Đã tìm thấy ${totalFilteredProducts} sản phẩm phù hợp`);
+      // ✅ Gọi API lọc CTSP
+      const ctspResult = await store.locAndTimKiemSanPhamVaChiTietSanPham(
+        keyword,
+        giaBanMin,
+        giaBanMax,
+        selectedColors.value,
+        selectedTypes.value,
+        selectedBrands.value,
+        selectedMaterials.value,
+        selectedSizes.value
+      );
+
+      // ✅ Transform CTSP thành products
+      if (ctspResult && !ctspResult.error) {
+        const products = transformCTSPToProducts(ctspResult);
+        previewFilterCount.value = products.length;
+        console.log(`Preview: ${ctspResult.length} CTSP → ${products.length} sản phẩm`);
+      } else {
+        previewFilterCount.value = 0;
+      }
+    } catch (error) {
+      previewFilterCount.value = 0;
+    }
   } else {
-    message.info('Không tìm thấy sản phẩm nào phù hợp với bộ lọc đã chọn');
+    previewFilterCount.value = 0;
+  }
+}, { deep: true });
+
+// ✅ Apply filters - GỌI API VÀ TRANSFORM DỮ LIỆU
+const applyFilters = async () => {
+  try {
+    store.isProductLoading = true;
+    currentPage.value = 1;
+
+    const keyword = searchQuery.value || '';
+    const giaBanMin = selectedPrice.value[0];
+    const giaBanMax = selectedPrice.value[1];
+
+    const listMauSac = selectedColors.value;
+    const listDanhMuc = selectedTypes.value;
+    const listThuongHieu = selectedBrands.value;
+    const listChatLieu = selectedMaterials.value;
+    const listKichThuoc = selectedSizes.value;
+
+    console.log('✅ Applying filters:', {
+      keyword, giaBanMin, giaBanMax,
+      listMauSac, listDanhMuc, listThuongHieu, listChatLieu, listKichThuoc
+    });
+
+    // ✅ Gọi API lọc CTSP
+    const ctspResult = await store.locAndTimKiemSanPhamVaChiTietSanPham(
+      keyword,
+      giaBanMin,
+      giaBanMax,
+      listMauSac,
+      listDanhMuc,
+      listThuongHieu,
+      listChatLieu,
+      listKichThuoc
+    );
+
+    // ✅ Transform CTSP thành products và lưu vào store
+    if (ctspResult && !ctspResult.error) {
+      const products = transformCTSPToProducts(ctspResult);
+
+      // Lưu vào store để hiển thị
+      store.listSanPhamBanHang = products;
+
+      console.log(`✅ Filtered: ${ctspResult.length} CTSP → ${products.length} sản phẩm unique`);
+
+      if (products.length > 0) {
+        message.success(`Đã tìm thấy ${products.length} sản phẩm phù hợp (${ctspResult.length} biến thể)`);
+      } else {
+        message.info('Không tìm thấy sản phẩm nào phù hợp với bộ lọc đã chọn');
+      }
+    } else {
+      store.listSanPhamBanHang = [];
+      message.info('Không tìm thấy sản phẩm nào phù hợp với bộ lọc đã chọn');
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi lọc sản phẩm:', error);
+    message.error('Lỗi khi lọc sản phẩm, vui lòng thử lại');
+  } finally {
+    store.isProductLoading = false;
   }
 };
 
-const resetFilters = () => {
+// ✅ Reset filters
+const resetFilters = async () => {
   selectedTypes.value = [];
-  selectedGender.value = null;
   selectedBrands.value = [];
   selectedPrice.value = [minPrice, maxPrice];
   selectedColors.value = [];
   selectedMaterials.value = [];
   selectedSizes.value = [];
   sortBy.value = 'default';
-  message.success('Đã làm mới bộ lọc');
+  searchQuery.value = '';
+
+  // Reload all products
+  try {
+    store.isProductLoading = true;
+    filterKeywords.value = [];
+    await store.getSanPhamByTenSP(''); // Load tất cả sản phẩm
+    message.success('Đã làm mới bộ lọc');
+  } catch (error) {
+    console.error('Lỗi khi reset:', error);
+  } finally {
+    store.isProductLoading = false;
+  }
 };
 </script>
 
@@ -650,10 +892,34 @@ const resetFilters = () => {
   overflow: hidden;
   height: fit-content;
   transition: all 0.3s ease;
+
+  /* ✅ Ghim sidebar khi scroll */
+  position: sticky;
+  top: 80px;
+  /* Offset để tránh dính vào header (header khoảng 60-70px) */
+  max-height: calc(100vh - 100px);
+  /* Chiều cao tối đa, trừ offset top và bottom */
+  overflow-y: auto;
+  /* Cho phép scrollbar riêng nếu nội dung dài */
 }
 
-.sidebar:hover {
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+/* Custom scrollbar cho sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #f33b47;
+  border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #ff5160;
 }
 
 .filter-header {
@@ -867,34 +1133,85 @@ const resetFilters = () => {
 }
 
 .filter-actions .ant-btn {
-  height: 38px;
-  border-radius: 6px;
+  height: 42px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 .filter-actions .ant-btn-primary {
   background-color: #f33b47;
   border-color: #f33b47;
   box-shadow: 0 2px 8px rgba(243, 59, 71, 0.3);
-  transition: all 0.3s;
 }
 
-.filter-actions .ant-btn-primary:hover {
+.filter-actions .ant-btn-primary:hover:not(:disabled) {
   background-color: #ff5160;
   border-color: #ff5160;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(243, 59, 71, 0.4);
 }
 
+.filter-actions .ant-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 .reset-button {
   border: 1px solid #d9d9d9;
   background: #f5f5f5;
   color: #666;
-  font-weight: 500;
 }
 
-.reset-button:hover {
-  border-color: #999;
-  color: #333;
+.reset-button:hover:not(:disabled) {
+  border-color: #f33b47;
+  color: #f33b47;
+  background: #fff7f8;
+}
+
+.reset-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ✅ Preview count styling */
+.preview-count {
+  text-align: center;
+  padding: 8px;
+  background: #fff7f8;
+  border-radius: 6px;
+  border: 1px solid #ffcdd2;
+}
+
+.preview-count .ant-tag {
+  font-size: 13px;
+  padding: 4px 12px;
+  border: none;
+}
+
+/* ✅ Badge animations */
+:deep(.ant-badge) {
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* ✅ Filter group hover effect */
+.filter-group {
+  transition: all 0.2s ease;
+}
+
+.filter-group:hover {
+  background-color: #fcfcfc;
 }
 
 /* Style filter cho Ant Slider */

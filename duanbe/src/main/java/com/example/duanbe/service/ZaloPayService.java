@@ -57,6 +57,7 @@ public class ZaloPayService {
             order.put("app_user", "user_" + System.currentTimeMillis());
             order.put("app_time", System.currentTimeMillis());
             order.put("amount", tongTien.longValue());
+            System.out.println("💰 ZALOPAY AMOUNT: " + tongTien.longValue() + " VNĐ");
             order.put("description", moTa);
             order.put("bank_code", "");
             order.put("item", gson.toJson(items));

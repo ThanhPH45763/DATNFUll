@@ -607,9 +607,9 @@ import '../../../config/fonts/Roboto-normal'
 import '../../../config/fonts/Roboto-bold'
 import { toast } from 'vue3-toastify';
 import { thanhToanService } from '@/services/thanhToan';
-import { banHangService } from '@/services/banHangService';
 import FormKhachHangBH from './formKhachHangBH.vue';
 import { useRouter } from 'vue-router';
+import { banHangService } from '@/services/banHangService';
 import QRCode from 'qrcode';
 const router = useRouter();
 import { Html5Qrcode } from 'html5-qrcode';
@@ -2203,69 +2203,24 @@ const proceedToPayment = async () => {
             await thanhToanService.handlePayOSPayment(payment_info);
 
         } else if (hinhThuc === "ZaloPay") {
-            // ✅ PHASE 1: Đồng bộ dữ liệu trước khi thanh toán
-            showPaymentConfirm.value = false;
-            
-            try {
-                // 1. Validate payment amount cơ bản
-                const paymentAmount = fe_tongThanhToan.value;
-                if (paymentAmount <= 0) {
-                    message.error('Số tiền thanh toán không hợp lệ. Vui lòng thêm sản phẩm vào hóa đơn!');
-                    console.error('Invalid payment amount:', paymentAmount);
-                    return;
-                }
+            // Validate payment amount
+            const paymentAmount = fe_tongThanhToan.value;
 
-                // 2. Validate phí vận chuyển cho ZaloPay
-                if (activeTabData.value.hd.phuong_thuc_nhan_hang === "Giao hàng") {
-                    const phiVanChuyen = activeTabData.value.hd.phi_van_chuyen || 0;
-                    if (!phiVanChuyen || phiVanChuyen === 0) {
-                        message.error("Phí vận chuyển chưa được tính. Vui lòng chọn địa chỉ giao hàng!");
-                        console.error("Phí vận chuyển = 0 khi thanh toán ZaloPay");
-                        return;
-                    }
-                    console.log("✅ Phí vận chuyển đã được tính:", phiVanChuyen);
-                } else if (activeTabData.value.hd.phuong_thuc_nhan_hang === "Nhận tại cửa hàng") {
-                    console.log("✅ Nhận tại cửa hàng - không tính phí vận chuyển");
-                }
-
-                // 3. ✅ Đồng bộ hóa đơn từ backend
-                console.log('🔄 Bắt đầu đồng bộ trước khi thanh toán ZaloPay...');
-                const { dbTotal, feTotal, hasDifference } = await syncHoaDonBeforePayment(
-                    activeTabData.value.hd.id_hoa_don
-                );
-
-                // 4. ✅ Check sự khác biệt và xác nhận với user
-                if (hasDifference) {
-                    const shouldContinue = await showPriceDifferenceDialog(dbTotal, feTotal);
-                    if (!shouldContinue) {
-                        console.log('❌ User hủy thanh toán do sự khác biệt giá');
-                        return;
-                    }
-                    // Refresh lại state để dùng giá mới nhất
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                }
-
-                // 5. ✅ Log thông tin cuối cùng
-                console.log('🎯 ZALOPAY THANH TOÁN:');
-                console.log('  - ID Hóa đơn:', activeTabData.value.hd.id_hoa_don);
-                console.log('  - Tiền sản phẩm:', fe_tongTienHang.value - fe_phiVanChuyen.value);
-                console.log('  - Phí vận chuyển:', fe_phiVanChuyen.value);
-                console.log('  - FE Total:', feTotal);
-                console.log('  - DB Total:', dbTotal);
-                console.log('  - Sẽ thanh toán:', hasDifference ? dbTotal : feTotal);
-
-                localStorage.setItem('checkPaymentStatus', 'true');
-                localStorage.setItem('idHDPayMent', JSON.stringify(activeTabData.value.hd.id_hoa_don));
-                localStorage.setItem('paymentMethod', 'ZaloPay');
-                localStorage.removeItem('khachHangBH');
-
-                // 6. ✅ Gọi ZaloPay với dữ liệu đã đồng bộ
-                await thanhToanService.handleZaloPayPayment(activeTabData.value.hd.id_hoa_don);
-
-            } catch (error) {
-                console.error('❌ Lỗi khi đồng bộ/thanh toán ZaloPay:', error);
-                message.error('Không thể đồng bộ dữ liệu. Vui lòng thử lại!');
+            if (paymentAmount <= 0) {
+                message.error('Số tiền thanh toán không hợp lệ. Vui lòng thêm sản phẩm vào hóa đơn!');
+                console.error('Invalid payment amount:', paymentAmount);
+                return;
             }
+
+            console.log('ZaloPay Payment - ID Hóa đơn:', activeTabData.value.hd.id_hoa_don);
+            console.log('ZaloPay Payment - Số tiền:', paymentAmount);
+
+            localStorage.setItem('checkPaymentStatus', 'true');
+            localStorage.setItem('idHDPayMent', JSON.stringify(activeTabData.value.hd.id_hoa_don));
+            localStorage.setItem('paymentMethod', 'ZaloPay');
+            localStorage.removeItem('khachHangBH');
+
+            await thanhToanService.handleZaloPayPayment(activeTabData.value.hd.id_hoa_don);
         }
     } catch (error) {
         console.error('Lỗi khi thanh toán:', error);
@@ -2303,96 +2258,6 @@ const updateHinhThucThanhToan = async () => {
     } catch (err) {
         console.error("Lỗi cập nhật hình thức thanh toán", err);
     }
-};
-
-// ✅ PHASE 1: Đồng bộ hóa đơn trước khi thanh toán ZaloPay
-const syncHoaDonBeforePayment = async (idHoaDon) => {
-    try {
-        console.log('🔄 Bắt đầu đồng bộ hóa đơn trước khi thanh toán...');
-        
-        // ✅ VALIDATE: Ensure store is initialized
-        store.initializeStore();
-        
-        // ✅ VALIDATE: Check store state before operations
-        if (!store.tabs || store.tabs.length === 0) {
-            console.warn('⚠️ Store tabs not ready, using fallback calculation');
-            return {
-                dbTotal: fe_tongThanhToan.value,
-                feTotal: fe_tongThanhToan.value,
-                hasDifference: false
-            };
-        }
-        
-        // 1. Refresh thông tin hóa đơn từ DB
-        await store.refreshHoaDon(idHoaDon);
-        console.log('✅ Đã refresh thông tin hóa đơn');
-        
-        // 2. Refresh danh sách sản phẩm từ DB
-        await store.getAllSPHD(idHoaDon);
-        console.log('✅ Đã refresh danh sách sản phẩm');
-        
-        // 3. Đợi 300ms để đảm bảo state được cập nhật
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // 4. Lấy giá trị từ DB sau khi sync với fallback
-        const dbHoaDon = store.getHoaDonById(idHoaDon);
-        let dbTotal = fe_tongThanhToan.value; // fallback to FE value
-        
-        if (dbHoaDon) {
-            dbTotal = (dbHoaDon.tong_tien_sau_giam || 0) + (dbHoaDon.phi_van_chuyen || 0);
-            console.log('✅ Got data from DB');
-        } else {
-            console.warn('⚠️ DB hoa don not found, using FE calculation');
-        }
-        
-        const feTotal = fe_tongThanhToan.value;
-        
-        console.log('📊 So sánh sau khi sync:');
-        console.log('  - DB Total:', dbTotal);
-        console.log('  - FE Total:', feTotal);
-        
-        return {
-            dbTotal,
-            feTotal,
-            hasDifference: Math.abs(dbTotal - feTotal) > 100 // Chấp nhận sai lệch < 100đ
-        };
-        
-    } catch (error) {
-        console.error('❌ Lỗi khi đồng bộ hóa đơn:', error);
-        // ✅ FALLBACK: Return FE values on error
-        return {
-            dbTotal: fe_tongThanhToan.value,
-            feTotal: fe_tongThanhToan.value,
-            hasDifference: false
-        };
-    }
-};
-
-// ✅ Hiển thị dialog xác nhận khi có sự khác biệt
-const showPriceDifferenceDialog = (dbTotal, feTotal) => {
-    return new Promise((resolve) => {
-        Modal.confirm({
-            title: '⚠️ Phát hiện sự khác biệt về giá',
-            width: 500,
-            content: h('div', { style: 'padding: 10px 0;' }, [
-                h('p', { style: 'margin-bottom: 10px; font-weight: bold;' }, 'Dữ liệu đã thay đổi trong lúc bạn thao tác:'),
-                h('div', { style: 'margin-bottom: 8px;' }, [
-                    h('span', { style: 'display: inline-block; width: 120px;' }, 'Giao diện: '),
-                    h('span', { style: 'font-weight: bold; color: #ff6600;' }, formatCurrency(feTotal))
-                ]),
-                h('div', { style: 'margin-bottom: 15px;' }, [
-                    h('span', { style: 'display: inline-block; width: 120px;' }, 'Hệ thống: '),
-                    h('span', { style: 'font-weight: bold; color: #52c41a;' }, formatCurrency(dbTotal))
-                ]),
-                h('p', { style: 'margin-bottom: 10px; color: #666;' }, 'Bạn có muốn tiếp tục với giá mới nhất từ hệ thống không?')
-            ]),
-            okText: 'Dùng giá hệ thống',
-            cancelText: 'Hủy thanh toán',
-            onOk: () => resolve(true),
-            onCancel: () => resolve(false),
-            class: 'price-difference-dialog'
-        });
-    });
 };
 
 
@@ -2805,15 +2670,8 @@ const handleShippingFeeCalculated = async (fee) => {
         // ✅ LƯU VÀO DATABASE
         try {
             const idHoaDon = currentTab.hd.id_hoa_don;
-            if (typeof store.updatePhiVanChuyen === 'function') {
-                await store.updatePhiVanChuyen(idHoaDon, fee);
-                console.log('✅ Đã lưu phí vận chuyển vào DB:', fee);
-            } else {
-                console.warn('⚠️ Method updatePhiVanChuyen không tồn tại trong store');
-                // Fallback: Gọi API trực tiếp
-                await banHangService.updatePhiVanChuyen(idHoaDon, fee);
-                console.log('✅ Đã lưu phí vận chuyển vào DB (API trực tiếp):', fee);
-            }
+            await store.updatePhiVanChuyen(idHoaDon, fee);
+            console.log('✅ Đã lưu phí vận chuyển vào DB:', fee);
         } catch (error) {
             console.error('❌ Lỗi lưu phí vận chuyển:', error);
         }
@@ -4396,33 +4254,5 @@ label.form-label {
 
 .invalid-items-banner :deep(.ant-alert-close-icon:hover) {
     color: #ff6600 !important;
-}
-
-/* ✅ PHASE 1: Price Difference Dialog Styles */
-.price-difference-dialog :deep(.ant-modal-header) {
-    background: linear-gradient(135deg, #fff7e6 0%, #fffbf0 100%);
-    border-bottom: 2px solid #faad14;
-}
-
-.price-difference-dialog :deep(.ant-modal-title) {
-    color: #d48806;
-    font-weight: 600;
-}
-
-.price-difference-dialog :deep(.ant-modal-body) {
-    padding: 20px 24px;
-}
-
-.price-difference-dialog :deep(.ant-btn-primary) {
-    background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
-    border: none;
-    border-radius: 6px;
-    font-weight: 500;
-}
-
-.price-difference-dialog :deep(.ant-btn-primary:hover) {
-    background: linear-gradient(135deg, #73d13d 0%, #95de64 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
 }
 </style>

@@ -158,7 +158,7 @@ import {
 } from '@ant-design/icons-vue';
 import { calculateShippingFee, formatVND } from '@/utils/shippingFeeCalculator';
 
-const emit = defineEmits(['shippingFeeCalculated']);
+const emit = defineEmits(['shippingFeeCalculated', 'customerDataSaved']);
 
 const gbStore = useGbStore();
 const calculatedShippingFee = ref(0);
@@ -400,19 +400,19 @@ const updateShippingFee = async (index) => {
             const idHoaDon = gbStore.getCurrentHoaDonId();
             const hoaDonHienTai = idHoaDon ? gbStore.getAllHoaDonCTTArr.find(hd => hd.id_hoa_don === idHoaDon) : null;
             const tongTienHoaDon = Math.round(hoaDonHienTai?.tong_tien_truoc_giam || 150000); // Convert to integer
-            
+
             // ✅ Chuẩn bị tham số cho GHTK API
             // GHTK yêu cầu tên tỉnh/quận KHÔNG có tiền tố "Tỉnh"/"Quận"
             const cleanProvince = diaChi.tinhThanhPho.replace(/^(Tỉnh|Thành phố)\s+/i, '');
             const cleanDistrict = diaChi.quanHuyen.replace(/^(Quận|Huyện|Thị xã|Thành phố)\s+/i, '');
-            
+
             console.log(`🎯 GHTK params:`, {
                 from: 'Hà Nội - Đống Đa',
                 to: `${cleanProvince} - ${cleanDistrict}`,
                 weight: 500,
                 value: tongTienHoaDon
             });
-            
+
             // ✅ LUÔN gọi API GHTK để tính phí (không cần idHoaDon)
             const result = await gbStore.tinhPhiShip(
                 'Hà Nội',              // GHTK yêu cầu bỏ "Tỉnh"
@@ -426,10 +426,10 @@ const updateShippingFee = async (index) => {
             if (result && !result.error && result.fee) {
                 calculatedShippingFee.value = result.fee;
                 console.log(`✅ Phí vận chuyển từ GHTK: ${formatVND(calculatedShippingFee.value)}`);
-                
+
                 // ✅ Emit event để parent cập nhật ngay
                 emit('shippingFeeCalculated', calculatedShippingFee.value);
-                
+
                 // Chỉ cập nhật vào backend NẾU có hóa đơn
                 if (idHoaDon) {
                     await gbStore.setTrangThaiNhanHang(idHoaDon, 'Giao hàng', calculatedShippingFee.value);
@@ -554,9 +554,11 @@ const themKhachHang = async () => {
         console.error('Lỗi khi thêm khách hàng:', error);
         console.log('Error object:', error);
         console.log('Response:', error.response);
-        console.log('Message:', error.message);
-        if (error.response && error.response.data && error.response.data.error) {
-            if (error.response.data.error.includes('Email đã được sử dụng')) {
+        if (error.response) {
+            if (error.response.data.error.includes('Số điện thoại đã được sử dụng')) {
+                errors.soDienThoai = 'Số điện thoại đã được sử dụng!';
+                toast.error('Số điện thoại đã được sử dụng!');
+            } else if (error.response.data.error.includes('Email đã được sử dụng')) {
                 errors.email = 'Email đã được sử dụng!';
                 toast.error('Email đã được sử dụng!');
             } else if (error.response.data.error.includes('Mã khách hàng đã tồn tại')) {
@@ -569,54 +571,79 @@ const themKhachHang = async () => {
         }
     }
 };
-const luuThongTin = async () => {
-    if (!validateForm()) {
-        toast.error('Vui lòng điền đầy đủ và chính xác thông tin!');
+
+const luuThongTinKhachHang = async () => {
+    // Validate form trước khi lưu
+    if (!formData.tenKhachHang || !formData.soDienThoai) {
+        toast.error('Vui lòng nhập đầy đủ họ tên và số điện thoại');
         return;
     }
 
-    const idHoaDon = gbStore.getCurrentHoaDonId()
-    console.log('idHoaDon', idHoaDon)
-    const diaChiList = formData.diaChiList.map(diaChi => {
-        return `${diaChi.soNha}, ${diaChi.xaPhuong}, ${diaChi.quanHuyen}, ${diaChi.tinhThanhPho}`;
-    });
+    // Lấy idHoaDon từ gbStore
+    const idHoaDon = gbStore.getCurrentHoaDonId();
 
-    console.log('Địa chỉ gộp:', diaChiList);
+    try {
+        // ✅ Lưu thông tin khách hàng vào localStorage
+        const customerData = {
+            id_khach_hang: null,
+            ten_khach_hang: formData.tenKhachHang,
+            sdt: formData.soDienThoai,
+            email: formData.email || '',
+            dia_chi_list: formData.diaChiList || []
+        };
 
-    // Thực hiện logic lưu thông tin (ví dụ: gửi dữ liệu đến API)
-    const dataToSend = {
-        ...formData,
-        diaChiList, // Thêm chuỗi địa chỉ gộp vào dữ liệu gửi đi
-        idHoaDon,  // Thêm ID hóa đơn
-    };
+        localStorage.setItem('walkInCustomer', JSON.stringify(customerData));
+        console.log('✅ Đã lưu thông tin khách lẻ vào localStorage:', customerData);
 
-    console.log('Dữ liệu gửi đi:', dataToSend);
+        // ✅ Nếu đã có hóa đơn, cập nhật luôn vào backend
+        if (idHoaDon) {
+            const defaultAddress = formData.diaChiList?.find(dc => dc.diaChiMacDinh);
+            let diaChiGiaoHang = '';
 
-    console.log('Lưu thông tin khách hàng:', idHoaDon, null, diaChiList, formData.tenKhachHang, formData.soDienThoai, formData.email);
+            if (defaultAddress) {
+                diaChiGiaoHang = `${defaultAddress.soNha || ''}, ${defaultAddress.xaPhuong || ''}, ${defaultAddress.quanHuyen || ''}, ${defaultAddress.tinhThanhPho || ''}`.trim();
+            }
 
-    const khachHangList = await gbStore.getAllKhachHangNoPage();
-    const existingKhachHang = khachHangList?.find(kh =>
-        kh.tenKhachHang === formData.tenKhachHang &&
-        kh.soDienThoai === formData.soDienThoai
-    );
-    const idKH = existingKhachHang ? existingKhachHang.idKhachHang : null;
+            await gbStore.addKHHD(
+                null,
+                idHoaDon,
+                diaChiGiaoHang,
+                formData.tenKhachHang,
+                formData.soDienThoai,
+                formData.email || ''
+            );
 
-    await gbStore.addKHHD(idHoaDon, idKH, diaChiList, formData.tenKhachHang, formData.soDienThoai, formData.email);
+            console.log('✅ Đã cập nhật thông tin khách lẻ vào hóa đơn');
 
-    // ✅ Lưu thông tin vào localStorage để component cha đọc được
-    localStorage.setItem('luuTTKHBH', JSON.stringify({
-        saved: true,
-        ten_khach_hang: formData.tenKhachHang,
-        so_dien_thoai: formData.soDienThoai,
-        dia_chi: diaChiList[0], // Lấy địa chỉ đầu tiên
-        email: formData.email
-    }));
+            // ✅ Tính phí vận chuyển nếu có địa chỉ giao hàng
+            if (defaultAddress && defaultAddress.tinhThanhPho && defaultAddress.quanHuyen) {
+                try {
+                    const phiShip = await gbStore.tinhPhiShip(
+                        'Hà Nội',
+                        'Nam Từ Liêm',
+                        defaultAddress.tinhThanhPho.replace(/^(Tỉnh|Thành phố)\s+/i, '').trim(),
+                        defaultAddress.quanHuyen.replace(/^(Quận|Huyện|Thị xã|Thành phố)\s+/i, '').trim(),
+                        500,
+                        100000 // Giá trị tạm để tính phí
+                    );
 
-    toast.success('Lưu thông tin khách hàng thành công!', {
-        autoClose: 2000,
-        position: 'top-right'
-    });
+                    if (phiShip && phiShip.fee) {
+                        console.log('✅ Phí vận chuyển tính được:', phiShip.fee);
+                        emit('shippingFeeCalculated', phiShip.fee);
+                    }
+                } catch (error) {
+                    console.error('❌ Lỗi tính phí vận chuyển:', error);
+                }
+            }
+        }
 
+        // ✅ Emit event
+        emit('customerDataSaved', customerData);
+        toast.success('Lưu thông tin khách hàng thành công');
+    } catch (error) {
+        console.error('Lỗi khi lưu thông tin:', error);
+        toast.error('Không thể lưu thông tin khách hàng');
+    }
 };
 
 const confirmThemKhachHang = () => {
@@ -637,27 +664,6 @@ const confirmThemKhachHang = () => {
         onOk: () => {
             themKhachHang();
         },
-    });
-};
-
-const luuThongTinKhachHang = () => {
-    AModal.confirm({
-        title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
-            h(SaveOutlined, { style: 'color: #1890ff; font-size: 22px;' }),
-            h('span', { style: 'font-size: 16px; font-weight: 600;' }, 'Lưu thông tin KH')
-        ]),
-        content: () => h('div', { style: 'padding: 8px 0;' }, [
-            h('p', { style: 'margin: 0; font-size: 14px;' }, 'Bạn có muốn lưu thông tin khách hàng này không?')
-        ]),
-        okText: 'Lưu',
-        cancelText: 'Hủy',
-        okButtonProps: { size: 'large', style: { height: '38px' } },
-        cancelButtonProps: { size: 'large', style: { height: '38px' } },
-        centered: true,
-        width: 420,
-        onOk: () => {
-            luuThongTin();
-        }
     });
 };
 
@@ -770,14 +776,14 @@ const handleAllAddressLevels = async () => {
 
     for (let index = 0; index < formData.diaChiList.length; index++) {
         const diaChi = formData.diaChiList[index];
-        console.log(`📍 Đang xử lý địa chỉ tại index ${index}:`, diaChi);
+        console.log(`📍 Đang xử lý địa chỉ tại index ${index}: `, diaChi);
 
         // Đánh dấu đang load để không reset dữ liệu
         formData.diaChiList[index]._isLoading = true;
 
         // Bước 1: Gọi API tỉnh và đợi hoàn thành
         if (diaChi.tinhThanhPho) {
-            console.log(`1️⃣ Tải danh sách quận/huyện cho: ${diaChi.tinhThanhPho}`);
+            console.log(`1️⃣ Tải danh sách quận / huyện cho: ${diaChi.tinhThanhPho} `);
             await handleProvinceChange(index);
 
             // Đợi một chút để API hoàn thành
@@ -787,13 +793,13 @@ const handleAllAddressLevels = async () => {
             if (districts.value[index] && districts.value[index].length > 0) {
                 const matchedDistrict = timTenGanDung(diaChi.quanHuyen, 'district', index);
                 formData.diaChiList[index].quanHuyen = matchedDistrict;
-                console.log(`✅ Quận/Huyện đã map: ${matchedDistrict}`);
+                console.log(`✅ Quận / Huyện đã map: ${matchedDistrict} `);
             }
         }
 
         // Bước 2: Gọi API huyện và đợi hoàn thành
         if (formData.diaChiList[index].quanHuyen) {
-            console.log(`2️⃣ Tải danh sách phường/xã cho: ${formData.diaChiList[index].quanHuyen}`);
+            console.log(`2️⃣ Tải danh sách phường / xã cho: ${formData.diaChiList[index].quanHuyen} `);
             await handleDistrictChange(index);
 
             // Đợi một chút để API hoàn thành
@@ -803,7 +809,7 @@ const handleAllAddressLevels = async () => {
             if (wards.value[index] && wards.value[index].length > 0) {
                 const matchedWard = timTenGanDung(diaChi.xaPhuong, 'ward', index);
                 formData.diaChiList[index].xaPhuong = matchedWard;
-                console.log(`✅ Phường/Xã đã map: ${matchedWard}`);
+                console.log(`✅ Phường / Xã đã map: ${matchedWard} `);
             }
         }
 

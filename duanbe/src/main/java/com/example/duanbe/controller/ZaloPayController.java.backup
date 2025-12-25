@@ -2,10 +2,7 @@ package com.example.duanbe.controller;
 
 import com.example.duanbe.config.ZaloPayConfig;
 import com.example.duanbe.entity.HoaDon;
-import com.example.duanbe.entity.Voucher;
 import com.example.duanbe.repository.HoaDonRepo;
-import com.example.duanbe.repository.HoaDonChiTietRepo;
-import com.example.duanbe.repository.VoucherRepository;
 import com.example.duanbe.service.ZaloPayService;
 import com.example.duanbe.utils.HMACUtil;
 import com.google.gson.Gson;
@@ -15,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,12 +27,6 @@ public class ZaloPayController {
 
     @Autowired
     private HoaDonRepo hoaDonRepo;
-
-    @Autowired
-    private HoaDonChiTietRepo hoaDonChiTietRepo;
-
-    @Autowired
-    private VoucherRepository voucherRepo;
 
     private final Gson gson = new Gson();
 
@@ -65,60 +55,15 @@ public class ZaloPayController {
 
             // Kiểm tra số tiền hợp lệ
             java.math.BigDecimal tongTienSauGiam = hoaDon.getTong_tien_sau_giam();
+            java.math.BigDecimal phiVanChuyen = hoaDon.getPhi_van_chuyen() != null ? hoaDon.getPhi_van_chuyen()
+                    : java.math.BigDecimal.ZERO;
 
-            // ✅ DEBUG THÔNG TIN CHI TIẾT HÓA ĐƠN
-            System.out.println("=== DEBUG THÔNG TIN HÓA ĐƠN ===");
-            System.out.println("ID Hóa đơn: " + hoaDon.getId_hoa_don());
-            System.out.println("Mã hóa đơn: " + hoaDon.getMa_hoa_don());
-            System.out.println("Loại hóa đơn: " + hoaDon.getLoai_hoa_don());
-            System.out.println("Địa chỉ: " + hoaDon.getDia_chi());
-            System.out.println("Phương thức nhận hàng: " + hoaDon.getPhuong_thuc_nhan_hang());
-            System.out.println("Ghi chú hiện tại: " + hoaDon.getGhi_chu());
-            System.out.println("Tổng tiền trước giảm (đã có ship): " + hoaDon.getTong_tien_truoc_giam());
-            System.out.println("Tổng tiền sau giảm (đã có ship): " + tongTienSauGiam);
-            System.out.println("Phí vận chuyển riêng: " + hoaDon.getPhi_van_chuyen());
-            System.out.println("=== END DEBUG ===");
+            // ✅ TỔNG THANH TOÁN = TỔNG SAU GIẢM + PHÍ VẬN CHUYỂN
+            java.math.BigDecimal tongTien = tongTienSauGiam.add(phiVanChuyen);
 
-            // ✅ FIX BUG: TỔNG THANH TOÁN = TỔNG SAU GIẢM (ĐÃ BAO GỒM SHIP)
-            // LÝ DO: updateTongTienHoaDon() đã tính:
-            // tongTienTruocGiam = sản phẩm + ship
-            // tongTienSauGiam = tongTienTruocGiam - voucher
-            // VÌ VẬY tongTienSauGiam ĐÃ BAO GỒM SHIP, KHÔNG CỘNG THÊM!
-            java.math.BigDecimal tongTien = tongTienSauGiam;
-
-            System.out.println("💰 TỔNG THANH TOÁN ZALOPAY (đã có ship + trừ voucher): " + tongTien);
-
-            // ✅ PHASE 2: TÍNH LẠI TỔNG TIỀN ĐỂ ĐỒNG BỘ
-            java.math.BigDecimal recalculatedTotal = recalculateInvoiceTotal(hoaDon);
-            System.out.println("=== PHASE 2 RECALCULATION ===");
-            System.out.println("DB Total: " + tongTien);
-            System.out.println("Recalculated Total: " + recalculatedTotal);
-
-            // ✅ SỬ DỤNG GIÁ TRỊ TÍNH LẠI NẾU CÓ KHÁC BIỆT
-            java.math.BigDecimal finalAmount = recalculatedTotal;
-            if (recalculatedTotal.compareTo(tongTien) != 0) {
-                System.out.println("⚠️ PHÁT HIỆN KHÁC BIỆT - DÙNG GIÁ TÍNH LẠI");
-                System.out.println("Chênh lệch: " + recalculatedTotal.subtract(tongTien));
-            } else {
-                System.out.println("✅ DỮ LIỆU ĐỒNG BỘ - DÙNG GIÁ DB");
-                finalAmount = tongTien;
-            }
-            System.out.println("=== END PHASE 2 ===");
-
-            // ✅ VALIDATE TỔNG TIỀN CHO HÓA ĐƠN GIAO HÀNG
-            if ("Giao hàng".equals(hoaDon.getPhuong_thuc_nhan_hang())) {
-                java.math.BigDecimal phiVanChuyen = hoaDon.getPhi_van_chuyen();
-                if (phiVanChuyen == null || phiVanChuyen.compareTo(java.math.BigDecimal.ZERO) == 0) {
-                    System.out.println("!!! PHÍ VẬN CHUYỂN = 0 CHO HÓA ĐƠN GIAO HÀNG");
-                    return ResponseEntity.badRequest().body(Map.of(
-                            "return_code", -1,
-                            "return_message",
-                            "Phí vận chuyển chưa được tính. Vui lòng tính phí vận chuyển trước khi thanh toán!"));
-                }
-                System.out.println("✅ Phí vận chuyển đã tính: " + phiVanChuyen + " (đã bao gồm trong tổng)");
-            } else if ("Nhận tại cửa hàng".equals(hoaDon.getPhuong_thuc_nhan_hang())) {
-                System.out.println("✅ Nhận tại cửa hàng - không tính phí vận chuyển");
-            }
+            System.out.println("Tổng tiền sau giảm: " + tongTienSauGiam);
+            System.out.println("Phí vận chuyển: " + phiVanChuyen);
+            System.out.println("TỔNG THANH TOÁN (bao gồm ship): " + tongTien);
 
             if (tongTien == null || tongTien.compareTo(java.math.BigDecimal.ZERO) <= 0) {
                 System.out.println("!!! SỐ TIỀN KHÔNG HỢP LỆ");
@@ -132,7 +77,7 @@ public class ZaloPayController {
             System.out.println(">>> Gọi ZaloPay Create Order API...");
             Map<String, Object> result = zaloPayService.createOrder(
                     hoaDon.getMa_hoa_don(),
-                    finalAmount,
+                    tongTien,
                     moTa);
 
             System.out.println("ZaloPay Response Return Code: " + result.get("return_code"));
@@ -286,48 +231,5 @@ public class ZaloPayController {
             endIndex = ghiChu.length();
         }
         return ghiChu.substring(startIndex, endIndex).trim();
-    }
-
-    // ✅ PHASE 2: VALIDATE VÀ TÍNH LẠI TỔNG TIỀN
-    private java.math.BigDecimal recalculateInvoiceTotal(HoaDon hoaDon) {
-        try {
-            // 1. Lấy tổng sau giảm và phí vận chuyển
-            java.math.BigDecimal tongTienSauGiam = hoaDon.getTong_tien_sau_giam() != null
-                    ? hoaDon.getTong_tien_sau_giam()
-                    : java.math.BigDecimal.ZERO;
-            java.math.BigDecimal phiVanChuyen = hoaDon.getPhi_van_chuyen() != null
-                    ? hoaDon.getPhi_van_chuyen()
-                    : java.math.BigDecimal.ZERO;
-
-            // 2. Tính tổng thanh toán: Sau giảm + Ship
-            java.math.BigDecimal finalAmount = tongTienSauGiam.add(phiVanChuyen);
-
-            // 3. Log chi tiết để debug
-            System.out.println("📊 PHASE 2 - Chi tiết hóa đơn:");
-            System.out.println("  - Tổng trước giảm: " + hoaDon.getTong_tien_truoc_giam());
-            System.out.println("  - Tổng sau giảm: " + tongTienSauGiam);
-            System.out.println("  - Phí vận chuyển: " + phiVanChuyen);
-            System.out.println("  - Final Amount: " + finalAmount);
-
-            // 4. Validate
-            if (finalAmount.compareTo(java.math.BigDecimal.ZERO) <= 0) {
-                System.out.println("⚠️ WARNING: Tổng tiền không hợp lệ!");
-            }
-
-            return finalAmount;
-
-        } catch (Exception e) {
-            System.err.println("❌ Lỗi khi tính lại tổng tiền: " + e.getMessage());
-            e.printStackTrace();
-
-            // Fallback: trả về tong_tien_sau_giam + phi_van_chuyen
-            java.math.BigDecimal tongTienSauGiam = hoaDon.getTong_tien_sau_giam() != null
-                    ? hoaDon.getTong_tien_sau_giam()
-                    : java.math.BigDecimal.ZERO;
-            java.math.BigDecimal phiVanChuyen = hoaDon.getPhi_van_chuyen() != null
-                    ? hoaDon.getPhi_van_chuyen()
-                    : java.math.BigDecimal.ZERO;
-            return tongTienSauGiam.add(phiVanChuyen);
-        }
     }
 }

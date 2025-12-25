@@ -153,6 +153,9 @@ export const useGbStore = defineStore('gbStore', {
     //lưu id hoá đơn
     currentHoaDonId: null,
 
+    // ✅ PHASE 1: Khai báo tabs để tránh undefined
+    tabs: [],
+
     // Thêm vào phần state
     filteredProductsData: [],
     isProductLoading: false, // Thêm state để quản lý trạng thái loading sản phẩm
@@ -165,8 +168,19 @@ export const useGbStore = defineStore('gbStore', {
     debouncedSearchTimer: null,
   }),
 
-  ///Đầu mút2
+  // ✅ PHASE 1: Actions for state management  
   actions: {
+    // ✅ Initialize store state
+    initializeStore() {
+      if (!this.tabs) {
+        this.tabs = [];
+      }
+      if (!this.stockValidationCache) {
+        this.stockValidationCache = new Map();
+      }
+    },
+
+    ///Đầu mút2 - Merged actions
     // Sản phẩm siêu sale
     // Thêm action mới cho siêu sale
     async getSanPhamSieuSale() {
@@ -1369,6 +1383,13 @@ export const useGbStore = defineStore('gbStore', {
     async locAndTimKiemSanPhamVaChiTietSanPham(keyword, tenSanPham, giaBanMin, giaBanMax, listMauSac, listDanhMuc, listThuongHieu, listChatLieu, listKichThuoc) {
       try {
         const response = await sanPhamService.locSanPhamVaChiTietSanPham(keyword, tenSanPham, giaBanMin, giaBanMax, listMauSac, listDanhMuc, listThuongHieu, listChatLieu, listKichThuoc)
+
+        // ✅ KHÔNG tự động lưu vào state
+        // Component sẽ transform CTSP → Products trước khi lưu
+        if (response && !response.error) {
+          console.log(`✅ API trả về ${response.length} CTSP`);
+        }
+
         return response
       } catch (error) {
         console.error(error)
@@ -1474,16 +1495,12 @@ export const useGbStore = defineStore('gbStore', {
         }
 
         this.hoaDonDetail = response.hoaDon || {};
-        // Lọc trùng lặp dựa trên id_chi_tiet_san_pham
-        const uniqueChiTietHoaDons = [];
-        const seenIds = new Set();
-        for (const item of response.chiTietHoaDons || []) {
-          if (!seenIds.has(item.id_chi_tiet_san_pham)) {
-            seenIds.add(item.id_chi_tiet_san_pham);
-            uniqueChiTietHoaDons.push(item);
-          }
-        }
-        this.chiTietHoaDons = uniqueChiTietHoaDons;
+
+        // ✅ FIXED: Hiển thị TẤT CẢ dòng (bao gồm cùng SP nhưng khác giá)
+        // Không filter duplicate vì backend đã xử lý logic đa giá
+        this.chiTietHoaDons = response.chiTietHoaDons || [];
+
+        console.log(`✅ Đã load ${this.chiTietHoaDons.length} dòng sản phẩm (bao gồm đa giá)`);
         this.trangThaiHistory = response.trangThaiHistory || [];
         // this.chiTietTraHangs = response1.chiTietTraHangs || []; // ⛔ REMOVED: Chức năng trả hàng đã bỏ
         // this.traHangs = response1.traHangs || []; // ⛔ REMOVED: Chức năng trả hàng đã bỏ
@@ -1618,8 +1635,39 @@ export const useGbStore = defineStore('gbStore', {
         }
         return response
       } catch (error) {
-        console.error('Lỗi khi xóa sản phẩm khỏi hóa đơn:', error)
         return { error: true }
+      }
+    },
+    // This block seems to be a placeholder for addKHHD, which is not in the provided context.
+    // Inserting the new function here as per the instruction's context.
+    // The instruction's context for insertion point is:
+    //         )
+    //         if (response.error) {
+    //           console.log('Thêm khách hàng vào hóa đơn thành công')
+    //         return result
+    //       } catch (error) {
+    //         console.error('Lỗi khi thêm khách hàng hoá đơn:', error)
+    //         return { error: true, message: error.message }
+    //       }
+    //     },
+
+    // ✅ CẬP NHẬT PHÍ VẬN CHUYỂN
+    async updatePhiVanChuyen(idHoaDon, phiVanChuyen) {
+      try {
+        console.log(`📦 Đang lưu phí vận chuyển ${phiVanChuyen} cho hóa đơn ${idHoaDon}`);
+
+        await banHangService.updatePhiVanChuyen(idHoaDon, phiVanChuyen);
+
+        // Cập nhật trong store
+        const tab = this.tabs.find(t => t.hd.id_hoa_don === idHoaDon);
+        if (tab) {
+          tab.hd.phi_van_chuyen = phiVanChuyen;
+        }
+
+        console.log('✅ Đã lưu phí vận chuyển vào DB');
+      } catch (error) {
+        console.error('❌ Lỗi lưu phí vận chuyển:', error);
+        throw error;
       }
     },
     async updateProductQuantity(maHoaDon, idCTSP, quantityChange) {
@@ -1899,7 +1947,7 @@ export const useGbStore = defineStore('gbStore', {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', `san-pham-export-${new Date().getTime()}.xlsx`)
+        link.setAttribute('download', `san - pham -export-${new Date().getTime()}.xlsx`)
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
@@ -2376,6 +2424,78 @@ export const useGbStore = defineStore('gbStore', {
         console.error(error)
         toast.error('Có lị xảy ra')
         throw error
+      }
+    },
+
+    // ✅ PHASE 1: Refresh thông tin hóa đơn
+    async refreshHoaDon(idHoaDon) {
+      try {
+        console.log(`🔄 Refreshing hoa don ${idHoaDon}...`);
+
+        // ✅ VALIDATE: Kiểm tra state trước khi dùng
+        if (!this.tabs || !Array.isArray(this.tabs)) {
+          console.warn('⚠️ tabs not initialized, skipping refresh');
+          return;
+        }
+
+        await this.getHoaDonByIdHoaDon(idHoaDon);
+
+        // ✅ VALIDATE: Kiểm tra getHDBIDHD trước khi dùng
+        if (!this.getHDBIDHD) {
+          console.warn('⚠️ getHDBIDHD is null, skipping tab update');
+          return;
+        }
+
+        // ✅ SAFELY tìm active tab với validation
+        const activeTab = this.tabs.find(tab => tab && tab.hd && tab.hd.id_hoa_don === idHoaDon);
+        if (activeTab) {
+          activeTab.hd = { ...activeTab.hd, ...this.getHDBIDHD };
+          console.log('✅ Đã refresh thông tin hóa đơn vào active tab');
+        } else {
+          console.warn(`⚠️ Tab for hoa don ${idHoaDon} not found`);
+        }
+      } catch (error) {
+        console.error('❌ Lỗi refresh hóa đơn:', error);
+        // ✅ Không throw error để không block payment
+        return;
+      }
+    },
+
+    // ✅ PHASE 1: Get hóa đơn by ID
+    getHoaDonById(idHoaDon) {
+      try {
+        // ✅ VALIDATE: Kiểm tra state trước khi dùng
+        if (!idHoaDon) {
+          console.warn('⚠️ idHoaDon is null');
+          return null;
+        }
+
+        // ✅ SAFELY tìm từ active tab với validation
+        let activeTab = null;
+        if (this.tabs && Array.isArray(this.tabs)) {
+          activeTab = this.tabs.find(tab =>
+            tab && tab.hd && tab.hd.id_hoa_don === idHoaDon
+          );
+
+          if (activeTab && activeTab.hd) {
+            console.log('✅ Found hoa don in active tab');
+            return activeTab.hd;
+          }
+        }
+
+        // ✅ FALLBACK: Lấy từ getHDBIDHD với validation
+        if (this.getHDBIDHD && this.getHDBIDHD.id_hoa_don === idHoaDon) {
+          console.log('✅ Found hoa don in getHDBIDHD');
+          return this.getHDBIDHD;
+        }
+
+        // ✅ NOT FOUND: Return null với warning
+        console.warn(`⚠️ Hoa don ${idHoaDon} not found in any source`);
+        return null;
+
+      } catch (error) {
+        console.error('❌ Error in getHoaDonById:', error);
+        return null;
       }
     },
 
@@ -3412,7 +3532,7 @@ export const useGbStore = defineStore('gbStore', {
         Object.keys(this.filterCriteria).length > 0 && this.filteredProductIds.length > 0
 
       console.log(
-        `Đang cập nhật danh sách cuối cùng. Tìm kiếm: ${isSearching}, Lọc: ${isFiltering}`,
+        `Đang cập nhật danh sách cuối cùng.Tìm kiếm: ${isSearching}, Lọc: ${isFiltering}`,
       )
 
       if (isSearching && isFiltering) {
@@ -3682,7 +3802,7 @@ export const useGbStore = defineStore('gbStore', {
               response = await this.changeAllCTSPKhongHoatDong(ctspId);
             }
 
-            console.log(`Response từ API cho CTSP ${ctspId}:`, response);
+            console.log(`Response từ API cho CTSP ${ctspId}: `, response);
 
             // Kiểm tra response
             if (response) {
@@ -3718,7 +3838,7 @@ export const useGbStore = defineStore('gbStore', {
             }
           } catch (error) {
             errorCount++;
-            console.error(`Lỗi khi thay đổi trạng thái CTSP ${ctspId}:`, error);
+            console.error(`Lỗi khi thay đổi trạng thái CTSP ${ctspId}: `, error);
           }
         }
 
@@ -3736,7 +3856,7 @@ export const useGbStore = defineStore('gbStore', {
           totalProcessed: selectedCtspIds.length,
           parentStatusUpdated: updatedParents.length > 0,
           updatedParents: updatedParents,
-          message: `Đã chuyển ${successCount}/${selectedCtspIds.length} biến thể thành ${newStatus}`
+          message: `Đã chuyển ${successCount} / ${selectedCtspIds.length} biến thể thành ${newStatus}`
         };
       } catch (error) {
         console.error('Lỗi khi cập nhật hàng loạt trạng thái CTSP:', error);
@@ -4067,6 +4187,4 @@ export const useGbStore = defineStore('gbStore', {
       }
     },
   },
-
-
 })

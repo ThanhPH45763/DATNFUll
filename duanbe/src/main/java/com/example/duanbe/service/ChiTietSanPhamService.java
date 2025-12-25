@@ -45,6 +45,8 @@ public class ChiTietSanPhamService {
     SanPhamRepo sanPhamRepo;
     @Autowired
     SanPhamService sanPhamService;
+    @Autowired
+    PromotionRecalculationService promotionRecalculationService;
 
     // @Cacheable(value = "detailProducts")
     public List<ChiTietSanPhamView> getAllCTSP() {
@@ -157,6 +159,9 @@ public class ChiTietSanPhamService {
 
             // Lưu chi tiết sản phẩm để có ID
             ChiTietSanPham savedProduct = chiTietSanPhamRepo.save(chiTietSanPham);
+
+            // ✅ NEW: Tính lại giá khuyến mãi nếu giá bản thay đổi
+            promotionRecalculationService.recalculatePromotionPrices(savedProduct.getId_chi_tiet_san_pham());
 
             // Xử lý hình ảnh (luôn xóa cũ và thêm mới để đảm bảo đồng bộ)
             updateAndSaveImages(savedProduct, chiTietSanPhamRequest.getHinh_anh());

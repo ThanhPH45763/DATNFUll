@@ -30,7 +30,7 @@ const handlePayOSPayment = async (orderData) => {
 
 const handleZaloPayPayment = async (idHoaDon) => {
     try {
-        // Gọi API ZaloPay backend - MUST include /api prefix!
+        // Backend sẽ tự tính: tong_tien_sau_giam + phi_van_chuyen
         const response = await axiosInstance.post('/api/zalopay/create-order', null, {
             params: { idHoaDon }
         });

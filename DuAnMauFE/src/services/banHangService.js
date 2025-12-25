@@ -200,6 +200,13 @@ const thanhToanMomo = async (idHoaDon) => {
     }
 }
 
+// ✅ Cập nhật phí vận chuyển
+const updatePhiVanChuyen = (idHoaDon, phiVanChuyen) => {
+    return axiosInstance.put(`/banhang/hoa-don/${idHoaDon}/phi-van-chuyen`, null, {
+        params: { phiVanChuyen }
+    });
+};
+
 const tinhPhiShip = async (pickProvince, pickDistrict, province, district, weight, tongTienHoaDon) => {
     try {
         // Properly encode Vietnamese parameters using URLSearchParams
@@ -290,6 +297,7 @@ export const banHangService = {
     thanhToanMomo,
     setSPHD,
     tinhPhiShip,
+    updatePhiVanChuyen,
     getSuitableVouchers,
     applyVoucher,
     checkCartStock

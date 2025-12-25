@@ -2411,16 +2411,29 @@ const calculatePhiVanChuyen = async (useEditedCustomer = false) => {
     }
 
     try {
+        const tinhThanhPho = diaChi.tinh || '';
+        const quanHuyen = diaChi.huyen || '';
+
+        // ✅ Loại bỏ tiền tố trước khi gửi đến GHTK API
+        const cleanProvince = tinhThanhPho
+            .replace(/^(Tỉnh|Thành phố)\s+/i, '')
+            .trim();
+
+        const cleanDistrict = quanHuyen
+            .replace(/^(Quận|Huyện|Thị xã|Thành phố)\s+/i, '')
+            .trim();
+
+        console.log('Địa chỉ cụ thể: ', diaChi.diaChiCuThe, diaChi.xa, diaChi.huyen, diaChi.tinh)
+        console.log('Dữ liệu: ', cleanProvince, cleanDistrict, weight, tongTienHoaDon, store.hoaDonDetail.tong_tien_sau_giam, store.hoaDonDetail.phi_van_chuyen)
+
         const phiShip = await banHangService.tinhPhiShip(
             'Hà Nội',
             'Nam Từ Liêm',
-            diaChi.tinh,
-            diaChi.huyen,
+            cleanProvince,
+            cleanDistrict,
             weight,
-            tongTienHoaDon
+            Math.round(tongTienHoaDon) // ✅ Convert to integer
         );
-        console.log('Địa chỉ cụ thể: ', diaChi.diaChiCuThe, diaChi.xa, diaChi.huyen, diaChi.tinh)
-        console.log('Dữ liệu: ', diaChi.tinh, diaChi.huyen, weight, tongTienHoaDon, store.hoaDonDetail.tong_tien_sau_giam, store.hoaDonDetail.phi_van_chuyen)
         console.log('Phí ship: ', phiShip.fee)
         return phiShip.fee || 0;
     } catch (error) {

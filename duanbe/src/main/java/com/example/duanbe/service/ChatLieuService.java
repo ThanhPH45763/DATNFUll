@@ -24,7 +24,8 @@ public class ChatLieuService {
     public ChatLieu getChatLieuOrCreateChatLieu(String tenChatLieu) {
         System.out.println(tenChatLieu);
         Optional<ChatLieu> existingChatLieu = chatLieuRepo.findAll().stream()
-                .filter(chatLieu -> tenChatLieu.equalsIgnoreCase(Optional.ofNullable(chatLieu.getTen_chat_lieu()).orElse("")))
+                .filter(chatLieu -> tenChatLieu
+                        .equalsIgnoreCase(Optional.ofNullable(chatLieu.getTen_chat_lieu()).orElse("")))
                 .findFirst();
 
         if (existingChatLieu.isPresent()) {
@@ -70,16 +71,16 @@ public class ChatLieuService {
         }
     }
 
-    public ResponseEntity<?> updateChatLieu(@RequestBody ChatLieu chatLieu){
-        if (chatLieu.getId_chat_lieu() != null){
+    public ResponseEntity<?> updateChatLieu(@RequestBody ChatLieu chatLieu) {
+        if (chatLieu.getId_chat_lieu() != null) {
             ChatLieu chatLieuSua = chatLieuRepo.findById(chatLieu.getId_chat_lieu()).get();
             chatLieuSua.setTen_chat_lieu(chatLieu.getTen_chat_lieu());
             chatLieuSua.setNgay_sua(LocalDateTime.now());
             chatLieuRepo.save(chatLieuSua);
             return ResponseEntity.ok(chatLieuSua);
-        }else {
+        } else {
             Map<String, String> error = new HashMap<>();
-            error.put("messege","Lỗi id null");
+            error.put("messege", "Lỗi id null");
             return ResponseEntity.badRequest().body(error);
         }
     }

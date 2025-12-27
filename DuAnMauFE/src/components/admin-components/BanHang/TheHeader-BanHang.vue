@@ -649,6 +649,177 @@ let checkPaymentInterval = null;
 // ✅ PAYMENT PROCESSING FLAG - Ngăn auto-apply voucher khi đang thanh toán
 const isProcessingPayment = ref(false);
 
+// ✅ BACKUP/RESTORE SYSTEM - Giữ state qua page reload khi thanh toán
+const INVOICE_BACKUP_KEY = 'posInvoiceBackup';
+const PAYMENT_PROCESSING_KEY = 'posPaymentProcessing';
+const PAYMENT_TIMESTAMP_KEY = 'posPaymentTimestamp';
+const RESTORE_COMPLETED_KEY = 'voucherRestoreCompleted';
+
+// Tạo backup trạng thái hóa đơn trước khi thanh toán
+const createInvoiceBackup = (invoiceId) => {
+    console.log('💾 Tạo backup cho hóa đơn:', invoiceId);
+    
+    const currentTab = activeTabData.value;
+    if (!currentTab || !currentTab.hd || currentTab.hd.id_hoa_don !== invoiceId) {
+        console.warn('⚠️ Không tìm thấy hóa đơn để backup');
+        return false;
+    }
+    
+    // Tạo object backup chỉ với các field quan trọng
+    const backup = {
+        invoiceId: currentTab.hd.id_hoa_don,
+        voucherState: {
+            id_voucher: currentTab.hd.id_voucher,
+            ten_voucher: currentTab.hd.ten_voucher || null,
+            gia_tri_giam: currentTab.hd.gia_tri_giam || 0
+        },
+        totals: {
+            tong_tien_truoc_giam: currentTab.hd.tong_tien_truoc_giam || 0,
+            tong_tien_sau_giam: currentTab.hd.tong_tien_sau_giam || 0,
+            phi_van_chuyen: currentTab.hd.phi_van_chuyen || 0
+        },
+        paymentMethod: currentTab.hd.hinh_thuc_thanh_toan,
+        timestamp: Date.now(),
+        ma_hoa_don: currentTab.hd.ma_hoa_don
+    };
+    
+    try {
+        // Ghi đè backup cũ nếu có
+        localStorage.setItem(INVOICE_BACKUP_KEY, JSON.stringify(backup));
+        console.log('✅ Backup đã được tạo thành công:', backup);
+        return true;
+    } catch (error) {
+        console.error('❌ Lỗi khi tạo backup:', error);
+        return false;
+    }
+};
+
+// Khôi phục trạng thái hóa đơn từ backup
+const restoreInvoiceFromBackup = async () => {
+    console.log('🔄 Bắt đầu khôi phục từ backup...');
+    
+    try {
+        const backupStr = localStorage.getItem(INVOICE_BACKUP_KEY);
+        if (!backupStr) {
+            console.log('⚠️ Không tìm thấy backup');
+            return false;
+        }
+        
+        const backup = JSON.parse(backupStr);
+        
+        // Kiểm tra backup còn hạn (5 phút)
+        const now = Date.now();
+        const elapsed = now - backup.timestamp;
+        const isValid = elapsed < 5 * 60 * 1000; // 5 phút
+        
+        if (!isValid) {
+            console.log('⏰ Backup đã hết hạn, xóa bỏ');
+            cleanupPaymentState();
+            return false;
+        }
+        
+        // Tìm tab active hiện tại hoặc tab có cùng ID
+        let targetTab = activeTabData.value;
+        if (!targetTab || !targetTab.hd) {
+            // Nếu không có active tab, tìm tab có ID hóa đơn khớp
+            targetTab = panes.value.find(tab => tab.hd?.id_hoa_don === backup.invoiceId);
+        }
+        
+        if (!targetTab) {
+            console.log('⚠️ Không tìm thấy tab để restore');
+            cleanupPaymentState();
+            return false;
+        }
+        
+        console.log('🔄 Restore state cho hóa đơn:', backup.invoiceId);
+        
+        // Khôi phục các giá trị quan trọng
+        Object.assign(targetTab.hd, {
+            id_voucher: backup.voucherState.id_voucher,
+            ten_voucher: backup.voucherState.ten_voucher,
+            gia_tri_giam: backup.voucherState.gia_tri_giam,
+            tong_tien_truoc_giam: backup.totals.tong_tien_truoc_giam,
+            tong_tien_sau_giam: backup.totals.tong_tien_sau_giam,
+            phi_van_chuyen: backup.totals.phi_van_chuyen
+        });
+        
+        // Set flag để ngăn auto-apply voucher
+        localStorage.setItem(RESTORE_COMPLETED_KEY, 'true');
+        
+        console.log('✅ Restore thành công');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Lỗi khi restore backup:', error);
+        cleanupPaymentState(); // Cleanup backup lỗi
+        return false;
+    }
+};
+
+// Kiểm tra có đang ở payment recovery mode không
+const isPaymentRecoveryMode = () => {
+    const isProcessing = localStorage.getItem(PAYMENT_PROCESSING_KEY) === 'true';
+    const timestamp = localStorage.getItem(PAYMENT_TIMESTAMP_KEY);
+    
+    if (!isProcessing || !timestamp) {
+        return false;
+    }
+    
+    // Kiểm tra timeout (5 phút)
+    const now = Date.now();
+    const paymentStart = parseInt(timestamp);
+    const elapsed = now - paymentStart;
+    const isValid = elapsed < 5 * 60 * 1000; // 5 phút
+    
+    if (!isValid) {
+        console.log('⏰ Payment timeout, cleanup state');
+        cleanupPaymentState();
+        return false;
+    }
+    
+    console.log('🔄 Payment recovery mode detected');
+    return true;
+};
+
+// Kiểm tra vừa restore từ backup xong
+const justRestoredFromBackup = () => {
+    const restored = localStorage.getItem(RESTORE_COMPLETED_KEY) === 'true';
+    if (restored) {
+        console.log('🔄 Just restored from backup - preventing auto-apply');
+        // Xóa flag sau khi kiểm tra
+        localStorage.removeItem(RESTORE_COMPLETED_KEY);
+        return true;
+    }
+    return false;
+};
+
+// Dọn dẹp payment state
+const cleanupPaymentState = () => {
+    console.log('🧹 Dọn dẹp payment state');
+    localStorage.removeItem(INVOICE_BACKUP_KEY);
+    localStorage.removeItem(PAYMENT_PROCESSING_KEY);
+    localStorage.removeItem(PAYMENT_TIMESTAMP_KEY);
+    localStorage.removeItem(RESTORE_COMPLETED_KEY);
+    
+    // Reset local flag
+    isProcessingPayment.value = false;
+};
+
+// Set payment processing state với localStorage persistence
+const setPaymentProcessing = (isProcessing) => {
+    isProcessingPayment.value = isProcessing;
+    
+    if (isProcessing) {
+        localStorage.setItem(PAYMENT_PROCESSING_KEY, 'true');
+        localStorage.setItem(PAYMENT_TIMESTAMP_KEY, Date.now().toString());
+        console.log('🚀 Payment processing STARTED');
+    } else {
+        localStorage.removeItem(PAYMENT_PROCESSING_KEY);
+        localStorage.removeItem(PAYMENT_TIMESTAMP_KEY);
+        console.log('🏁 Payment processing ENDED');
+    }
+};
+
 // Hiển thị modal quét QR
 const showQrScanner = () => {
     qrScannerVisible.value = true;
@@ -1676,9 +1847,23 @@ watch(fe_tongTienHang, async (newTotal) => {
     const currentTab = activeTabData.value;
     if (!currentTab || !currentTab.hd || !currentTab.hd.id_hoa_don) return;
 
-    // ❌ KHÔNG auto-apply voucher khi đang trong quá trình thanh toán
+    // ❌ NHIỀU CHECKS để prevent auto-apply trong mọi trường hợp
+    
+    // 1. Check payment processing trong current session
     if (isProcessingPayment.value) {
         console.log('🛑 Đang trong quá trình thanh toán, bỏ qua auto-apply voucher');
+        return;
+    }
+    
+    // 2. Check payment recovery mode (sau page reload)
+    if (isPaymentRecoveryMode()) {
+        console.log('🔄 Payment recovery mode - bỏ qua auto-apply voucher');
+        return;
+    }
+    
+    // 3. Check vừa restore từ backup xong
+    if (justRestoredFromBackup()) {
+        console.log('🔄 Vừa restore từ backup - bỏ qua auto-apply voucher');
         return;
     }
 
@@ -2212,17 +2397,26 @@ const handlePayment = async () => {
 // Hủy thanh toán
 const cancelPayment = () => {
     showPaymentConfirm.value = false;
-    // ✅ RESET FLAG: User hủy thanh toán
-    isProcessingPayment.value = false;
-    console.log('🚫 User hủy thanh toán - Tắt isProcessingPayment flag');
+    // ✅ CLEANUP: User hủy thanh toán
+    cleanupPaymentState();
+    console.log('🚫 User hủy thanh toán - Cleanup payment state');
 };
 
 // Bước 2: Xác nhận thanh toán -> Thực hiện thanh toán -> Hiển thị modal in hóa đơn
 const proceedToPayment = async () => {
     showPaymentConfirm.value = false;
 
+    const invoiceId = activeTabData.value.hd.id_hoa_don;
+    
+    // ✅ BACKUP: Lưu state trước khi thanh toán (ghi đè backup cũ)
+    const backupSuccess = createInvoiceBackup(invoiceId);
+    if (!backupSuccess) {
+        message.error('Không thể tạo backup hóa đơn. Vui lòng thử lại!');
+        return;
+    }
+    
     // ✅ BẬT FLAG: Bắt đầu quá trình thanh toán
-    isProcessingPayment.value = true;
+    setPaymentProcessing(true);
     console.log('🚀 Bắt đầu quá trình thanh toán - Bật isProcessingPayment flag');
 
     const hinhThuc = activeTabData.value.hd.hinh_thuc_thanh_toan;
@@ -2233,9 +2427,9 @@ const proceedToPayment = async () => {
             await store.trangThaiDonHang(activeTabData.value.hd.id_hoa_don);
             // Sau khi thanh toán thành công -> hiển thị modal in hóa đơn
             showPrintConfirm.value = true;
-            // ✅ RESET FLAG: Thanh toán tiền mặt thành công
-            isProcessingPayment.value = false;
-            console.log('💰 Thanh toán tiền mặt thành công - Tắt isProcessingPayment flag');
+            // ✅ CLEANUP: Thanh toán tiền mặt thành công
+            cleanupPaymentState();
+            console.log('💰 Thanh toán tiền mặt thành công - Cleanup payment state');
         } else if (hinhThuc === "PayOS") {
             // Validate payment amount - USE computed property!
             const paymentAmount = fe_tongThanhToan.value;
@@ -2246,9 +2440,9 @@ const proceedToPayment = async () => {
                 console.log('Debug - Tổng hàng:', fe_tongTienHang.value);
                 console.log('Debug - Giảm giá:', fe_giamGia.value);
                 console.log('Debug - Phí ship:', fe_phiVanChuyen.value);
-                // ✅ RESET FLAG: Lỗi validation
-                isProcessingPayment.value = false;
-                console.log('🚫 Lỗi PayOS - Tắt isProcessingPayment flag');
+                // ✅ CLEANUP: Lỗi validation
+                cleanupPaymentState();
+                console.log('🚫 Lỗi PayOS validation - Cleanup payment state');
                 return;
             }
 
@@ -2270,9 +2464,9 @@ const proceedToPayment = async () => {
 
             await thanhToanService.handlePayOSPayment(payment_info);
             
-            // ✅ RESET FLAG: PayOS thanh toán thành công
-            isProcessingPayment.value = false;
-            console.log('💳 PayOS thành công - Tắt isProcessingPayment flag');
+            // ✅ CLEANUP: PayOS thanh toán thành công
+            cleanupPaymentState();
+            console.log('💳 PayOS thành công - Cleanup payment state');
 
         } else if (hinhThuc === "Chuyển khoản") {
             // ✅ PHASE 1: Đồng bộ dữ liệu trước khi thanh toán
@@ -2284,9 +2478,9 @@ const proceedToPayment = async () => {
                 if (paymentAmount <= 0) {
                     message.error('Số tiền thanh toán không hợp lệ. Vui lòng thêm sản phẩm vào hóa đơn!');
                     console.error('Invalid payment amount:', paymentAmount);
-                    // ✅ RESET FLAG: Lỗi validation ZaloPay
-                    isProcessingPayment.value = false;
-                    console.log('🚫 Lỗi ZaloPay validation - Tắt isProcessingPayment flag');
+                    // ✅ CLEANUP: Lỗi validation ZaloPay
+                    cleanupPaymentState();
+                    console.log('🚫 Lỗi ZaloPay validation - Cleanup payment state');
                     return;
                 }
 
@@ -2297,9 +2491,9 @@ const proceedToPayment = async () => {
                         message.error("Phí vận chuyển chưa được tính. Vui lòng chọn địa chỉ giao hàng!");
                         console.error("Phí vận chuyển = 0 khi thanh toán ZaloPay");
                         showPaymentConfirm.value = true;
-                        // ✅ RESET FLAG: Lỗi phí vận chuyển
-                        isProcessingPayment.value = false;
-                        console.log('🚫 Lỗi phí vận chuyển ZaloPay - Tắt isProcessingPayment flag');
+                        // ✅ CLEANUP: Lỗi phí vận chuyển
+                        cleanupPaymentState();
+                        console.log('🚫 Lỗi phí vận chuyển ZaloPay - Cleanup payment state');
                         return;
                     }
                     console.log("✅ Phí vận chuyển đã được tính:", phiVanChuyen);
@@ -2318,9 +2512,9 @@ const proceedToPayment = async () => {
                     const shouldContinue = await showPriceDifferenceDialog(dbTotal, feTotal);
                     if (!shouldContinue) {
                         console.log('❌ User hủy thanh toán do sự khác biệt giá');
-                        // ✅ RESET FLAG: User hủy do khác biệt giá
-                        isProcessingPayment.value = false;
-                        console.log('🚫 User hủy (giá khác biệt) - Tắt isProcessingPayment flag');
+                        // ✅ CLEANUP: User hủy do khác biệt giá
+                        cleanupPaymentState();
+                        console.log('🚫 User hủy (giá khác biệt) - Cleanup payment state');
                         return;
                     }
                     // Refresh lại state để dùng giá mới nhất
@@ -2347,25 +2541,25 @@ const proceedToPayment = async () => {
                     fe_tongThanhToan.value  // ← TRUYỀN TỔNG TIỀN
                 );
                 
-                // ✅ RESET FLAG: ZaloPay thanh toán thành công
-                isProcessingPayment.value = false;
-                console.log('💰 ZaloPay thành công - Tắt isProcessingPayment flag');
+                // ✅ CLEANUP: ZaloPay thanh toán thành công
+                cleanupPaymentState();
+                console.log('💰 ZaloPay thành công - Cleanup payment state');
 
             } catch (error) {
                 console.error('❌ Lỗi khi đồng bộ/thanh toán ZaloPay:', error);
                 message.error('Không thể đồng bộ dữ liệu. Vui lòng thử lại!');
-                // ✅ RESET FLAG: Lỗi ZaloPay inner catch
-                isProcessingPayment.value = false;
-                console.log('🚫 Lỗi ZaloPay inner - Tắt isProcessingPayment flag');
+                // ✅ CLEANUP: Lỗi ZaloPay inner catch
+                cleanupPaymentState();
+                console.log('🚫 Lỗi ZaloPay inner - Cleanup payment state');
             }
         }
     } catch (error) {
         console.error('Lỗi khi thanh toán:', error);
         message.error('Đã xảy ra lỗi khi thanh toán!');
     } finally {
-        // ✅ RESET FLAG: Kết thúc quá trình thanh toán
-        isProcessingPayment.value = false;
-        console.log('🏁 Kết thúc quá trình thanh toán - Tắt isProcessingPayment flag');
+        // ✅ CLEANUP: Kết thúc quá trình thanh toán
+        cleanupPaymentState();
+        console.log('🏁 Kết thúc quá trình thanh toán - Cleanup payment state');
     }
 };
 
@@ -2383,7 +2577,8 @@ const confirmPrint = async (shouldPrint) => {
         duration: 3
     });
 
-    // ✅ Xóa TẤT CẢ localStorage liên quan đến đơn hàng
+    // ✅ CLEANUP: Xóa TẤT CẢ localStorage liên quan đến đơn hàng
+    cleanupPaymentState(); // Đảm bảo payment state được xóa
     localStorage.removeItem('khachHangBH');           // Khách có TK
     localStorage.removeItem('walkInCustomer');        // Khách lẻ
     localStorage.removeItem('chonKH');                // Flag chọn KH
@@ -2503,8 +2698,31 @@ const da = ref([]);
 
 // --- Lifecycle Hooks ---
 onMounted(async () => {
+    console.log('🚀 Component mounting - checking payment recovery mode...');
+    
+    // ✅ CHECK: Payment recovery mode trước khi load data
+    if (isPaymentRecoveryMode()) {
+        console.log('🔄 Payment recovery mode detected - restoring state first');
+        
+        // 1. Restore state từ backup
+        const restored = await restoreInvoiceFromBackup();
+        
+        if (restored) {
+            console.log('✅ State restored from backup - loading invoice data');
+            // 2. Chỉ load data cho invoice đã restore
+            await loadData();
+        } else {
+            console.log('⚠️ Restore failed - fallback to normal loading');
+            // Fallback: Cleanup và load bình thường
+            cleanupPaymentState();
+            await loadData();
+        }
+    } else {
+        console.log('📋 Normal mode - loading data...');
+        await loadData();
+    }
+    
     await checkAndApplyLocalData();
-    await loadData();
     stopQrScanner();
     setupAutoReloadAtMidnight();
     startChecking();
@@ -2549,7 +2767,8 @@ onMounted(async () => {
                         await refreshHoaDon(idhdpay);
                         showPrintConfirm.value = true;
 
-                        // Cleanup
+                        // ✅ CLEANUP: Payment success - Xóa TẤT CẢ payment state
+                        cleanupPaymentState();
                         localStorage.removeItem('checkPaymentStatus');
                         localStorage.removeItem('paymentMethod');
                         localStorage.removeItem('zaloPayResponse');
@@ -2565,7 +2784,8 @@ onMounted(async () => {
                             duration: 6
                         });
 
-                        // Cleanup
+                        // ✅ CLEANUP: Timeout - Xóa TẤT CẢ payment state
+                        cleanupPaymentState();
                         localStorage.removeItem('checkPaymentStatus');
                         localStorage.removeItem('paymentMethod');
                         localStorage.removeItem('zaloPayResponse');
@@ -2586,7 +2806,8 @@ onMounted(async () => {
                             duration: 5
                         });
 
-                        // Cleanup
+                        // ✅ CLEANUP: Error polling - Xóa TẤT CẢ payment state
+                        cleanupPaymentState();
                         localStorage.removeItem('checkPaymentStatus');
                         localStorage.removeItem('paymentMethod');
                         localStorage.removeItem('zaloPayResponse');
@@ -2655,11 +2876,45 @@ const startChecking = () => {
     }, 3000); // Kiểm tra mỗi 3 giây để tối ưu hiệu năng
 };
 
+// ✅ AUTO CLEANUP: Xóa backup cũ định kỳ
+const cleanupOldBackups = () => {
+    const keys = Object.keys(localStorage);
+    const now = Date.now();
+    const maxAge = 5 * 60 * 1000; // 5 phút
+    
+    keys.forEach(key => {
+        if (key === INVOICE_BACKUP_KEY) {
+            try {
+                const backupStr = localStorage.getItem(key);
+                if (backupStr) {
+                    const backup = JSON.parse(backupStr);
+                    if (backup && backup.timestamp) {
+                        if (now - backup.timestamp > maxAge) {
+                            console.log('🗑️ Xóa backup cũ:', key);
+                            localStorage.removeItem(key);
+                        }
+                    }
+                }
+            } catch (error) {
+                // Xóa backup bị lỗi
+                console.log('🗑️ Xóa backup lỗi:', key);
+                localStorage.removeItem(key);
+            }
+        }
+    });
+};
+
+// Chạy cleanup mỗi 2 phút
+setInterval(cleanupOldBackups, 2 * 60 * 1000);
+
 // Dọn dẹp interval khi component bị hủy
 onUnmounted(() => {
     if (intervalId) {
         clearInterval(intervalId);
     }
+    
+    // Cleanup payment state khi component bị hủy
+    cleanupPaymentState();
 });
 
 async function loadData() {

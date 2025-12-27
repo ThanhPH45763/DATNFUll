@@ -28,11 +28,15 @@ const handlePayOSPayment = async (orderData) => {
     }
 };
 
-const handleZaloPayPayment = async (idHoaDon) => {
+const handleZaloPayPayment = async (idHoaDon, tongThanhToan) => {
     try {
-        // Backend sẽ tự tính: tong_tien_sau_giam + phi_van_chuyen
+        // ✅ TRUYỀN TỔNG TIỀN TỪ FE CHO BE
+        // BE sẽ dùng số tiền này để thanh toán ZaloPay
         const response = await axiosInstance.post('/api/zalopay/create-order', null, {
-            params: { idHoaDon }
+            params: {
+                idHoaDon,
+                tongThanhToan  // ← TRUYỀN TỔNG TIỀN
+            }
         });
         console.log('ZaloPay Response:', response.data);
 

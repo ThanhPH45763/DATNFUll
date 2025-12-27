@@ -179,7 +179,21 @@ export const useGbStore = defineStore('gbStore', {
         this.stockValidationCache = new Map();
       }
     },
-
+    //Thêm khách hàng cho hóa đơn (BÁN HÀNG)
+    async updateCustomerInfoBH(idHD, tenKhachHang, soDienThoai, email, diaChi) {
+      try {
+        const result = await banHangService.updateCustomerInfo(idHD, tenKhachHang, soDienThoai, email, diaChi);
+        if (result.error) {
+          toast.error('Lỗi khi lưu thông tin khách hàng vào DB');
+          return { error: true };
+        }
+        console.log('✅ Đã lưu thông tin khách hàng vào DB');
+        return result;
+      } catch (error) {
+        console.error('❌ Lỗi updateCustomerInfoBH:', error);
+        return { error: true };
+      }
+    },
     ///Đầu mút2 - Merged actions
     // Sản phẩm siêu sale
     // Thêm action mới cho siêu sale

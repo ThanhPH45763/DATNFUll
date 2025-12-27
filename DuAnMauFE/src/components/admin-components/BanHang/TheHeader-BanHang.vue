@@ -234,7 +234,8 @@
 
                 <div v-if="ptnh === 'Giao hàng'">
                     <FormKhachHangBH :triggerUpdate="triggerUpdate"
-                        @shippingFeeCalculated="handleShippingFeeCalculated" />
+                        @shippingFeeCalculated="handleShippingFeeCalculated"
+                        @customerDataSaved="handleCustomerDataSaved" />
                 </div>
             </div>
             <div class="col-4">
@@ -316,7 +317,8 @@
                             <a-input-number v-model:value="activeTabData.hd.phi_van_chuyen" :min="0"
                                 :formatter="value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
                                 :parser="value => value.replace(/\$\s?|(,*)/g, '')" placeholder="Nhập phí vận chuyển"
-                                style="width: 100%" />
+                                style="width: 100%" 
+                                :readonly="true" />
                         </div>
                     </div> <!-- Closing invoice-info-card -->
                     <div class="mb-3">
@@ -375,9 +377,9 @@
                                 </label>
                             </div>
                             <div class="payment-method-option"
-                                :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'ZaloPay' }">
+                                :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'Chuyển khoản' }">
                                 <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
-                                    :id="'zalopay_' + activeKey" value="ZaloPay"
+                                    :id="'zalopay_' + activeKey" value="Chuyển khoản"
                                     v-model="activeTabData.hd.hinh_thuc_thanh_toan" @change="updateHinhThucThanhToan" />
                                 <label class="payment-label" :for="'zalopay_' + activeKey">
                                     <div class="payment-icon">⚡</div>
@@ -407,8 +409,21 @@
                         </template>
                     </a-alert>
 
+                    <!-- ✅ Debug: Show button state -->
+                    <div v-if="isPaymentDisabled" style="color: red; margin-bottom: 8px; font-size: 12px;">
+                        ⚠️ Button bị vô hiệu hóa:
+                        <div>- Có hóa đơn: {{ !!activeTabData?.hd?.id_hoa_don }}</div>
+                        <div>- Số sản phẩm: {{ currentInvoiceItems.length }}</div>
+                        <div>- Sản phẩm inactive: {{ hasInactiveProducts }}</div>
+                        <div>- Hình thức TT: {{ activeTabData?.hd?.hinh_thuc_thanh_toan }}</div>
+                        <div v-if="activeTabData?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt'">
+                            - Tiền khách đưa: {{ tienKhachDua }}
+                        </div>
+                    </div>
+
                     <!-- Nút thanh toán với điều kiện vô hiệu hóa -->
-                    <button type="submit" class="btn btn-primary w-100" :disabled="isPaymentDisabled">
+                    <button type="submit" class="btn btn-primary w-100" :disabled="isPaymentDisabled"
+                        @click="console.log('🔘 Button clicked')">
                         Thanh toán
                     </button>
                     <!-- Modal 1: Xác nhận thanh toán -->
@@ -575,7 +590,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch, onUnmounted, h } from 'vue';
+import { ref, reactive, computed, onMounted, watch, onUnmounted, nextTick, h } from 'vue';
 import {
     SearchOutlined,
     FileSearchOutlined,
@@ -741,6 +756,13 @@ const danhSachKhachHang = computed(() => {
 
 const chonKhachHang = async (khachHang) => {
     try {
+        // ✅ Xóa khách lẻ (nếu có) trước khi chọn khách TK
+        const walkInCustomer = localStorage.getItem('walkInCustomer');
+        if (walkInCustomer) {
+            console.log('⚠️ Phát hiện khách lẻ → Xóa để chọn khách có TK');
+            localStorage.removeItem('walkInCustomer');
+        }
+        
         Object.assign(activeTabData.value.hd, {
             ten_khach_hang: khachHang.hoTen,
             so_dien_thoai: khachHang.soDienThoai,
@@ -824,6 +846,7 @@ const boChonKhachHang = async () => {
         localStorage.removeItem('chonKH');
         localStorage.removeItem('luuTTKHBH');
         localStorage.removeItem('shippingFeeUpdated');
+        localStorage.removeItem('calculatedShippingFee');  // ← Thêm dòng này
 
         // Reload hóa đơn để cập nhật tổng tiền
         await refreshHoaDon(idHoaDon);
@@ -1749,6 +1772,19 @@ const removeFromBill = (productId) => {
         });
 };
 
+// ✅ Watch activeTabData để lưu ID hóa đơn hiện tại vào localStorage
+watch(
+    activeTabData,
+    (newData) => {
+        if (newData?.hd?.id_hoa_don) {
+            localStorage.setItem('currentInvoiceId', newData.hd.id_hoa_don.toString());
+            console.log('💾 Đã lưu currentInvoiceId vào localStorage:', newData.hd.id_hoa_don);
+        } else {
+            localStorage.removeItem('currentInvoiceId');
+        }
+    },
+    { deep: true }
+);
 
 // Hàm tạo mới một tab hóa đơn
 const add = async () => {
@@ -2072,7 +2108,11 @@ const showPrintConfirm = ref(false);
 
 // Hàm xử lý thanh toán - Bước 1: Validate và hiển thị modal
 const handlePayment = async () => {
+    console.log('💰 handlePayment được gọi!');
+    
     const currentTab = activeTabData.value;
+    console.log('💰 Current tab:', currentTab);
+    
     if (!currentTab || !currentTab.hd?.id_hoa_don) {
         message.error('Không tìm thấy hóa đơn!');
         return;
@@ -2087,27 +2127,35 @@ const handlePayment = async () => {
     // ✅ Kiểm tra thông tin khách hàng
     const tenKhachHang = currentTab.hd.ho_ten;
     const isWalkInCustomer = !currentTab.hd.id_khach_hang || tenKhachHang === 'Khách lẻ';
+    
+    console.log('👤 Tên khách hàng:', tenKhachHang);
+    console.log('👤 Là khách lẻ?', isWalkInCustomer);
 
     if (isWalkInCustomer) {
         // Kiểm tra localStorage có thông tin khách lẻ không
         const walkInData = localStorage.getItem('walkInCustomer');
+        console.log('💾 walkInCustomer từ localStorage:', walkInData);
 
         if (!walkInData) {
+            console.error('❌ RETURN: Không có walkInCustomer trong localStorage');
             message.error('Vui lòng nhập và lưu thông tin khách hàng trước khi thanh toán!');
             return;
         }
 
         try {
             const customerData = JSON.parse(walkInData);
+            console.log('✅ Parse customer data thành công:', customerData);
 
             // Validate thông tin cơ bản
             if (!customerData.ten_khach_hang || !customerData.sdt) {
+                console.error('❌ RETURN: Thông tin khách hàng không đầy đủ');
                 message.error('Thông tin khách hàng chưa đầy đủ. Vui lòng nhập lại!');
                 localStorage.removeItem('walkInCustomer');
                 return;
             }
 
             // Nếu chọn giao hàng, validate địa chỉ
+            console.log('🚚 Phương thức nhận hàng:', currentTab.hd.phuong_thuc_nhan_hang);
             if (currentTab.hd.phuong_thuc_nhan_hang === 'Giao hàng') {
                 console.log('📍 Checking address for delivery...', customerData.dia_chi_list);
 
@@ -2202,7 +2250,7 @@ const proceedToPayment = async () => {
 
             await thanhToanService.handlePayOSPayment(payment_info);
 
-        } else if (hinhThuc === "ZaloPay") {
+        } else if (hinhThuc === "Chuyển khoản") {
             // ✅ PHASE 1: Đồng bộ dữ liệu trước khi thanh toán
             showPaymentConfirm.value = false;
             
@@ -2221,6 +2269,7 @@ const proceedToPayment = async () => {
                     if (!phiVanChuyen || phiVanChuyen === 0) {
                         message.error("Phí vận chuyển chưa được tính. Vui lòng chọn địa chỉ giao hàng!");
                         console.error("Phí vận chuyển = 0 khi thanh toán ZaloPay");
+                        showPaymentConfirm.value = true;
                         return;
                     }
                     console.log("✅ Phí vận chuyển đã được tính:", phiVanChuyen);
@@ -2259,8 +2308,11 @@ const proceedToPayment = async () => {
                 localStorage.setItem('paymentMethod', 'ZaloPay');
                 localStorage.removeItem('khachHangBH');
 
-                // 6. ✅ Gọi ZaloPay với dữ liệu đã đồng bộ
-                await thanhToanService.handleZaloPayPayment(activeTabData.value.hd.id_hoa_don);
+                // 6. ✅ Gọi ZaloPay với số tiền từ FE
+                await thanhToanService.handleZaloPayPayment(
+                    activeTabData.value.hd.id_hoa_don,
+                    fe_tongThanhToan.value  // ← TRUYỀN TỔNG TIỀN
+                );
 
             } catch (error) {
                 console.error('❌ Lỗi khi đồng bộ/thanh toán ZaloPay:', error);
@@ -2287,7 +2339,14 @@ const confirmPrint = async (shouldPrint) => {
         duration: 3
     });
 
-    localStorage.removeItem('khachHangBH');
+    // ✅ Xóa TẤT CẢ localStorage liên quan đến đơn hàng
+    localStorage.removeItem('khachHangBH');           // Khách có TK
+    localStorage.removeItem('walkInCustomer');        // Khách lẻ
+    localStorage.removeItem('chonKH');                // Flag chọn KH
+    localStorage.removeItem('shippingFeeUpdated');    // Phí ship đã update
+    localStorage.removeItem('calculatedShippingFee'); // Phí ship tính toán
+    localStorage.removeItem('luuTTKHBH');             // Lưu TT KH BH
+    console.log('✅ Đã xóa toàn bộ localStorage sau thanh toán thành công');
 
     setTimeout(() => {
         router.push('/admin/banhang');
@@ -2818,7 +2877,23 @@ const handleShippingFeeCalculated = async (fee) => {
             console.error('❌ Lỗi lưu phí vận chuyển:', error);
         }
 
+
         console.log('✅ Đã cập nhật phí vận chuyển:', fee);
+    }
+};
+
+// ✅ Nhận event khi form khách hàng thay đổi (reset hoặc lưu)
+const handleCustomerDataSaved = async (customerData) => {
+    // CHỈ refresh UI khi RESET (customerData = null)
+    // KHÔNG refresh khi LƯU (customerData có giá trị) để tránh form biến mất
+    if (customerData === null) {
+        const idHoaDon = activeTabData.value?.hd?.id_hoa_don;
+        if (idHoaDon) {
+            await refreshHoaDon(idHoaDon);
+            console.log('✅ Đã refresh UI sau khi reset form');
+        }
+    } else {
+        console.log('ℹ️ Form saved, skip refresh to keep form visible');
     }
 };
 

@@ -104,6 +104,14 @@ public class BanHangController {
             @RequestParam("soDienThoai") String soDienThoai,
             @RequestParam("email") String email) {
         try {
+            System.out.println("=== API addKhHD được gọi ===");
+            System.out.println("idKH: " + idKHStr);
+            System.out.println("idHD: " + idHD);
+            System.out.println("tenKhachHang: " + tenKhachHang);
+            System.out.println("soDienThoai: " + soDienThoai);
+            System.out.println("email: " + email);
+            System.out.println("diaChi: " + diaChi);
+
             HoaDon hoaDon = hoaDonRepo.findById(idHD)
                     .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
 
@@ -117,6 +125,7 @@ public class BanHangController {
                     hoaDon.setSdt(khachHang.getSoDienThoai());
                     hoaDon.setDia_chi(diaChi);
                     hoaDon.setEmail(khachHang.getEmail());
+                    System.out.println("→ Lưu KHÁCH CÓ TK");
                 } catch (NumberFormatException ex) {
                     // Nếu idKH không phải là số, coi như nhập khách hàng mới
                     hoaDon.setKhachHang(null);
@@ -124,6 +133,7 @@ public class BanHangController {
                     hoaDon.setSdt(soDienThoai);
                     hoaDon.setDia_chi(diaChi);
                     hoaDon.setEmail(email);
+                    System.out.println("→ Lưu KHÁCH LẺ (idKH không parse được)");
                 }
             } else {
                 hoaDon.setKhachHang(null);
@@ -131,13 +141,105 @@ public class BanHangController {
                 hoaDon.setSdt(soDienThoai);
                 hoaDon.setDia_chi(diaChi);
                 hoaDon.setEmail(email);
+                System.out.println("→ Lưu KHÁCH LẺ (idKH = null)");
             }
 
             hoaDonRepo.save(hoaDon);
+            System.out.println("✅ Đã lưu hóa đơn vào DB");
             return ResponseEntity.ok("Cập nhật khách hàng cho hóa đơn thành công!");
         } catch (Exception e) {
+            System.err.println("❌ Lỗi: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi khi cập nhật khách hàng cho hóa đơn: " + e.getMessage());
+        }
+    }
+
+    // ✅ NEW: Endpoint riêng để update thông tin khách hàng vào hóa đơn
+    @PostMapping("/updateCustomerInfo")
+    public ResponseEntity<?> updateCustomerInfo(
+            @RequestParam("idHD") Integer idHD,
+            @RequestParam("tenKhachHang") String tenKhachHang,
+            @RequestParam("soDienThoai") String soDienThoai,
+            @RequestParam(value = "email", required = false) String email,
+            @RequestParam(value = "diaChi", required = false) String diaChi) {
+        try {
+            System.out.println("=== API updateCustomerInfo được gọi ===");
+            System.out.println("idHD: " + idHD);
+            System.out.println("tenKhachHang: " + tenKhachHang);
+            System.out.println("soDienThoai: " + soDienThoai);
+            System.out.println("email: " + email);
+            System.out.println("diaChi: " + diaChi);
+
+            HoaDon hoaDon = hoaDonRepo.findById(idHD)
+                    .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
+
+            // ✅ Lưu thông tin khách lẻ
+            hoaDon.setKhachHang(null); // id_khach_hang = NULL
+            hoaDon.setHo_ten(tenKhachHang);
+            hoaDon.setSdt(soDienThoai);
+            hoaDon.setEmail(email != null && !email.isEmpty() ? email : null);
+            hoaDon.setDia_chi(diaChi != null && !diaChi.isEmpty() ? diaChi : null);
+
+            hoaDonRepo.save(hoaDon);
+            System.out.println("✅ ĐÃ LƯU THÔNG TIN KHÁCH HÀNG VÀO DB");
+
+            return ResponseEntity.ok("Cập nhật thông tin khách hàng thành công!");
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi updateCustomerInfo: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/trangThaiDonHang")
+    public String trangThaiDonHang(@RequestParam("idHD") Integer idHD) {
+        try {
+            HoaDon hoaDon = hoaDonRepo.findById(idHD)
+                    .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
+
+            // ✅ LOGIC MỚI: Set trạng thái dựa trên loại hóa đơn và phương thức nhận
+            String loaiHoaDon = hoaDon.getLoai_hoa_don();
+            String phuongThucNhanHang = hoaDon.getPhuong_thuc_nhan_hang();
+            String trangThaiMoi = "";
+
+            if ("Offline".equals(loaiHoaDon)) {
+                // Offline - Thanh toán tại quầy
+                if ("Nhận tại cửa hàng".equals(phuongThucNhanHang)) {
+                    // Trường hợp 1: Offline + Nhận tại cửa hàng
+                    // → Đã thanh toán + Đã nhận hàng → HOÀN THÀNH
+                    trangThaiMoi = "Hoàn thành";
+                    hoaDon.setTrang_thai(trangThaiMoi);
+                } else {
+                    // Trường hợp 2: Offline + Giao hàng
+                    // → Đã thanh toán nhưng CHƯA giao → ĐÃ XÁC NHẬN
+                    trangThaiMoi = "Đã xác nhận";
+                    hoaDon.setTrang_thai(trangThaiMoi);
+                }
+            } else {
+                // Trường hợp 3: Online (đã được xử lý trong callback ZaloPay/PayOS)
+                // → Đã thanh toán online nhưng CHƯA giao → ĐÃ XÁC NHẬN
+                trangThaiMoi = "Đã xác nhận";
+                hoaDon.setTrang_thai(trangThaiMoi);
+            }
+
+            hoaDonRepo.save(hoaDon);
+
+            // ✅ THÊM: Insert/Update bảng theo_doi_don_hang
+            if ("Đã xác nhận".equals(trangThaiMoi)) {
+                TheoDoiDonHang tracking = new TheoDoiDonHang();
+                tracking.setHoaDon(hoaDon);
+                tracking.setTrang_thai("Đã xác nhận");
+                tracking.setNgay_chuyen(LocalDateTime.now());
+                tracking.setNoi_dung_doi("Đơn hàng đã được xác nhận và chờ giao hàng");
+                theoDoiDonHangRepo.save(tracking);
+                System.out.println("✅ Đã tạo theo dõi đơn hàng: Đã xác nhận");
+            }
+
+            return "Cập nhật trạng thái hóa đơn thành công!";
+        } catch (Exception e) {
+            return "Lỗi khi cập nhật trạng thái hóa đơn: " + e.getMessage();
         }
     }
 
@@ -188,24 +290,11 @@ public class BanHangController {
                 hoaDon.setPhi_van_chuyen(BigDecimal.ZERO);
             }
 
-            // Lấy chi tiết hóa đơn
-
-            List<HoaDonChiTiet> chiTietList = hoaDonChiTietRepo.findByIdHoaDon(idHD);
-
-            // Tính tổng tiền hàng (chưa bao gồm phí vận chuyển)
-            // Lưu ý: don_gia trong DB đã là tổng tiền (giá_lẻ × số_lượng), không cần nhân
-            // thêm
-            BigDecimal tongTienHang = chiTietList.stream()
-                    .map(HoaDonChiTiet::getDon_gia)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            // Tổng tiền trước giảm = tổng tiền hàng + phí vận chuyển
-            BigDecimal tongTienTruocGiam = tongTienHang.add(pvc);
-
-            hoaDon.setTong_tien_truoc_giam(tongTienTruocGiam);
-
+            // ✅ LƯU PHÍ SHIP
             hoaDonRepo.save(hoaDon);
 
+            // ✅ GỌI updateTongTienHoaDon để tính lại ĐÚNG
+            // (tongTienTruocGiam = CHỈ sản phẩm, KHÔNG cộng ship)
             updateTongTienHoaDon(idHD);
 
             return ResponseEntity.ok("Cập nhật phương thức nhận hàng và tính tổng tiền thành công!");
@@ -413,13 +502,36 @@ public class BanHangController {
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại!"));
 
             // ✅ 1. Lấy giá HIỆN TẠI của sản phẩm (sau khuyến mãi)
+            System.out.println("🔍 Tìm KM cho sản phẩm ID: " + idCTSP);
+
+            // DEBUG: Lấy TẤT CẢ KM cho SP này (không filter) để xem có data không
+            List<ChiTietKhuyenMai> allKM = chiTietKhuyenMaiRepo.findAll().stream()
+                    .filter(ckm -> ckm.getChiTietSanPham() != null &&
+                            ckm.getChiTietSanPham().getId_chi_tiet_san_pham().equals(idCTSP))
+                    .toList();
+            System.out.println("📊 Tất cả KM cho SP (không filter): " + allKM.size());
+            allKM.forEach(ckm -> {
+                if (ckm.getKhuyenMai() != null) {
+                    System.out.println("  - KM ID: " + ckm.getKhuyenMai().getId());
+                    System.out.println("    Trạng thái: " + ckm.getKhuyenMai().getTrangThai());
+                    System.out.println("    Ngày bắt đầu: " + ckm.getKhuyenMai().getNgayBatDau());
+                    System.out.println("    Ngày hết hạn: " + ckm.getKhuyenMai().getNgayHetHan());
+                    System.out.println("    Giá sau giảm: " + ckm.getGiaSauGiam());
+                }
+            });
+            System.out.println("⏰ Thời gian hiện tại: " + new java.util.Date());
+
             List<ChiTietKhuyenMai> khuyenMais = chiTietKhuyenMaiRepo.findAllByChiTietSanPhamId(idCTSP);
+            System.out.println("📦 Số KM tìm thấy (có filter): " + khuyenMais.size());
+
             Optional<BigDecimal> giaGiamTotNhat = khuyenMais.stream()
                     .map(ChiTietKhuyenMai::getGiaSauGiam)
                     .filter(Objects::nonNull)
                     .min(BigDecimal::compareTo);
 
             BigDecimal donGiaPerUnit = giaGiamTotNhat.orElse(ctsp.getGia_ban());
+            System.out.println("💰 Giá gốc: " + ctsp.getGia_ban());
+            System.out.println("💰 Giá sau KM: " + donGiaPerUnit);
 
             // ✅ 2. Kiểm tra tồn kho - tính tổng số lượng đã mua (tất cả các dòng)
             List<HoaDonChiTiet> allItemsOfProduct = hoaDonChiTietRepo
@@ -781,41 +893,26 @@ public class BanHangController {
         }
     }
 
-    @GetMapping("/trangThaiDonHang")
-    public ResponseEntity<?> chuyenTrangThaiHoaDon(@RequestParam("idHoaDon") Integer idHD) {
-        HoaDon hoaDon = hoaDonRepo.findById(idHD).get();
-        if (hoaDon.getPhuong_thuc_nhan_hang().equalsIgnoreCase("Nhận tại cửa hàng")) {
-            hoaDon.setTrang_thai("Hoàn thành");
-            hoaDon.setHinh_thuc_thanh_toan(hoaDon.getHinh_thuc_thanh_toan());
-            hoaDonRepo.insertTrangThaiDonHang(hoaDon.getMa_hoa_don(), "Hoàn thành", LocalDateTime.now(),
-                    "Hoàn tất thanh toán");
-            hoaDonRepo.save(hoaDon);
-        } else if (hoaDon.getPhuong_thuc_nhan_hang().equalsIgnoreCase("Giao hàng")) {
-            hoaDon.setTrang_thai("Hoàn thành");
-            hoaDon.setHinh_thuc_thanh_toan(hoaDon.getHinh_thuc_thanh_toan());
-            hoaDonRepo.insertTrangThaiDonHang(hoaDon.getMa_hoa_don(), "Đã xác nhận", LocalDateTime.now(),
-                    "Hoàn tất thanh toán");
-            hoaDonRepo.save(hoaDon);
-        }
-
-        return ResponseEntity.ok("Thanh toán hóa đơn thành công");
-    }
-
     @GetMapping("/phuongThucNhanHang")
     public ResponseEntity<?> phuongThucNhanHang(
             @RequestParam("idHoaDon") Integer idHD,
             @RequestParam("phuongThucNhanHang") String phuongThuc) {
         Optional<HoaDon> hoaDon = hoaDonRepo.findById(idHD);
         HoaDon hd = hoaDon.get();
-        if (phuongThuc.equalsIgnoreCase("Giao hàng")) {
-            hd.setPhuong_thuc_nhan_hang("Giao hàng");
-            hd.setPhi_van_chuyen(BigDecimal.valueOf(30000));
-        } else {
-            hd.setPhuong_thuc_nhan_hang("Nhận tại cửa hàng");
-            hd.setPhi_van_chuyen(BigDecimal.ZERO);
-        }
+
+        // ✅ CHỈ SET PHƯƠNG THỨC NHẬN HÀNG
+        // Phí vận chuyển sẽ được tính và set khi thanh toán ZaloPay
+        hd.setPhuong_thuc_nhan_hang(phuongThuc);
+
+        // ❌ KHÔNG SET PHÍ VẬN CHUYỂN Ở ĐÂY
+        // Lý do: Tránh bug cộng dồn khi user đổi phương thức nhiều lần
+        // Phí ship sẽ được tính trong ZaloPayController.createOrder()
+
         hoaDonRepo.save(hd);
-        updateTongTienHoaDon(idHD);
+
+        System.out.println("✅ Đã set phương thức nhận hàng: " + phuongThuc +
+                " cho hóa đơn " + idHD);
+
         return ResponseEntity.ok("ok");
     }
 

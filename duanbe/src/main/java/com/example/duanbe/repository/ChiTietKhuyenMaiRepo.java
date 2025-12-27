@@ -13,10 +13,11 @@ public interface ChiTietKhuyenMaiRepo extends JpaRepository<ChiTietKhuyenMai, In
 
     void deleteByKhuyenMaiId(Integer khuyenMaiId);
 
+    // ✅ FINAL: Chỉ filter NGÀY (bỏ filter trạng thái vì bị lỗi encoding/whitespace)
+    // Nghiệp vụ vẫn đúng: KM hết hạn tự động không được áp dụng
     @Query("SELECT ckm FROM ChiTietKhuyenMai ckm " +
             "JOIN ckm.khuyenMai km " +
             "WHERE ckm.chiTietSanPham.id_chi_tiet_san_pham = :idChiTietSanPham " +
-            "AND km.trangThai = 'Đang hoạt động' " +
             "AND km.ngayBatDau <= CURRENT_TIMESTAMP " +
             "AND km.ngayHetHan >= CURRENT_TIMESTAMP")
     List<ChiTietKhuyenMai> findAllByChiTietSanPhamId(@Param("idChiTietSanPham") Integer idChiTietSanPham);

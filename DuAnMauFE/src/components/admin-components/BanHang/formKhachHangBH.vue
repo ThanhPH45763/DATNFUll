@@ -145,6 +145,7 @@
 <script setup>
 import { ref, onMounted, reactive, computed, watch, onUnmounted, h } from 'vue';
 import { useGbStore } from '@/stores/gbStore';
+import { banHangService } from '@/services/banHangService';
 import { toast } from 'vue3-toastify';
 import { Modal as AModal } from 'ant-design-vue';
 import {
@@ -499,7 +500,8 @@ const handleDefaultChange = (index) => {
 
 
 
-const resetForm = () => {
+const resetForm = async () => {
+    // ✅ Reset form data
     Object.assign(formData, {
         maKhachHang: '',
         tenKhachHang: '',
@@ -516,12 +518,48 @@ const resetForm = () => {
             diaChiMacDinh: true
         }]
     });
+    
     Object.keys(errors).forEach(key => {
         if (key !== 'diaChiErrors') errors[key] = '';
     });
     errors.diaChiErrors = [{}];
     districts.value = [[]];
     wards.value = [[]];
+    
+    // ✅ Reset phí ship về 0
+    calculatedShippingFee.value = 0;
+    
+    // ✅ Nếu có hóa đơn, clear TOÀN BỘ thông tin khách hàng
+    const idHoaDon = gbStore.getCurrentHoaDonId();
+    if (idHoaDon) {
+        try {
+            // ✅ 1. Xóa thông tin khách hàng (cả TK và khách lẻ) khỏi hóa đơn
+            await gbStore.removeCustomerFromHD(idHoaDon);
+            console.log('✅ Đã xóa thông tin khách hàng khỏi hóa đơn');
+            
+            // ✅ 2. Reset phí ship = 0 (đã được API removeCustomerFromInvoice tự động xử lý)
+            
+            toast.info('Đã làm mới form và xóa thông tin khách hàng', {
+                autoClose: 2000,
+                position: 'top-right'
+            });
+        } catch (error) {
+            console.error('❌ Lỗi khi làm mới:', error);
+        }
+    }
+    
+    // ✅ Clear TẤT CẢ localStorage liên quan đến khách hàng
+    localStorage.removeItem('khachHangBH');        // Khách có TK
+    localStorage.removeItem('walkInCustomer');     // Khách lẻ
+    localStorage.removeItem('chonKH');             // Flag đã chọn KH
+    localStorage.removeItem('shippingFeeUpdated');
+    localStorage.removeItem('calculatedShippingFee');
+    
+    // ✅ Emit event để parent biết phí = 0
+    emit('shippingFeeCalculated', 0);
+    
+    // ✅ Emit event để parent refresh UI (header hiển thị "Khách lẻ")
+    emit('customerDataSaved', null);
 };
 
 const themKhachHang = async () => {
@@ -579,11 +617,37 @@ const luuThongTinKhachHang = async () => {
         return;
     }
 
-    // Lấy idHoaDon từ gbStore
-    const idHoaDon = gbStore.getCurrentHoaDonId();
+    // Lấy idHoaDon từ localStorage (parent component đã lưu khi switch tab)
+    const idHoaDon = localStorage.getItem('currentInvoiceId');
+    console.log('🔍 Lấy ID từ localStorage.currentInvoiceId:', idHoaDon);
+    
+    if (!idHoaDon || idHoaDon === 'null') {
+        toast.error('Không tìm thấy hóa đơn. Vui lòng chọn tab hóa đơn!');
+        console.error('❌ localStorage.currentInvoiceId:', idHoaDon);
+        return;
+    }
 
     try {
-        // ✅ Lưu thông tin khách hàng vào localStorage
+        // Convert string to number
+        const invoiceId = parseInt(idHoaDon);
+        
+        // ✅ BƯỚC 1: Kiểm tra xem có khách có TK đang chọn không
+        const khachHangBH = localStorage.getItem('khachHangBH');
+        const chonKH = localStorage.getItem('chonKH');
+        
+        if (khachHangBH || chonKH === 'true') {
+            // Có khách TK đang chọn → XÓA khách TK trước
+            console.log('⚠️ Phát hiện khách có TK đang chọn → Xóa để lưu khách lẻ');
+            
+            await gbStore.removeCustomerFromHD(invoiceId);
+            console.log('✅ Đã xóa khách có TK khỏi hóa đơn');
+            
+            // Xóa localStorage khách TK
+            localStorage.removeItem('khachHangBH');
+            localStorage.removeItem('chonKH');
+        }
+        
+        // ✅ BƯỚC 2: Lưu thông tin khách lẻ vào localStorage
         const customerData = {
             id_khach_hang: null,
             ten_khach_hang: formData.tenKhachHang,
@@ -595,51 +659,61 @@ const luuThongTinKhachHang = async () => {
         localStorage.setItem('walkInCustomer', JSON.stringify(customerData));
         console.log('✅ Đã lưu thông tin khách lẻ vào localStorage:', customerData);
 
-        // ✅ Nếu đã có hóa đơn, cập nhật luôn vào backend
-        if (idHoaDon) {
-            const defaultAddress = formData.diaChiList?.find(dc => dc.diaChiMacDinh);
-            let diaChiGiaoHang = '';
+        // ✅ BƯỚC 3: Lưu vào DB
+        const defaultAddress = formData.diaChiList?.find(dc => dc.diaChiMacDinh);
+        let diaChiGiaoHang = '';
 
-            if (defaultAddress) {
-                diaChiGiaoHang = `${defaultAddress.soNha || ''}, ${defaultAddress.xaPhuong || ''}, ${defaultAddress.quanHuyen || ''}, ${defaultAddress.tinhThanhPho || ''}`.trim();
-            }
+        if (defaultAddress) {
+            diaChiGiaoHang = `${defaultAddress.soNha || ''}, ${defaultAddress.xaPhuong || ''}, ${defaultAddress.quanHuyen || ''}, ${defaultAddress.tinhThanhPho || ''}`.trim();
+        }
+        
+        // ✅ GỌI API - updateCustomerInfo
+        console.log('📞 Gọi API updateCustomerInfoBH với idHD:', invoiceId);
+        const result = await gbStore.updateCustomerInfoBH(
+            invoiceId,
+            formData.tenKhachHang,
+            formData.soDienThoai,
+            formData.email || '',
+            diaChiGiaoHang
+        );
 
-            await gbStore.addKHHD(
-                null,
-                idHoaDon,
-                diaChiGiaoHang,
-                formData.tenKhachHang,
-                formData.soDienThoai,
-                formData.email || ''
-            );
+        if (result.error) {
+            toast.error('Lỗi khi lưu thông tin khách hàng vào DB');
+            return;
+        }
 
-            console.log('✅ Đã cập nhật thông tin khách lẻ vào hóa đơn');
+        console.log('✅ API updateCustomerInfoBH thành công!');
 
-            // ✅ Tính phí vận chuyển nếu có địa chỉ giao hàng
-            if (defaultAddress && defaultAddress.tinhThanhPho && defaultAddress.quanHuyen) {
-                try {
-                    const phiShip = await gbStore.tinhPhiShip(
-                        'Hà Nội',
-                        'Nam Từ Liêm',
-                        defaultAddress.tinhThanhPho.replace(/^(Tỉnh|Thành phố)\s+/i, '').trim(),
-                        defaultAddress.quanHuyen.replace(/^(Quận|Huyện|Thị xã|Thành phố)\s+/i, '').trim(),
-                        500,
-                        100000 // Giá trị tạm để tính phí
-                    );
+        // ✅ Tính phí vận chuyển nếu có địa chỉ giao hàng
+        if (defaultAddress && defaultAddress.tinhThanhPho && defaultAddress.quanHuyen) {
+            try {
+                const phiShip = await gbStore.tinhPhiShip(
+                    'Hà Nội',
+                    'Nam Từ Liêm',
+                    defaultAddress.tinhThanhPho.replace(/^(Tỉnh|Thành phố)\s+/i, '').trim(),
+                    defaultAddress.quanHuyen.replace(/^(Quận|Huyện|Thị xã|Thành phố)\s+/i, '').trim(),
+                    500,
+                    100000
+                );
 
-                    if (phiShip && phiShip.fee) {
-                        console.log('✅ Phí vận chuyển tính được:', phiShip.fee);
-                        emit('shippingFeeCalculated', phiShip.fee);
-                    }
-                } catch (error) {
-                    console.error('❌ Lỗi tính phí vận chuyển:', error);
+                if (phiShip && phiShip.fee) {
+                    console.log('✅ Phí vận chuyển tính được:', phiShip.fee);
+                    emit('shippingFeeCalculated', phiShip.fee);
                 }
+            } catch (error) {
+                console.error('❌ Lỗi tính phí vận chuyển:', error);
             }
         }
 
         // ✅ Emit event
         emit('customerDataSaved', customerData);
-        toast.success('Lưu thông tin khách hàng thành công');
+        
+        // Toast message khác nhau tùy có hóa đơn hay không
+        if (idHoaDon) {
+            toast.success('Đã lưu thông tin khách lẻ vào hóa đơn');
+        } else {
+            toast.info('Đã lưu thông tin tạm (chưa có hóa đơn)');
+        }
     } catch (error) {
         console.error('Lỗi khi lưu thông tin:', error);
         toast.error('Không thể lưu thông tin khách hàng');
@@ -716,10 +790,70 @@ const props = defineProps({
 onMounted(async () => {
     await initializeLocationData();
 
+    // ✅ PRIORITY 1: Load từ DB (nếu hóa đơn đã có thông tin khách hàng)
+    const idHoaDon = gbStore.getCurrentHoaDonId();
+    if (idHoaDon) {
+        const hoaDon = gbStore.getAllHoaDonCTTArr.find(hd => hd.id_hoa_don === idHoaDon);
+        
+        if (hoaDon && hoaDon.ho_ten && hoaDon.sdt) {
+            console.log('📋 Load thông tin khách hàng từ DB');
+            
+            // Fill form từ DB
+            formData.tenKhachHang = hoaDon.ho_ten;
+            formData.soDienThoai = hoaDon.sdt;
+            formData.email = hoaDon.email || '';
+            
+            if (hoaDon.dia_chi) {
+                const diaChi = tachDiaChi(hoaDon.dia_chi);
+                formData.diaChiList = [{
+                    soNha: diaChi.soNha || '',
+                    xaPhuong: diaChi.xaPhuong || '',
+                    quanHuyen: diaChi.quanHuyen || '',
+                    tinhThanhPho: diaChi.tinhThanhPho || '',
+                    diaChiMacDinh: true
+                }];
+                
+                // Load địa chỉ cascade
+                await handleAllAddressLevels();
+            }
+            
+            return; // Đã load từ DB → STOP
+        }
+    }
+    
+    // ✅ PRIORITY 2: Load từ localStorage - Khách lẻ
+    const walkInCustomer = localStorage.getItem('walkInCustomer');
+    if (walkInCustomer) {
+        try {
+            const customer = JSON.parse(walkInCustomer);
+            console.log('📋 Load thông tin khách lẻ từ localStorage');
+            
+            formData.tenKhachHang = customer.ten_khach_hang || '';
+            formData.soDienThoai = customer.sdt || '';
+            formData.email = customer.email || '';
+            
+            if (customer.dia_chi_list && customer.dia_chi_list.length > 0) {
+                formData.diaChiList = customer.dia_chi_list.map(dc => ({
+                    soNha: dc.soNha || '',
+                    xaPhuong: dc.xaPhuong || '',
+                    quanHuyen: dc.quanHuyen || '',
+                    tinhThanhPho: dc.tinhThanhPho || '',
+                    diaChiMacDinh: dc.diaChiMacDinh || false
+                }));
+                
+                await handleAllAddressLevels();
+            }
+            
+            return; // Đã load từ walkInCustomer → STOP
+        } catch (err) {
+            console.error('❌ Lỗi parse walkInCustomer:', err);
+        }
+    }
+    
+    // ✅ PRIORITY 3: Load từ localStorage - Khách có TK (fallback)
     const checkKH = localStorage.getItem('chonKH');
     if (checkKH === 'true') {
         await loadKhachHangTuLocalStorage();
-
         await handleAllAddressLevels();
     }
 });

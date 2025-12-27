@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +45,13 @@ public class ZaloPayController {
      * Tạo đơn hàng ZaloPay và trả về QR code
      */
     @PostMapping("/create-order")
-    public ResponseEntity<?> createOrder(@RequestParam("idHoaDon") Integer idHoaDon) {
+    public ResponseEntity<?> createOrder(
+            @RequestParam Integer idHoaDon,
+            @RequestParam BigDecimal tongThanhToan) { // ← ✅ NHẬN TỪ FE
         try {
-            System.out.println("\n=== TẠO ORDER ZALOPAY ===");
+            System.out.println("=== TẠO ORDER ZALOPAY ===");
             System.out.println("ID Hóa đơn: " + idHoaDon);
+            System.out.println("💰 TỔNG TỪ FE: " + tongThanhToan);
 
             HoaDon hoaDon = hoaDonRepo.findById(idHoaDon)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn"));
@@ -63,64 +67,16 @@ public class ZaloPayController {
                         "return_message", "Hóa đơn đã được thanh toán rồi!"));
             }
 
-            // Kiểm tra số tiền hợp lệ
-            java.math.BigDecimal tongTienSauGiam = hoaDon.getTong_tien_sau_giam();
+            // ✅ GIẢI PHÁP CUỐI CÙNG: DÙNG SỐ TIỀN TỪ FE
+            // FE đã tính: SP + ship - voucher = tongThanhToan
+            // BE CHỈ NHẬN và gửi ZaloPay, KHÔNG tính lại
+            System.out.println("=== SỬ DỤNG SỐ TIỀN TỪ FE ===");
+            System.out.println("Tổng từ FE: " + tongThanhToan);
+            System.out.println("(FE đã tính: SP + ship - voucher)");
+            System.out.println("=== END ===");
 
-            // ✅ DEBUG THÔNG TIN CHI TIẾT HÓA ĐƠN
-            System.out.println("=== DEBUG THÔNG TIN HÓA ĐƠN ===");
-            System.out.println("ID Hóa đơn: " + hoaDon.getId_hoa_don());
-            System.out.println("Mã hóa đơn: " + hoaDon.getMa_hoa_don());
-            System.out.println("Loại hóa đơn: " + hoaDon.getLoai_hoa_don());
-            System.out.println("Địa chỉ: " + hoaDon.getDia_chi());
-            System.out.println("Phương thức nhận hàng: " + hoaDon.getPhuong_thuc_nhan_hang());
-            System.out.println("Ghi chú hiện tại: " + hoaDon.getGhi_chu());
-            System.out.println("Tổng tiền trước giảm (đã có ship): " + hoaDon.getTong_tien_truoc_giam());
-            System.out.println("Tổng tiền sau giảm (đã có ship): " + tongTienSauGiam);
-            System.out.println("Phí vận chuyển riêng: " + hoaDon.getPhi_van_chuyen());
-            System.out.println("=== END DEBUG ===");
-
-            // ✅ FIX BUG: TỔNG THANH TOÁN = TỔNG SAU GIẢM (ĐÃ BAO GỒM SHIP)
-            // LÝ DO: updateTongTienHoaDon() đã tính:
-            // tongTienTruocGiam = sản phẩm + ship
-            // tongTienSauGiam = tongTienTruocGiam - voucher
-            // VÌ VẬY tongTienSauGiam ĐÃ BAO GỒM SHIP, KHÔNG CỘNG THÊM!
-            java.math.BigDecimal tongTien = tongTienSauGiam;
-
-            System.out.println("💰 TỔNG THANH TOÁN ZALOPAY (đã có ship + trừ voucher): " + tongTien);
-
-            // ✅ PHASE 2: TÍNH LẠI TỔNG TIỀN ĐỂ ĐỒNG BỘ
-            java.math.BigDecimal recalculatedTotal = recalculateInvoiceTotal(hoaDon);
-            System.out.println("=== PHASE 2 RECALCULATION ===");
-            System.out.println("DB Total: " + tongTien);
-            System.out.println("Recalculated Total: " + recalculatedTotal);
-
-            // ✅ SỬ DỤNG GIÁ TRỊ TÍNH LẠI NẾU CÓ KHÁC BIỆT
-            java.math.BigDecimal finalAmount = recalculatedTotal;
-            if (recalculatedTotal.compareTo(tongTien) != 0) {
-                System.out.println("⚠️ PHÁT HIỆN KHÁC BIỆT - DÙNG GIÁ TÍNH LẠI");
-                System.out.println("Chênh lệch: " + recalculatedTotal.subtract(tongTien));
-            } else {
-                System.out.println("✅ DỮ LIỆU ĐỒNG BỘ - DÙNG GIÁ DB");
-                finalAmount = tongTien;
-            }
-            System.out.println("=== END PHASE 2 ===");
-
-            // ✅ VALIDATE TỔNG TIỀN CHO HÓA ĐƠN GIAO HÀNG
-            if ("Giao hàng".equals(hoaDon.getPhuong_thuc_nhan_hang())) {
-                java.math.BigDecimal phiVanChuyen = hoaDon.getPhi_van_chuyen();
-                if (phiVanChuyen == null || phiVanChuyen.compareTo(java.math.BigDecimal.ZERO) == 0) {
-                    System.out.println("!!! PHÍ VẬN CHUYỂN = 0 CHO HÓA ĐƠN GIAO HÀNG");
-                    return ResponseEntity.badRequest().body(Map.of(
-                            "return_code", -1,
-                            "return_message",
-                            "Phí vận chuyển chưa được tính. Vui lòng tính phí vận chuyển trước khi thanh toán!"));
-                }
-                System.out.println("✅ Phí vận chuyển đã tính: " + phiVanChuyen + " (đã bao gồm trong tổng)");
-            } else if ("Nhận tại cửa hàng".equals(hoaDon.getPhuong_thuc_nhan_hang())) {
-                System.out.println("✅ Nhận tại cửa hàng - không tính phí vận chuyển");
-            }
-
-            if (tongTien == null || tongTien.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            // Validate
+            if (tongThanhToan == null || tongThanhToan.compareTo(java.math.BigDecimal.ZERO) <= 0) {
                 System.out.println("!!! SỐ TIỀN KHÔNG HỢP LỆ");
                 return ResponseEntity.badRequest().body(Map.of(
                         "return_code", -1,
@@ -132,7 +88,7 @@ public class ZaloPayController {
             System.out.println(">>> Gọi ZaloPay Create Order API...");
             Map<String, Object> result = zaloPayService.createOrder(
                     hoaDon.getMa_hoa_don(),
-                    finalAmount,
+                    tongThanhToan, // ✅ DÙNG SỐ TIỀN TỪ FE
                     moTa);
 
             System.out.println("ZaloPay Response Return Code: " + result.get("return_code"));
@@ -211,8 +167,8 @@ public class ZaloPayController {
             // Nếu thanh toán thành công, cập nhật hóa đơn
             if (result.get("return_code") != null && (Double) result.get("return_code") == 1.0) {
                 System.out.println(">>> ZALOPAY XÁC NHẬN THÀNH CÔNG - CẬP NHẬT DB");
-                hoaDon.setTrang_thai("Hoàn thành");
-                hoaDon.setHinh_thuc_thanh_toan("Chuyển khoản");
+                hoaDon.setTrang_thai("Hoàn thành"); // ✅ ĐÃ SỬA: Đã xác nhận, chưa hoàn thành
+                hoaDon.setHinh_thuc_thanh_toan("Chuyển khoản"); // ✅ ZaloPay = Chuyển khoản
                 hoaDonRepo.save(hoaDon);
             } else {
                 System.out.println(">>> CHƯA THANH TOÁN - Return Code: " + result.get("return_code"));
@@ -255,8 +211,8 @@ public class ZaloPayController {
 
                 if (hoaDonOpt.isPresent()) {
                     HoaDon hoaDon = hoaDonOpt.get();
-                    hoaDon.setTrang_thai("Hoàn thành");
-                    hoaDon.setHinh_thuc_thanh_toan("Chuyển khoản");
+                    hoaDon.setTrang_thai("Hoàn thành"); // ✅ ĐÃ SỬA: Đã xác nhận
+                    hoaDon.setHinh_thuc_thanh_toan("Chuyển khoản"); // ✅ ZaloPay = Chuyển khoản
                     hoaDonRepo.save(hoaDon);
                     System.out.println("Cập nhật trạng thái hóa đơn thành công cho app_trans_id: " + appTransId);
                     result.put("return_code", 1);

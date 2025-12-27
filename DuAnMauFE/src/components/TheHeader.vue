@@ -342,7 +342,10 @@ const checkCartInterval = setInterval(updateCartCount, 5000);
     height: var(--header-height);
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: var(--space-md);
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 /* ========== Logo Section ========== */

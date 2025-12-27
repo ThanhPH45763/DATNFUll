@@ -1593,7 +1593,7 @@ const shouldCalculateSoLuongTon = computed(() => {
 });
 // Tăng số lượng trong Popup
 const increaseQuantityPopup = (index) => {
-    const max = shouldCalculateSoLuongTon ? store.listCTSP_HD[index].so_luong : calculateSoLuongTon(store.listCTSP_HD[index]);
+    const max = shouldCalculateSoLuongTon.value ? store.listCTSP_HD[index].so_luong : calculateSoLuongTon(store.listCTSP_HD[index]);
     if (quantities.value[index] < max) {
         quantities.value[index]++;
     }
@@ -1611,7 +1611,7 @@ const validateQuantity = (index, max) => {
     if (quantities.value[index] < 0) {
         quantities.value[index] = 0;
     }
-    if (shouldCalculateSoLuongTon && quantities.value[index] > max) {
+    if (shouldCalculateSoLuongTon.value && quantities.value[index] > max) {
         toast.error(`Số lượng mua không được vượt quá ${max}`);
         quantities.value[index] = max;
     }
@@ -1634,7 +1634,7 @@ const addSelectedProducts = async () => {
     // Chỉ validate số lượng khả dụng nếu trạng thái là "Chờ xác nhận"
     for (const product of selectedProducts) {
         const ctsp = store.listCTSP_HD.find(item => item.id_chi_tiet_san_pham === product.idCTSP);
-        const maxQuantity = shouldCalculateSoLuongTon ? ctsp.so_luong : calculateSoLuongTon(ctsp);
+        const maxQuantity = shouldCalculateSoLuongTon.value ? ctsp.so_luong : calculateSoLuongTon(ctsp);
         if (product.soLuongMua > maxQuantity) {
             toast.error(`Số lượng sản phẩm ${ctsp.ten_san_pham} vượt quá số lượng tối đa (${maxQuantity})`);
             return;
@@ -1944,7 +1944,7 @@ const updateQuantity = async () => {
 
     if (popupType.value === 'increase') {
         // Tính số lượng tối đa
-        const maxQuantity = shouldCalculateSoLuongTon ? item.so_luong_con_lai : calculateSoLuongTon(item);
+        const maxQuantity = shouldCalculateSoLuongTon.value ? item.so_luong_con_lai : calculateSoLuongTon(item);
         if (change > maxQuantity) {
             toast.error(`Số lượng thêm không được vượt quá ${maxQuantity}`);
             return;

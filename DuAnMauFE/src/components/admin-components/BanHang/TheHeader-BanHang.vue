@@ -646,6 +646,9 @@ const isLoadingZaloPay = ref(false);
 const paymentStatus = ref(''); // checking, success, failed
 let checkPaymentInterval = null;
 
+// ✅ PAYMENT PROCESSING FLAG - Ngăn auto-apply voucher khi đang thanh toán
+const isProcessingPayment = ref(false);
+
 // Hiển thị modal quét QR
 const showQrScanner = () => {
     qrScannerVisible.value = true;
@@ -1673,6 +1676,12 @@ watch(fe_tongTienHang, async (newTotal) => {
     const currentTab = activeTabData.value;
     if (!currentTab || !currentTab.hd || !currentTab.hd.id_hoa_don) return;
 
+    // ❌ KHÔNG auto-apply voucher khi đang trong quá trình thanh toán
+    if (isProcessingPayment.value) {
+        console.log('🛑 Đang trong quá trình thanh toán, bỏ qua auto-apply voucher');
+        return;
+    }
+
     // Lấy danh sách voucher phù hợp từ API mới
     const vouchers = newTotal > 0 ? await store.getSuitableVouchersForInvoice(newTotal) : [];
     availableVouchers.value = (vouchers && Array.isArray(vouchers)) ? vouchers : [];
@@ -1693,16 +1702,14 @@ watch(fe_tongTienHang, async (newTotal) => {
     if (currentVoucherId && !availableVouchers.value.some(v => v.id_voucher === currentVoucherId)) {
         currentTab.hd.id_voucher = null; // Gỡ voucher khỏi giao diện
         message.warning('Voucher không còn hợp lệ và đã được gỡ bỏ.');
-        // Reset flag để cho phép tự động áp dụng lại sau
-        userHasManuallyDeselectedVoucher.value = false;
+        // ✅ FIX: Không reset flag - tôn trọng lựa chọn của user
         await updateVoucher(false); // false = không phải manual action
     }
     // Kịch bản 2: Chưa có voucher, nhưng giờ đã đủ điều kiện cho voucher tốt nhất
     else if (!currentVoucherId && bestVoucher) {
         currentTab.hd.id_voucher = bestVoucher.id_voucher; // Tự động áp dụng trên giao diện
         message.success(`Đã tự động áp dụng voucher: ${bestVoucher.ten_voucher}`);
-        // Reset flag vì đây là auto-apply
-        userHasManuallyDeselectedVoucher.value = false;
+        // ✅ FIX: Không reset flag - nếu user đã bỏ chọn, không tự động apply lại
         await updateVoucher(false); // false = không phải manual action
     }
 });
@@ -2205,11 +2212,18 @@ const handlePayment = async () => {
 // Hủy thanh toán
 const cancelPayment = () => {
     showPaymentConfirm.value = false;
+    // ✅ RESET FLAG: User hủy thanh toán
+    isProcessingPayment.value = false;
+    console.log('🚫 User hủy thanh toán - Tắt isProcessingPayment flag');
 };
 
 // Bước 2: Xác nhận thanh toán -> Thực hiện thanh toán -> Hiển thị modal in hóa đơn
 const proceedToPayment = async () => {
     showPaymentConfirm.value = false;
+
+    // ✅ BẬT FLAG: Bắt đầu quá trình thanh toán
+    isProcessingPayment.value = true;
+    console.log('🚀 Bắt đầu quá trình thanh toán - Bật isProcessingPayment flag');
 
     const hinhThuc = activeTabData.value.hd.hinh_thuc_thanh_toan;
 
@@ -2219,6 +2233,9 @@ const proceedToPayment = async () => {
             await store.trangThaiDonHang(activeTabData.value.hd.id_hoa_don);
             // Sau khi thanh toán thành công -> hiển thị modal in hóa đơn
             showPrintConfirm.value = true;
+            // ✅ RESET FLAG: Thanh toán tiền mặt thành công
+            isProcessingPayment.value = false;
+            console.log('💰 Thanh toán tiền mặt thành công - Tắt isProcessingPayment flag');
         } else if (hinhThuc === "PayOS") {
             // Validate payment amount - USE computed property!
             const paymentAmount = fe_tongThanhToan.value;
@@ -2229,6 +2246,9 @@ const proceedToPayment = async () => {
                 console.log('Debug - Tổng hàng:', fe_tongTienHang.value);
                 console.log('Debug - Giảm giá:', fe_giamGia.value);
                 console.log('Debug - Phí ship:', fe_phiVanChuyen.value);
+                // ✅ RESET FLAG: Lỗi validation
+                isProcessingPayment.value = false;
+                console.log('🚫 Lỗi PayOS - Tắt isProcessingPayment flag');
                 return;
             }
 
@@ -2249,6 +2269,10 @@ const proceedToPayment = async () => {
             localStorage.removeItem('khachHangBH');
 
             await thanhToanService.handlePayOSPayment(payment_info);
+            
+            // ✅ RESET FLAG: PayOS thanh toán thành công
+            isProcessingPayment.value = false;
+            console.log('💳 PayOS thành công - Tắt isProcessingPayment flag');
 
         } else if (hinhThuc === "Chuyển khoản") {
             // ✅ PHASE 1: Đồng bộ dữ liệu trước khi thanh toán
@@ -2260,6 +2284,9 @@ const proceedToPayment = async () => {
                 if (paymentAmount <= 0) {
                     message.error('Số tiền thanh toán không hợp lệ. Vui lòng thêm sản phẩm vào hóa đơn!');
                     console.error('Invalid payment amount:', paymentAmount);
+                    // ✅ RESET FLAG: Lỗi validation ZaloPay
+                    isProcessingPayment.value = false;
+                    console.log('🚫 Lỗi ZaloPay validation - Tắt isProcessingPayment flag');
                     return;
                 }
 
@@ -2270,6 +2297,9 @@ const proceedToPayment = async () => {
                         message.error("Phí vận chuyển chưa được tính. Vui lòng chọn địa chỉ giao hàng!");
                         console.error("Phí vận chuyển = 0 khi thanh toán ZaloPay");
                         showPaymentConfirm.value = true;
+                        // ✅ RESET FLAG: Lỗi phí vận chuyển
+                        isProcessingPayment.value = false;
+                        console.log('🚫 Lỗi phí vận chuyển ZaloPay - Tắt isProcessingPayment flag');
                         return;
                     }
                     console.log("✅ Phí vận chuyển đã được tính:", phiVanChuyen);
@@ -2288,6 +2318,9 @@ const proceedToPayment = async () => {
                     const shouldContinue = await showPriceDifferenceDialog(dbTotal, feTotal);
                     if (!shouldContinue) {
                         console.log('❌ User hủy thanh toán do sự khác biệt giá');
+                        // ✅ RESET FLAG: User hủy do khác biệt giá
+                        isProcessingPayment.value = false;
+                        console.log('🚫 User hủy (giá khác biệt) - Tắt isProcessingPayment flag');
                         return;
                     }
                     // Refresh lại state để dùng giá mới nhất
@@ -2313,15 +2346,26 @@ const proceedToPayment = async () => {
                     activeTabData.value.hd.id_hoa_don,
                     fe_tongThanhToan.value  // ← TRUYỀN TỔNG TIỀN
                 );
+                
+                // ✅ RESET FLAG: ZaloPay thanh toán thành công
+                isProcessingPayment.value = false;
+                console.log('💰 ZaloPay thành công - Tắt isProcessingPayment flag');
 
             } catch (error) {
                 console.error('❌ Lỗi khi đồng bộ/thanh toán ZaloPay:', error);
                 message.error('Không thể đồng bộ dữ liệu. Vui lòng thử lại!');
+                // ✅ RESET FLAG: Lỗi ZaloPay inner catch
+                isProcessingPayment.value = false;
+                console.log('🚫 Lỗi ZaloPay inner - Tắt isProcessingPayment flag');
             }
         }
     } catch (error) {
         console.error('Lỗi khi thanh toán:', error);
         message.error('Đã xảy ra lỗi khi thanh toán!');
+    } finally {
+        // ✅ RESET FLAG: Kết thúc quá trình thanh toán
+        isProcessingPayment.value = false;
+        console.log('🏁 Kết thúc quá trình thanh toán - Tắt isProcessingPayment flag');
     }
 };
 

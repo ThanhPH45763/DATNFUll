@@ -66,35 +66,6 @@ public class BanHangController {
     @Autowired
     private ChiTietKhuyenMaiRepo chiTietKhuyenMaiRepo;
 
-    // Integer idHD = null;
-    // Integer idCTSP = null;
-    // Integer idNV = null;
-
-    // public void viewALl(Model model) {
-    // model.addAttribute("listHoaDon", hoaDonRepo.getAllHoaDonCTT());
-    // model.addAttribute("listCTSP", chiTietSanPhamRepo.listCTSP());
-    // model.addAttribute("listKH", khachHangRepo.findAll());
-    // model.addAttribute("listVC", voucherRepository.findAll());
-    // model.addAttribute("listNV", nhanVienRepo.findAll());
-    // if (idHD == null) {
-    // model.addAttribute("hdbh", null);
-    // } else {
-    // model.addAttribute("hdbh", hoaDonRepo.findHoaDonById(idHD).get(0));
-    // model.addAttribute("listGH", hoaDonChiTietRepo.getSPGH(idHD));
-    // }
-    // if (idCTSP == null) {
-    // model.addAttribute("slgh", null);
-    // } else {
-    // ChiTietSanPham ct = new ChiTietSanPham();
-    // for (ChiTietSanPham ctsp : chiTietSanPhamRepo.findAll()) {
-    // if (idCTSP == ctsp.getId_chi_tiet_san_pham()) {
-    // ct = ctsp;``
-    // }
-    // }
-    // model.addAttribute("slgh", ct);
-    // }
-    // }
-    //
     @PostMapping("/addKhHD")
     public ResponseEntity<?> addKhHd(
             @RequestParam(value = "idKH", required = false) String idKHStr,
@@ -249,6 +220,9 @@ public class BanHangController {
             HoaDon hoaDon = hoaDonRepo.findById(idHD)
                     .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
 
+            // ✅ LƯU LẠI phương thức nhận hàng hiện tại
+            String currentPhuongThuc = hoaDon.getPhuong_thuc_nhan_hang();
+
             // Reset thông tin khách hàng về khách lẻ
             hoaDon.setKhachHang(null);
             hoaDon.setHo_ten("Khách lẻ");
@@ -256,9 +230,12 @@ public class BanHangController {
             hoaDon.setDia_chi(null);
             hoaDon.setEmail(null);
 
-            // Reset phương thức nhận hàng về nhận tại cửa hàng
-            hoaDon.setPhuong_thuc_nhan_hang("Nhận tại cửa hàng");
-            hoaDon.setPhi_van_chuyen(BigDecimal.ZERO);
+            // ✅ GIỮ NGUYÊN phương thức nhận hàng (KHÔNG reset về "Nhận tại cửa hàng")
+            // Chỉ reset phí ship về 0 nếu phương thức là "Nhận tại cửa hàng"
+            if ("Nhận tại cửa hàng".equals(currentPhuongThuc)) {
+                hoaDon.setPhi_van_chuyen(BigDecimal.ZERO);
+            }
+            // Nếu là "Giao hàng", GIỮ NGUYÊN cả phương thức và phí ship
 
             hoaDonRepo.save(hoaDon);
 
@@ -319,14 +296,7 @@ public class BanHangController {
         try {
             // 1. Validate input
             // 3. Create new invoice
-            HoaDon newHoaDon = new HoaDon();
-            newHoaDon.setMa_hoa_don(generateUniqueMaHoaDon());
-            newHoaDon.setNgay_tao(LocalDateTime.now());
-            newHoaDon.setTrang_thai("Đang chờ");
-            newHoaDon.setLoai_hoa_don("Offline");
-            newHoaDon.setHinh_thuc_thanh_toan("Tiền mặt");
-            newHoaDon.setPhuong_thuc_nhan_hang("Nhận tại cửa hàng");
-            newHoaDon.setHo_ten("Khách lẻ");
+            HoaDon newHoaDon = new HoaDon(generateUniqueMaHoaDon());
 
             // 4. Set default values
             newHoaDon.setTong_tien_truoc_giam(BigDecimal.ZERO);
@@ -347,7 +317,7 @@ public class BanHangController {
             response.put("ngay_tao", savedHoaDon.getNgay_tao().format(DateTimeFormatter.ISO_DATE_TIME));
             response.put("trang_thai", savedHoaDon.getTrang_thai());
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(savedHoaDon);
 
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(
@@ -376,7 +346,7 @@ public class BanHangController {
 
             // Lưu thông tin trước khi xóa
             List<Map<String, Integer>> productUpdates = new ArrayList();
-            for (HoaDonChiTiet chiTiet : hoaDon.getDanhSachChiTiet()) {
+            for (HoaDonChiTiet chiTiet : hoaDon.getHoaDonChiTietList()) {
                 Map<String, Integer> update = new HashMap<>();
                 update.put("idCTSP", chiTiet.getChiTietSanPham().getId_chi_tiet_san_pham());
                 update.put("soLuong", chiTiet.getSo_luong());
@@ -897,18 +867,46 @@ public class BanHangController {
     public ResponseEntity<?> phuongThucNhanHang(
             @RequestParam("idHoaDon") Integer idHD,
             @RequestParam("phuongThucNhanHang") String phuongThuc) {
+
+        // 🔍 DEBUG LOGGING - STEP 1: Input Validation
+        System.out.println("🔍 [DEBUG] phuongThucNhanHang() called with:");
+        System.out.println("  - Invoice ID: " + idHD);
+        System.out.println("  - Delivery Method: '" + phuongThuc + "'");
+
         Optional<HoaDon> hoaDon = hoaDonRepo.findById(idHD);
+        if (!hoaDon.isPresent()) {
+            System.out.println("❌ [DEBUG] Invoice not found: " + idHD);
+            return ResponseEntity.badRequest().body("Không tìm thấy hóa đơn");
+        }
+
         HoaDon hd = hoaDon.get();
+
+        // 🔍 DEBUG LOGGING - STEP 2: Current State
+        System.out.println("🔍 [DEBUG] Current invoice state:");
+        System.out.println("  - Current Delivery Method: '" + hd.getPhuong_thuc_nhan_hang() + "'");
+        System.out.println("  - Current Shipping Fee: " + hd.getPhi_van_chuyen());
+        System.out.println("  - Invoice Status: '" + hd.getTrang_thai() + "'");
 
         // ✅ CHỈ SET PHƯƠNG THỨC NHẬN HÀNG
         // Phí vận chuyển sẽ được tính và set khi thanh toán ZaloPay
         hd.setPhuong_thuc_nhan_hang(phuongThuc);
+
+        // 🔍 DEBUG LOGGING - STEP 3: Before Save
+        System.out.println("🔍 [DEBUG] Setting delivery method to: '" + phuongThuc + "'");
 
         // ❌ KHÔNG SET PHÍ VẬN CHUYỂN Ở ĐÂY
         // Lý do: Tránh bug cộng dồn khi user đổi phương thức nhiều lần
         // Phí ship sẽ được tính trong ZaloPayController.createOrder()
 
         hoaDonRepo.save(hd);
+
+        // 🔍 DEBUG LOGGING - STEP 4: After Save
+        HoaDon savedHd = hoaDonRepo.findById(idHD).orElse(null);
+        if (savedHd != null) {
+            System.out.println("🔍 [DEBUG] State after save:");
+            System.out.println("  - Saved Delivery Method: '" + savedHd.getPhuong_thuc_nhan_hang() + "'");
+            System.out.println("  - Saved Shipping Fee: " + savedHd.getPhi_van_chuyen());
+        }
 
         System.out.println("✅ Đã set phương thức nhận hàng: " + phuongThuc +
                 " cho hóa đơn " + idHD);

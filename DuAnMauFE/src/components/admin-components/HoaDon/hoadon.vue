@@ -120,8 +120,7 @@
     <div class="d-flex justify-content-center align-items-center mt-3">
         <button class="btn buttonPT p-0" @click="fetchData(store.currentHoaDon - 1)"
             :disabled="store.currentHoaDon === 0 || store.totalHoaDon === 0">Previous</button>
-        <span class="mx-3">Trang {{ store.totalHoaDon === 0 ? 0 : (store.currentHoaDon ?? 0) + 1 }} / {{
-            store.totalHoaDon }}</span>
+        <span class="mx-3">Trang {{ store.totalHoaDon === 0 ? 0 : (store.currentHoaDon ?? 0) + 1 }} / {{ store.totalHoaDon }}</span>
         <button class="btn buttonPT" @click="fetchData(store.currentHoaDon + 1)"
             :disabled="store.totalHoaDon === 0 || store.currentHoaDon >= store.totalHoaDon - 1">Next</button>
     </div>

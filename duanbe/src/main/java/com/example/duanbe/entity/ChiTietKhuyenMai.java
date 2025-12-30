@@ -1,12 +1,10 @@
 package com.example.duanbe.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 
 import java.math.BigDecimal;
 
 @Entity
-@Data
 @Table(name = "chi_tiet_khuyen_mai")
 public class ChiTietKhuyenMai {
     @Id
@@ -23,4 +21,47 @@ public class ChiTietKhuyenMai {
     @ManyToOne
     @JoinColumn(name = "id_chi_tiet_san_pham")
     private ChiTietSanPham chiTietSanPham;
+
+    // Getters and Setters
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public BigDecimal getGiaSauGiam() {
+        return giaSauGiam;
+    }
+
+    public void setGiaSauGiam(BigDecimal giaSauGiam) {
+        this.giaSauGiam = giaSauGiam;
+    }
+
+    public KhuyenMai getKhuyenMai() {
+        return khuyenMai;
+    }
+
+    public void setKhuyenMai(KhuyenMai khuyenMai) {
+        this.khuyenMai = khuyenMai;
+    }
+
+    public ChiTietSanPham getChiTietSanPham() {
+        return chiTietSanPham;
+    }
+
+    public void setChiTietSanPham(ChiTietSanPham chiTietSanPham) {
+        this.chiTietSanPham = chiTietSanPham;
+    }
+
+    @Override
+    public String toString() {
+        return "ChiTietKhuyenMai{" +
+                "id=" + id +
+                ", giaSauGiam=" + giaSauGiam +
+                ", khuyenMai=" + khuyenMai +
+                ", chiTietSanPham=" + chiTietSanPham +
+                '}';
+    }
 }

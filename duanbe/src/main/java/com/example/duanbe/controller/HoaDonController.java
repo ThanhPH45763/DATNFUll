@@ -1376,7 +1376,7 @@ public class HoaDonController {
             }
 
             // Hoàn lại số lượng sản phẩm
-            List<HoaDonChiTiet> chiTietList = hoaDon.getDanhSachChiTiet();
+            List<HoaDonChiTiet> chiTietList = hoaDon.getHoaDonChiTietList();
             for (HoaDonChiTiet chiTiet : chiTietList) {
                 ChiTietSanPham ctsp = chiTiet.getChiTietSanPham();
                 ctsp.setSo_luong(ctsp.getSo_luong() + chiTiet.getSo_luong());

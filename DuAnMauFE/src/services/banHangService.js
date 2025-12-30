@@ -132,7 +132,7 @@ const xoaSPHD = async (idHoaDon, idCTSP) => {
 
 const trangThaiDonHang = async (idHoaDon) => {
     try {
-        const { data } = await axiosInstance.get(banHang + `trangThaiDonHang?idHoaDon=` + idHoaDon);
+        const { data } = await axiosInstance.get(banHang + `trangThaiDonHang?idHD=` + idHoaDon);
         return data;
     } catch (error) {
         console.error('Lỗi API trang thai don hang:', error);

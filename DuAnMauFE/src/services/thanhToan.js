@@ -52,7 +52,10 @@ const handleZaloPayPayment = async (idHoaDon, tongThanhToan) => {
         }
 
         localStorage.setItem('zaloPayResponse', JSON.stringify(response.data));
-        window.location.href = orderUrl;
+        
+        // ✅ THAY ĐỔI: Mở ZaloPay trong tab mới thay vì hard redirect
+        window.open(orderUrl, '_blank');
+        
         return response.data;
     } catch (error) {
         console.error('Lỗi khi tạo thanh toán ZaloPay:', error);
@@ -80,6 +83,37 @@ const checkZaloPayStatus = async (idHoaDon) => {
     } catch (error) {
         console.error('Lỗi khi kiểm tra trạng thái ZaloPay:', error);
         return null;
+    }
+};
+
+// ✅ ENHANCED ZALOPAY HANDLER
+export { handleZaloPayPayment, checkZaloPayStatus } from './enhancedZaloPayService.js';
+
+// ✅ PAYOS HANDLER (unchanged)
+export const handlePayOSPayment = async (orderData) => {
+    try {
+        // Gọi API backend để tạo đơn hàng và lấy thông tin thanh toán PayOS
+        const response = await axiosInstance.post('/order/create', orderData);
+        console.log('Payment Response:', response.data);
+
+        // Kiểm tra response data
+        if (!response.data || !response.data.data) {
+            throw new Error('Phản hồi từ server không hợp lệ');
+        }
+
+        const checkoutUrl = response.data.data.checkoutUrl;
+        if (!checkoutUrl) {
+            throw new Error('Không nhận được link thanh toán từ server');
+        }
+
+        localStorage.setItem('paymentResponse', JSON.stringify(response.data));
+        window.location.href = checkoutUrl;
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tạo thanh toán PayOS:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Không thể tạo thanh toán PayOS. Vui lòng thử lại sau.';
+        message.error(errorMessage);
+        throw error; // Throw để proceedToPayment có thể catch
     }
 };
 

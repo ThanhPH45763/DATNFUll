@@ -17,7 +17,7 @@ public class TheoDoiDonHang {
     private Integer id_don_hang;
     @ManyToOne
     @JoinColumn(name = "id_hoa_don")
-    @JsonBackReference
+    @JsonBackReference(value = "hoaDon-theoDoiDonHang")
     private HoaDon hoaDon;
     private String trang_thai;
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")

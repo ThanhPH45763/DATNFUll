@@ -18,11 +18,11 @@ public class HoaDonChiTiet {
     @ManyToOne
     @JoinColumn(name = "id_hoa_don")
     @JsonBackReference(value = "hoaDon-chiTiet")
-//    @JsonIgnore
+    // @JsonIgnore
     private HoaDon hoaDon;
     @ManyToOne
     @JoinColumn(name = "id_chi_tiet_san_pham")
-//    @JsonIgnore
+    // @JsonIgnore
     private ChiTietSanPham chiTietSanPham;
     private Integer so_luong;
     private BigDecimal don_gia;

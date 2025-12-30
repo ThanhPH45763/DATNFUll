@@ -37,7 +37,7 @@ public class HoaDonScheduler {
 
         for (HoaDon hd : hoaDons) {
             // ✅ Cập nhật lại số lượng tồn sản phẩm
-            for (HoaDonChiTiet chiTiet : hd.getDanhSachChiTiet()) {
+            for (HoaDonChiTiet chiTiet : hd.getHoaDonChiTietList()) {
                 Integer idChiTietSanPham = chiTiet.getChiTietSanPham().getId_chi_tiet_san_pham();
                 Integer soLuong = chiTiet.getSo_luong();
                 chiTietSanPhamRepo.updateSLCTSPByIdCTSP(idChiTietSanPham, soLuong);
@@ -58,8 +58,6 @@ public class HoaDonScheduler {
 
         return hoaDons.size();
     }
-
-
 
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional

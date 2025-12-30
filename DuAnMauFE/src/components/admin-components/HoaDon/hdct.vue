@@ -224,10 +224,7 @@
                     <a-modal v-model:open="showStatusModal" :title="modalTitle" @ok="confirmStatusChange"
                         @cancel="closeStatusModal">
                         <a-form :model="statusForm" layout="vertical">
-                            <a-form-item label="Người xác nhận" name="nhanVienDoi">
-                                <a-input v-model:value="statusForm.nhanVienDoi" placeholder="Nhập tên của bạn"
-                                    :readonly="isNhanVienDoiReadOnly" />
-                            </a-form-item>
+                            <!-- Removed "Người xác nhận" field as per user request -->
                             <a-form-item label="Ghi chú" name="noiDungDoi">
                                 <a-input v-model:value="statusForm.noiDungDoi" placeholder="Chọn hoặc nhập nội dung"
                                     allow-clear list="noiDungDoiOptions" @focus="handleFocus" @blur="handleBlur" />
@@ -1781,14 +1778,12 @@ const closeStatusModal = () => {
     showStatusModal.value = false;
     modalAction.value = '';
     modalTitle.value = '';
-    statusForm.value = { nhanVienDoi: '', noiDungDoi: '' };
+    statusForm.value = { noiDungDoi: '' }; // Removed nhanVienDoi
 };
 // Hàm xác nhận thay đổi trạng thái
 const confirmStatusChange = () => {
-    if (!statusForm.value.nhanVienDoi) {
-        toast.error('Vui lòng nhập tên nhân viên!');
-        return;
-    }
+    // Removed validation for nhanVienDoi
+    
     if (!statusForm.value.noiDungDoi || statusForm.value.noiDungDoi.trim() === '') {
         statusForm.value.noiDungDoi = 'Không có ghi chú';
     }
@@ -1797,19 +1792,19 @@ const confirmStatusChange = () => {
         store.changeTrangThaiHoaDon(
             store.hoaDonDetail.ma_hoa_don,
             nextStatusValue.value,
-            statusForm.value.nhanVienDoi,
+            '', // Empty string for nhanVienDoi (removed)
             statusForm.value.noiDungDoi
         );
     } else if (modalAction.value === 'revert') {
         store.revertToInitialStatus(
             store.hoaDonDetail.ma_hoa_don,
-            statusForm.value.nhanVienDoi,
+            '', // Empty string for nhanVienDoi (removed)
             statusForm.value.noiDungDoi
         );
     } else if (modalAction.value === 'cancel') {
         store.cancelHoaDon(
             store.hoaDonDetail.ma_hoa_don,
-            statusForm.value.nhanVienDoi,
+            '', // Empty string for nhanVienDoi (removed)
             statusForm.value.noiDungDoi
         );
     }

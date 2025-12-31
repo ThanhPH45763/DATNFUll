@@ -477,7 +477,7 @@ public interface HoaDonChiTietRepo extends JpaRepository<HoaDonChiTiet, Integer>
             WHERE id_hoa_don = :idHoaDon
             AND id_chi_tiet_san_pham = :idChiTietSanPham
             """, nativeQuery = true)
-    Optional<HoaDonChiTiet> findByHoaDonAndChiTietSanPham(
+    List<HoaDonChiTiet> findByHoaDonAndChiTietSanPham(
             @Param("idHoaDon") Integer idHoaDon,
             @Param("idChiTietSanPham") Integer idChiTietSanPham);
 

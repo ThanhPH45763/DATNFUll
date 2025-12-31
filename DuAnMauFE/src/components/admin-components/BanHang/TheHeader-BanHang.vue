@@ -928,7 +928,8 @@ const handleOk = () => {
 const handleCancel = () => {
     open.value = false;
 };
-const ptnh = ref('Nhận tại cửa hàng');
+// ✅ Load from DB, not hard-code
+const ptnh = ref('Nhận tại cửa hàng'); // Default for new invoices only
 
 const selectedKeys = ref([store.indexMenu]);
 
@@ -1380,7 +1381,7 @@ const refreshHoaDon = async (idHoaDon) => {
                 ...currentTab.hd,
                 ...hoaDonInfo
             };
-            ptnh.value = hoaDonInfo.phuong_thuc_nhan_hang
+            ptnh.value = hoaDonInfo.phuong_thuc_nhan_hang;
         }
     } catch (error) {
         console.error('Lỗi khi cập nhật thông tin hóa đơn:', error);
@@ -1882,7 +1883,8 @@ const add = async () => {
 
         // Thêm hóa đơn mới vào đầu danh sách
         panes.value.unshift(newInvoice);
-        ptnh.value = 'Nhận tại cửa hàng';
+        // ✅ Chỉ set default khi TẠO MỚI (backend sẽ tự set mặc định)
+        ptnh.value = newInvoice.hd.phuong_thuc_nhan_hang;
         activeKey.value = newKey;
 
         // Nếu có >= 5 hóa đơn, hóa đơn thứ 5 (index 4) sẽ vào suspended
@@ -2263,172 +2265,118 @@ const cancelPayment = () => {
 const proceedToPayment = async () => {
     showPaymentConfirm.value = false;
 
-    // ✅ BẬT FLAG: Bắt đầu quá trình thanh toán
-    isProcessingPayment.value = true;
-    console.log('🚀 Bắt đầu quá trình thanh toán - Bật isProcessingPayment flag');
+    try {
+        // ✅ BẬT FLAG: Bắt đầu quá trình thanh toán
+        isProcessingPayment.value = true;
+        console.log('🚀 Bắt đầu quá trình thanh toán - Bật isProcessingPayment flag');
 
-    // ✅ STEP 1: VALIDATE AND SYNC BEFORE PAYMENT
-    console.log('🔄 Step 1: Validating and syncing invoice...');
-    const syncResult = await stateSyncService.syncBeforePayment(
-        activeTabData.value.hd.id_hoa_don
-    );
+        // ✅ STEP 1: VALIDATE AND SYNC BEFORE PAYMENT
+        console.log('🔄 Step 1: Validating and syncing invoice...');
 
-    if (syncResult.cancelled) {
-        console.log('❌ User cancelled payment due to price difference');
-        return;
-    }
-
-    // ✅ STEP 2: HANDLE PAYMENT WITH ENHANCED SERVICE
-    if (hinhThuc === "Tiền mặt") {
-        await store.trangThaiDonHang(activeTabData.value.hd.id_hoa_don);
-        showPrintConfirm.value = true;
-        isProcessingPayment.value = false;
-        console.log('💰 Thanh toán tiền mặt thành công - Tắt isProcessingPayment flag');
-    } else if (hinhThuc === "PayOS") {
-        // Validate payment amount - USE computed property!
+        const invoiceId = activeTabData.value.hd.id_hoa_don;
         const paymentAmount = fe_tongThanhToan.value;
 
+        // Validate payment amount
         if (paymentAmount <= 0) {
             message.error('Số tiền thanh toán không hợp lệ. Vui lòng thêm sản phẩm vào hóa đơn!');
-            isProcessingPayment.value = false;
-            console.log('🚫 Lỗi PayOS - Tắt isProcessingPayment flag');
             return;
         }
 
-        const paymentResult = await thanhToanService.handlePayOSPayment({
-            ma_hoa_don: activeTabData.value.hd.ma_hoa_don,
-            san_pham_ids: currentInvoiceItems.value.map(item => item.id_chi_tiet_san_pham),
-            gia_tong: fe_tongThanhToan.value,
-            description: `PayOS - ${currentInvoiceItems.value.length} sản phẩm`,
-            returnUrl: window.location.origin + "/admin/banhang",
-            cancelUrl: window.location.origin + "/admin/banhang",
-            price: paymentAmount
-        });
+        // ✅ STEP 2: HANDLE PAYMENT BY METHOD
+        if (hinhThuc === "Tiền mặt") {
+            // Tiền mặt
+            await store.trangThaiDonHang(invoiceId);
+            showPrintConfirm.value = true;
+            console.log('💰 Thanh toán tiền mặt thành công');
 
-        if (paymentResult.checkoutUrl) {
-            window.location.href = paymentResult.checkoutUrl;
+        } else if (hinhThuc === "PayOS") {
+            // PayOS
+            const paymentResult = await thanhToanService.handlePayOSPayment({
+                ma_hoa_don: activeTabData.value.hd.ma_hoa_don,
+                san_pham_ids: currentInvoiceItems.value.map(item => item.id_chi_tiet_san_pham),
+                gia_tong: paymentAmount,
+                description: `PayOS - ${currentInvoiceItems.value.length} sản phẩm`,
+                returnUrl: window.location.origin + "/admin/banhang",
+                cancelUrl: window.location.origin + "/admin/banhang",
+                price: paymentAmount
+            });
+
+            if (paymentResult.checkoutUrl) {
+                window.location.href = paymentResult.checkoutUrl;
+            }
+            console.log('✅ PayOS payment initiated');
+
+        } else if (hinhThuc === "Chuyển khoản") {
+            // ZaloPay
+
+            // Validate phí ship nếu giao hàng
+            if (activeTabData.value.hd.phuong_thuc_nhan_hang === "Giao hàng") {
+                const phiVanChuyen = activeTabData.value.hd.phi_van_chuyen || 0;
+                if (!phiVanChuyen || phiVanChuyen === 0) {
+                    message.error("Phí vận chuyển chưa được tính. Vui lòng chọn địa chỉ giao hàng!");
+                    return;
+                }
+                console.log("✅ Phí vận chuyển:", phiVanChuyen);
+            }
+
+            // Đồng bộ với backend
+            console.log('🔄 Đồng bộ trước khi thanh toán ZaloPay...');
+            const { dbTotal, feTotal, hasDifference } = await syncHoaDonBeforePayment(invoiceId);
+
+            // Check sự khác biệt và xác nhận
+            if (hasDifference) {
+                const shouldContinue = await showPriceDifferenceDialog(dbTotal, feTotal);
+                if (!shouldContinue) {
+                    console.log('❌ User hủy thanh toán do khác biệt giá');
+                    return;
+                }
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+
+            // Log info
+            console.log('🎯 ZALOPAY PAYMENT:', {
+                invoiceId,
+                feTotal,
+                dbTotal,
+                payAmount: hasDifference ? dbTotal : paymentAmount
+            });
+
+            // Lưu state để check sau khi redirect về
+            localStorage.setItem('checkPaymentStatus', 'true');
+            localStorage.setItem('idHDPayMent', JSON.stringify(invoiceId));
+            localStorage.setItem('paymentMethod', 'ZaloPay');
+            localStorage.setItem('pendingInvoiceForPrint', JSON.stringify({
+                id_hoa_don: invoiceId,
+                ma_hoa_don: activeTabData.value.hd.ma_hoa_don,
+                ho_ten: activeTabData.value.hd.ho_ten || 'Khách lẻ',
+                tong_tien: paymentAmount,
+                items: activeTabData.value.items?.value || []
+            }));
+
+            // Gọi ZaloPay
+            const zaloPayResult = await thanhToanService.handleZaloPayPayment(
+                invoiceId,
+                paymentAmount
+            );
+
+            if (zaloPayResult.cancelled) {
+                console.log('❌ User cancelled ZaloPay');
+                return;
+            }
+
+            if (zaloPayResult.success) {
+                console.log('✅ ZaloPay initiated successfully');
+            }
         }
 
-        isProcessingPayment.value = false;
-        console.log('✅ PayOS payment completed');
-    } else if (hinhThuc === "Chuyển khoản") {
-        // ✅ ENHANCED ZALOPAY HANDLER
-        const zaloPayResult = await thanhToanService.handleZaloPayPayment(
-            activeTabData.value.hd.id_hoa_don,
-            fe_tongThanhToan.value
-        );
-
-        if (zaloPayResult.cancelled) {
-            console.log('❌ User cancelled ZaloPay payment');
-            return;
-        }
-
-        // ✅ START POLLING IF PAYMENT INITIATED SUCCESSFULLY
-        if (zaloPayResult.success) {
-            console.log('🔄 ZaloPay payment initiated, polling started');
-            // Polling will be handled automatically by service
-        }
-
-        isProcessingPayment.value = false;
-        console.log('✅ ZaloPay payment process completed');
-    }
-
-    // 2. Validate phí vận chuyển cho ZaloPay
-    if (activeTabData.value.hd.phuong_thuc_nhan_hang === "Giao hàng") {
-        const phiVanChuyen = activeTabData.value.hd.phi_van_chuyen || 0;
-        if (!phiVanChuyen || phiVanChuyen === 0) {
-            message.error("Phí vận chuyển chưa được tính. Vui lòng chọn địa chỉ giao hàng!");
-            console.error("Phí vận chuyển = 0 khi thanh toán ZaloPay");
-            showPaymentConfirm.value = true;
-            // ✅ RESET FLAG: Lỗi phí vận chuyển
-            isProcessingPayment.value = false;
-            console.log('🚫 Lỗi phí vận chuyển ZaloPay - Tắt isProcessingPayment flag');
-            return;
-        }
-        console.log("✅ Phí vận chuyển đã được tính:", phiVanChuyen);
-    } else if (activeTabData.value.hd.phuong_thuc_nhan_hang === "Nhận tại cửa hàng") {
-        console.log("✅ Nhận tại cửa hàng - không tính phí vận chuyển");
-    }
-
-    // 3. ✅ Đồng bộ hóa đơn từ backend
-    console.log('🔄 Bắt đầu đồng bộ trước khi thanh toán ZaloPay...');
-    const { dbTotal, feTotal, hasDifference } = await syncHoaDonBeforePayment(
-        activeTabData.value.hd.id_hoa_don
-    );
-
-    // 4. ✅ Check sự khác biệt và xác nhận với user
-    if (hasDifference) {
-        const shouldContinue = await showPriceDifferenceDialog(dbTotal, feTotal);
-        if (!shouldContinue) {
-            console.log('❌ User hủy thanh toán do sự khác biệt giá');
-            // ✅ RESET FLAG: User hủy do khác biệt giá
-            isProcessingPayment.value = false;
-            console.log('🚫 User hủy (giá khác biệt) - Tắt isProcessingPayment flag');
-            return;
-        }
-        // Refresh lại state để dùng giá mới nhất
-        await new Promise(resolve => setTimeout(resolve, 200));
-    }
-
-    // 5. ✅ Log thông tin cuối cùng
-    console.log('🎯 ZALOPAY THANH TOÁN:');
-    console.log('  - ID Hóa đơn:', activeTabData.value.hd.id_hoa_don);
-    console.log('  - Tiền sản phẩm:', fe_tongTienHang.value - fe_phiVanChuyen.value);
-    console.log('  - Phí vận chuyển:', fe_phiVanChuyen.value);
-    console.log('  - FE Total:', feTotal);
-    console.log('  - DB Total:', dbTotal);
-    console.log('  - Sẽ thanh toán:', hasDifference ? dbTotal : feTotal);
-
-    localStorage.setItem('checkPaymentStatus', 'true');
-    localStorage.setItem('idHDPayMent', JSON.stringify(activeTabData.value.hd.id_hoa_don));
-    localStorage.setItem('paymentMethod', 'ZaloPay');
-    // ✅ LƯU THÔNG TIN HÓA ĐƠN ĐỂ HIỂN THỊ MODAL IN SAU KHI QUAY LẠI
-    localStorage.setItem('pendingInvoiceForPrint', JSON.stringify({
-        id_hoa_don: activeTabData.value.hd.id_hoa_don,
-        ma_hoa_don: activeTabData.value.hd.ma_hoa_don,
-        ho_ten: activeTabData.value.hd.ho_ten || 'Khách lẻ',
-        tong_tien: fe_tongThanhToan.value,
-        items: activeTabData.value.items?.value || []
-    }));
-    localStorage.removeItem('khachHangBH');
-
-    // 6. ✅ Gọi ZaloPay với ENHANCED HANDLER
-    const zaloPayResult = await thanhToanService.handleZaloPayPayment(
-        activeTabData.value.hd.id_hoa_don,
-        fe_tongThanhToan.value
-    );
-
-    if (zaloPayResult.cancelled) {
-        console.log('❌ User cancelled ZaloPay payment');
-        return;
-    }
-
-    // ✅ START POLLING IF PAYMENT INITIATED SUCCESSFULLY
-    if (zaloPayResult.success) {
-        console.log('🔄 ZaloPay payment initiated, polling started');
-        // Polling sẽ được handle tự động bởi service
-    }
-
-    // ✅ RESET FLAG: ZaloPay thanh toán thành công
-    isProcessingPayment.value = false;
-    console.log('💰 ZaloPay thành công - Tắt isProcessingPayment flag');
-
-} catch (error) {
-    console.error('❌ Lỗi khi đồng bộ/thanh toán ZaloPay:', error);
-    message.error('Không thể đồng bộ dữ liệu. Vui lòng thử lại!');
-    // ✅ RESET FLAG: Lỗi ZaloPay inner catch
-    isProcessingPayment.value = false;
-    console.log('🚫 Lỗi ZaloPay inner - Tắt isProcessingPayment flag');
-}
-        }
     } catch (error) {
-    console.error('Lỗi khi thanh toán:', error);
-    message.error('Đã xảy ra lỗi khi thanh toán!');
-} finally {
-    // ✅ RESET FLAG: Kết thúc quá trình thanh toán
-    isProcessingPayment.value = false;
-    console.log('🏁 Kết thúc quá trình thanh toán - Tắt isProcessingPayment flag');
-}
+        console.error('❌ Lỗi thanh toán:', error);
+        message.error('Đã xảy ra lỗi khi thanh toán!');
+    } finally {
+        // ✅ RESET FLAG: Kết thúc
+        isProcessingPayment.value = false;
+        console.log('🏁 Kết thúc quá trình thanh toán');
+    }
 };
 
 // Bước 3: Xác nhận in hóa đơn
@@ -2749,199 +2697,6 @@ const handleZaloPayTimeout = async (invoiceId, appTransId) => {
     }
 };
 
-const pollPaymentStatus = setInterval(async () => {
-    pollCount++;
-    console.log(`🔍 Poll #${pollCount}: Checking ZaloPay status for invoice ${idhdpay}...`);
-
-    try {
-        // ✅ STEP 1: Đảm bảo protection flag luôn ON
-        isProcessingPayment.value = true;
-
-        const zaloStatus = await thanhToanService.checkZaloPayStatus(idhdpay);
-        console.log('📊 ZaloPay Status Response:', zaloStatus);
-
-        if (zaloStatus && zaloStatus.return_code === 1) {
-            // ✅ STEP 2: Payment thành công
-            console.log('✅ ZaloPay payment confirmed!');
-
-            clearInterval(pollPaymentStatus);
-            loadingMessage();
-
-            message.success({
-                content: '✅ Thanh toán ZaloPay thành công!',
-                duration: 5
-            });
-
-            // ✅ KHÔI PHỤC THÔNG TIN HÓA ĐƠN TỪ LOCALSTORAGE
-            const pendingInvoice = localStorage.getItem('pendingInvoiceForPrint');
-            if (pendingInvoice) {
-                try {
-                    completedInvoiceForPrint.value = JSON.parse(pendingInvoice);
-                    console.log('✅ Đã khôi phục thông tin hóa đơn cho modal in:', completedInvoiceForPrint.value);
-                } catch (e) {
-                    console.error('Lỗi parse pendingInvoiceForPrint:', e);
-                }
-            }
-
-            // ✅ FETCH ĐẦY ĐỦ THÔNG TIN HÓA ĐƠN TỪ BE ĐỂ IN
-            try {
-                await store.getHoaDonByIdHoaDon(idhdpay);
-                const hoaDonFromBE = store.getHDBIDHD;
-
-                if (hoaDonFromBE) {
-                    console.log('✅ Lấy được thông tin hóa đơn từ BE:', hoaDonFromBE);
-
-                    // ✅ Fetch items của hóa đơn
-                    await store.getAllSPHD(idhdpay);
-                    const itemsFromBE = store.getAllSPHDArr.map(item => ({
-                        id_hoa_don: item.id_hoa_don,
-                        id_chi_tiet_san_pham: item.id_chi_tiet_san_pham,
-                        hinh_anh: item.hinh_anh,
-                        ten_san_pham: item.ten_san_pham,
-                        mau_sac: item.ten_mau_sac,
-                        kich_thuoc: item.gia_tri,
-                        so_luong: item.so_luong,
-                        gia_ban: item.gia_ban,
-                        tong_tien: item.don_gia
-                    }));
-
-                    // ✅ TẠO VIRTUAL TAB ĐỂ printInvoice HOẠT ĐỘNG
-                    const virtualTab = {
-                        key: `zalo_paid_${idhdpay}`,
-                        title: 'Đơn đã thanh toán',
-                        closable: false,
-                        items: ref(itemsFromBE),
-                        hd: reactive({ ...hoaDonFromBE })
-                    };
-
-                    // ✅ Thêm virtual tab và set active
-                    panes.value.unshift(virtualTab);
-                    activeKey.value = virtualTab.key;
-
-                    console.log('✅ Đã tạo virtual tab cho hóa đơn ZaloPay');
-                }
-            } catch (e) {
-                console.warn('Không thể fetch hóa đơn từ BE:', e);
-            }
-
-            showPrintConfirm.value = true;
-
-            // ✅ STEP 3: Cleanup TRƯỚC KHI reset flag
-            localStorage.removeItem('checkPaymentStatus');
-            localStorage.removeItem('paymentMethod');
-            localStorage.removeItem('zaloPayResponse');
-            localStorage.removeItem('idHDPayMent');
-            // ✅ GIỮ pendingInvoiceForPrint cho đến khi user đóng modal in
-
-            // ✅ STEP 4: Reset flag SAU cleanup
-            setTimeout(() => {
-                isProcessingPayment.value = false;
-                console.log('🔄 ZaloPay process completed - Reset isProcessingPayment flag');
-            }, 1000);
-
-        } else if (pollCount >= maxPolls) {
-            // ✅ STEP 5: Timeout handling
-            console.log('⏱️ ZaloPay polling timeout');
-            clearInterval(pollPaymentStatus);
-            loadingMessage();
-
-            message.warning({
-                content: '⚠️ Không thể xác nhận trạng thái thanh toán. Vui lòng kiểm tra lại hóa đơn!',
-                duration: 6
-            });
-
-            // ✅ Cleanup và reset
-            localStorage.removeItem('checkPaymentStatus');
-            localStorage.removeItem('paymentMethod');
-            localStorage.removeItem('zaloPayResponse');
-            localStorage.removeItem('idHDPayMent');
-
-            setTimeout(() => {
-                isProcessingPayment.value = false;
-                console.log('🔄 ZaloPay timeout - Reset isProcessingPayment flag');
-            }, 1000);
-        } else {
-            // Continue polling
-            console.log(`⏳ Payment pending... (${pollCount}/${maxPolls})`);
-        }
-    } catch (error) {
-        console.error('❌ Lỗi khi kiểm tra trạng thái ZaloPay:', error);
-
-        // Nếu có lỗi quá nhiều lần, reset để tránh bị stuck
-        if (pollCount >= 5) {
-            console.log('⚠️ Quá nhiều lỗi, reset isProcessingPayment flag');
-            isProcessingPayment.value = false;
-        }
-
-        if (pollCount >= maxPolls) {
-            clearInterval(pollPaymentStatus);
-            loadingMessage();
-
-            message.error({
-                content: '❌ Lỗi khi kiểm tra trạng thái thanh toán ZaloPay!',
-                duration: 5
-            });
-
-            // Cleanup
-            localStorage.removeItem('checkPaymentStatus');
-            localStorage.removeItem('paymentMethod');
-            localStorage.removeItem('zaloPayResponse');
-            localStorage.removeItem('idHDPayMent');
-        }
-    }
-}, pollInterval);
-
-        } else if (paymentMethod === 'PayOS') {
-    // PayOS status check (one-time)
-    try {
-        const idhdpay = JSON.parse(localStorage.getItem('idHDPayMent'));
-        const paymentResponse = JSON.parse(localStorage.getItem('paymentResponse'));
-
-        console.log('🔍 Checking PayOS payment status for invoice:', idhdpay);
-
-        if (paymentResponse && paymentResponse.data && paymentResponse.data.orderCode) {
-            const paystatus = await thanhToanService.checkStatusPayment(paymentResponse.data.orderCode);
-
-            if (paystatus.status === "PAID") {
-                await store.trangThaiDonHang(idhdpay);
-                message.success({
-                    content: '✅ Thanh toán PayOS thành công!',
-                    duration: 3
-                });
-                await refreshHoaDon(idhdpay);
-                showPrintConfirm.value = true;
-            } else if (paystatus.status === "PENDING") {
-                message.warning({
-                    content: '⏳ Thanh toán PayOS đang chờ xử lý...',
-                    duration: 3
-                });
-            } else if (paystatus.status === "CANCELLED") {
-                message.error({
-                    content: '❌ Thanh toán PayOS đã bị hủy!',
-                    duration: 3
-                });
-            }
-        }
-    } catch (error) {
-        console.error("Lỗi khi kiểm tra trạng thái PayOS:", error);
-        message.error({
-            content: '⚠️ Không thể kiểm tra trạng thái thanh toán PayOS!',
-            duration: 4
-        });
-    } finally {
-        // Cleanup
-        localStorage.removeItem('checkPaymentStatus');
-        localStorage.removeItem('paymentMethod');
-        localStorage.removeItem('paymentResponse');
-        localStorage.removeItem('idHDPayMent');
-    }
-}
-    }
-
-
-
-});
-
 // Thiết lập setInterval để kiểm tra luuTTKHBH và shippingFeeUpdated
 let intervalId = null;
 const startChecking = () => {
@@ -3060,6 +2815,16 @@ watch(() => activeKey.value, async (newKey) => {
     const currentTab = panes.value.find(p => p.key === newKey);
     if (currentTab && currentTab.hd.id_hoa_don) {
         console.log('📡 WATCH: GỌI API getAllSPHD cho hóa đơn:', currentTab.hd.id_hoa_don);
+
+        // ✅ LOAD phương thức nhận hàng từ DB
+        if (currentTab.hd.phuong_thuc_nhan_hang) {
+            ptnh.value = currentTab.hd.phuong_thuc_nhan_hang;
+            console.log(`✅ Loaded delivery method from DB: ${ptnh.value}`);
+        } else {
+            // Fallback nếu chưa có trong data
+            ptnh.value = 'Nhận tại cửa hàng';
+            console.log('⚠️ No delivery method in DB, using default');
+        }
 
         // ✅ QUY TẮC MỚI: Reload products để lấy status mới nhất
         await handleSearchFocus();
@@ -3369,7 +3134,7 @@ const showZaloPayQR = async () => {
 };
 
 // ✅ ENHANCED ZALOPAY CALLBACK HANDLING
-const handleZaloPayCallback = () => {
+const handleZaloPayCallback = async () => {
     try {
         console.log('🔄 ZaloPay callback detected - checking for pending payments...');
 

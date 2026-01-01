@@ -189,10 +189,13 @@ public class BanHangController {
                     // → Đã thanh toán + Đã nhận hàng → HOÀN THÀNH
                     trangThaiMoi = "Hoàn thành";
                     hoaDon.setTrang_thai(trangThaiMoi);
+                    TheoDoiDonHang tdhd = theoDoiDonHangRepo.findByIdHoaDon(idHD).get(0);
+                    tdhd.setTrang_thai(trangThaiMoi);
+                    theoDoiDonHangRepo.save(tdhd);
                 } else {
                     // Trường hợp 2: Offline + Giao hàng
                     // → Đã thanh toán nhưng CHƯA giao → ĐÃ XÁC NHẬN
-                    trangThaiMoi = "Đã xác nhận";
+                    trangThaiMoi = "Hoàn thành";
                     hoaDon.setTrang_thai(trangThaiMoi);
                 }
             } else {
@@ -241,9 +244,9 @@ public class BanHangController {
 
             // ✅ GIỮ NGUYÊN phương thức nhận hàng (KHÔNG reset về "Nhận tại cửa hàng")
             // Chỉ reset phí ship về 0 nếu phương thức là "Nhận tại cửa hàng"
-            if ("Nhận tại cửa hàng".equals(currentPhuongThuc)) {
-                hoaDon.setPhi_van_chuyen(BigDecimal.ZERO);
-            }
+            // if ("Nhận tại cửa hàng".equals(currentPhuongThuc)) {
+            hoaDon.setPhi_van_chuyen(BigDecimal.ZERO);
+            // }
             // Nếu là "Giao hàng", GIỮ NGUYÊN cả phương thức và phí ship
 
             hoaDonRepo.save(hoaDon);

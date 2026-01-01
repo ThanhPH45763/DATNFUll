@@ -97,9 +97,11 @@ public interface VoucherRepository extends JpaRepository<Voucher, Integer> {
                     	FROM\s
                     		voucher vc
                     	WHERE\s
-                    		:ngayHienTai >= vc.ngay_bat_dau\s
+                    		vc.ngay_bat_dau <= :ngayHienTai\s
                     		AND :ngayHienTai <= vc.ngay_het_han\s
-                    		AND :giaTruyen >= gia_tri_toi_thieu;
+                    		AND :giaTruyen >= vc.gia_tri_toi_thieu
+                    		AND vc.so_luong > 0
+                    	ORDER BY so_tien_giam DESC;
             """)
     List<VoucherBHResponse> listVoucherHopLeTheoGia(
             @Param("giaTruyen") BigDecimal giaTruyen,

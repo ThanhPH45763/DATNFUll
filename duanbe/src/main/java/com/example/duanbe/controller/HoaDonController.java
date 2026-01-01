@@ -96,13 +96,21 @@ public class HoaDonController {
     }
 
     @PutMapping("/updateHTTTHD")
-    public ResponseEntity<HoaDon> updateHinhThucTTHoaDon(@RequestParam("idHD") Integer id,
+    public ResponseEntity<HoaDonResponse> updateHinhThucTTHoaDon(@RequestParam("idHD") Integer id,
             @RequestParam("hinhThucThanhToan") String httt) {
         HoaDon hoaDon = hoaDonRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn"));
 
         hoaDon.setHinh_thuc_thanh_toan(httt);
-        return ResponseEntity.ok(hoaDonRepo.save(hoaDon));
+        hoaDonRepo.save(hoaDon);
+
+        // ✅ Return HoaDonResponse DTO to avoid Hibernate lazy loading serialization
+        // errors
+        List<HoaDonResponse> responses = hoaDonRepo.findHoaDonById(id);
+        if (responses.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy hóa đơn response");
+        }
+        return ResponseEntity.ok(responses.get(0));
     }
 
     @GetMapping("/all-hoa-don")

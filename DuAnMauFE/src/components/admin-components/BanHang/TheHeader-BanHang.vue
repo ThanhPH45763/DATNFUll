@@ -263,7 +263,8 @@
                                 </span>
                             </div>
                             <a-space>
-                                <a-button type="primary" size="small" class="select-customer-btn" @click="showModal">
+                                <a-button type="primary" size="small" class="select-customer-btn" @click="showModal"
+                                    style="display: inline-flex; align-items: center; justify-content: center; line-height: 1;">
                                     <template #icon>
                                         <edit-outlined />
                                     </template>
@@ -272,7 +273,8 @@
                                 <a-button
                                     v-if="activeTabData.hd.ten_khach_hang && activeTabData.hd.ten_khach_hang !== 'Khách lẻ'"
                                     type="default" danger size="small" class="remove-customer-btn"
-                                    @click="confirmBoChonKhachHang">
+                                    @click="confirmBoChonKhachHang"
+                                    style="display: inline-flex; align-items: center; justify-content: center; line-height: 1;">
                                     <template #icon>
                                         <close-circle-outlined />
                                     </template>
@@ -333,13 +335,39 @@
                             <gift-outlined style="margin-right: 8px; color: #ff6600;" />
                             Voucher
                         </label>
-                        <a-select v-model:value="activeTabData.hd.id_voucher" class="voucher-select" size="large"
-                            placeholder="Chọn voucher giảm giá" @change="updateVoucher(true)" style="width: 100%"
-                            :options="voucherOptions">
+                        <a-select v-model:value="activeTabData.hd.id_voucher"
+                            :class="['voucher-select', { 'highlight-voucher': voucherState.highlightSelect }]"
+                            size="large" placeholder="Chọn voucher giảm giá" @change="updateVoucher(true)"
+                            style="width: 100%" :options="voucherOptions">
                             <template #suffixIcon>
                                 <gift-outlined style="color: #ff6600;" />
                             </template>
                         </a-select>
+
+                        <!-- ✅ NEW: Voucher Suggestion Alert -->
+                        <a-alert v-if="voucherState.showSuggestion && voucherState.bestVoucher" type="success" closable
+                            @close="onDismissSuggestion" style="margin-top: 12px;">
+                            <template #message>
+                                💡 Tiết kiệm {{ formatCurrency(voucherState.bestVoucher.so_tien_giam || 0) }}đ!
+                            </template>
+                            <template #description>
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span style="color: white; font-weight: 500;">{{
+                                        voucherState.bestVoucher.ten_voucher }}</span>
+                                    <a-button type="default" ghost size="small" @click="applyBestVoucher" style="
+                                            background: rgba(255, 255, 255, 0.2);
+                                            border: 2px solid white;
+                                            color: white;
+                                            font-weight: 600;
+                                            border-radius: 8px;
+                                            padding: 4px 20px;
+                                            height: 32px;
+                                        ">
+                                        Áp dụng ngay
+                                    </a-button>
+                                </div>
+                            </template>
+                        </a-alert>
                     </div>
                     <div class="mb-3" v-if="fe_giamGia > 0">
                         <label class="form-label">Giảm từ Voucher:</label>
@@ -447,7 +475,7 @@
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                     <span style="color: #666;">Tổng tiền:</span>
                                     <strong style="color: #ff6600; font-size: 16px;">{{ formatCurrency(fe_tongThanhToan)
-                                        }}</strong>
+                                    }}</strong>
                                 </div>
                                 <div v-if="activeTabData?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt'"
                                     style="display: flex; justify-content: space-between;">
@@ -570,13 +598,18 @@
                                         <td class="text-center">{{ khachHang.soDienThoai }}</td>
                                         <td class="customer-address">{{ khachHang.diaChi }}</td>
                                         <td class="text-center">
-                                            <a-button type="primary" size="small" class="select-btn"
-                                                @click="chonKhachHang(khachHang)">
-                                                <template #icon>
-                                                    <check-circle-outlined />
-                                                </template>
-                                                Chọn
-                                            </a-button>
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <a-button type="primary" @click="chonKhachHang(khachHang)"
+                                                    style="display: inline-flex; align-items: center; justify-content: center; height: 34px; line-height: 1;">
+                                                    <EditOutlined />
+                                                    Chọn
+                                                </a-button>
+                                                <a-button type="danger" ghost @click="xoaKhachHang(khachHang)"
+                                                    style="display: inline-flex; align-items: center; justify-content: center; height: 34px; line-height: 1;">
+                                                    <DeleteOutlined />
+                                                    Bỏ chọn
+                                                </a-button>
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -797,16 +830,18 @@ const chonKhachHang = async (khachHang) => {
 
         // ✅ STEP 4: Update UI state
         open.value = false;
-        if (!activeTabData.value.hd.isKhachLe) {
-            handlePhuongThucChange();
-        }
 
         // ✅ STEP 5: Save to localStorage
         localStorage.setItem('khachHangBH', JSON.stringify(khachHang));
         localStorage.setItem('chonKH', true);
 
-        message.success(`Đã chọn khách hàng: ${khachHang.hoTen}`);
+        // ✅ STEP 6: Trigger form update to load customer data
+        // Form will detect new customer and if user switches to "Giao hàng",
+        // form will auto-calculate shipping fee
+        console.log('🔄 Triggering form update to load customer data...');
         triggerUpdate.value = Date.now();
+
+        message.success(`Đã chọn khách hàng: ${khachHang.hoTen}`);
 
     } catch (error) {
         console.error('Lỗi khi chọn khách hàng:', error);
@@ -1664,6 +1699,16 @@ const isPaymentDisabled = computed(() => {
 // =================================================================
 
 const userHasManuallyDeselectedVoucher = ref(false);
+
+// ✅ NEW: Voucher Suggestion State (Refactor - No Auto-Apply)
+const voucherState = reactive({
+    eligibleVouchers: [],        // Danh sách voucher có thể dùng
+    bestVoucher: null,           // Voucher tốt nhất (BE tính hoặc FE sort)
+    showSuggestion: false,       // Hiện notification lần đầu
+    suggestionDismissed: false,  // User đã dismiss notification
+    highlightSelect: false,      // Highlight ô select (sau khi dismiss)
+    userHasManuallySelected: false, // User đã chủ động chọn voucher
+});
 const availableVouchers = ref([]);
 
 // 1. TÍNH TOÁN CÁC GIÁ TRỊ TỨC THÌ
@@ -1734,6 +1779,13 @@ const updateVoucher = async (isManualAction = false) => {
         userHasManuallyDeselectedVoucher.value = true;
     }
 
+    // ✅ NEW: Track manual selection và reset suggestion UI
+    if (isManualAction) {
+        voucherState.userHasManuallySelected = true;
+        voucherState.showSuggestion = false;
+        voucherState.highlightSelect = false;
+    }
+
     try {
         // ✅ STEP 1: Call API - Backend returns HoaDonResponse
         const response = await store.applyVoucherToInvoice(
@@ -1751,6 +1803,28 @@ const updateVoucher = async (isManualAction = false) => {
     } catch (error) {
         console.error('Lỗi khi áp dụng voucher:', error);
     }
+};
+
+// ✅ NEW: Helper để apply best voucher khi user click "Áp dụng ngay"
+const applyBestVoucher = async () => {
+    if (!voucherState.bestVoucher) {
+        console.warn('No best voucher available');
+        return;
+    }
+
+    const currentTab = activeTabData.value;
+    if (!currentTab?.hd) return;
+
+    // Set voucher ID và gọi update
+    currentTab.hd.id_voucher = voucherState.bestVoucher.id_voucher;
+    await updateVoucher(true); // true = manual action
+};
+
+// ✅ NEW: Helper để dismiss suggestion
+const onDismissSuggestion = () => {
+    voucherState.suggestionDismissed = true;
+    voucherState.showSuggestion = false;
+    voucherState.highlightSelect = true; // Switch to highlight mode
 };
 
 // 3. LOGIC TỰ ĐỘNG XỬ LÝ VOUCHER
@@ -1803,19 +1877,39 @@ watch(fe_tongTienHang, async (newTotal) => {
         ? [...availableVouchers.value].sort((a, b) => (b.so_tien_giam || 0) - (a.so_tien_giam || 0))[0]
         : null;
 
+    // ✅ UPDATE: Sync to voucherState
+    voucherState.eligibleVouchers = availableVouchers.value;
+    voucherState.bestVoucher = bestVoucher;
+
     // Kịch bản 1: Voucher đang dùng không còn hợp lệ (ví dụ: giảm số lượng)
     if (currentVoucherId && !availableVouchers.value.some(v => v.id_voucher === currentVoucherId)) {
         currentTab.hd.id_voucher = null; // Gỡ voucher khỏi giao diện
         message.warning('Voucher không còn hợp lệ và đã được gỡ bỏ.');
-        // ✅ FIX: Không reset flag - tôn trọng lựa chọn của user
         await updateVoucher(false); // false = không phải manual action
     }
-    // Kịch bản 2: Chưa có voucher, nhưng giờ đã đủ điều kiện cho voucher tốt nhất
+    // Kịch bản 2: ❌ REMOVED AUTO-APPLY → ✅ CHỈ SUGGEST
     else if (!currentVoucherId && bestVoucher) {
-        currentTab.hd.id_voucher = bestVoucher.id_voucher; // Tự động áp dụng trên giao diện
-        message.success(`Đã tự động áp dụng voucher: ${bestVoucher.ten_voucher}`);
-        // ✅ FIX: Không reset flag - nếu user đã bỏ chọn, không tự động apply lại
-        await updateVoucher(false); // false = không phải manual action
+        console.log('💡 Voucher available - showing suggestion (NO AUTO-APPLY)');
+        console.log('🔍 Voucher State Debug:');
+        console.log('  - showSuggestion:', voucherState.showSuggestion);
+        console.log('  - suggestionDismissed:', voucherState.suggestionDismissed);
+        console.log('  - userHasManuallySelected:', voucherState.userHasManuallySelected);
+        console.log('  - bestVoucher:', voucherState.bestVoucher);
+
+        // ✅ NEW: Chỉ hiển thị gợi ý, KHÔNG tự động áp dụng
+        if (!voucherState.suggestionDismissed && !voucherState.userHasManuallySelected) {
+            console.log('✅ SETTING showSuggestion = true');
+            voucherState.showSuggestion = true;
+        } else {
+            console.log('⚠️ Skipping suggestion - dismissed or manually selected');
+            // Nếu user đã dismiss, chỉ highlight
+            voucherState.highlightSelect = true;
+        }
+
+        // ❌ REMOVED: Tự động áp dụng voucher
+        // currentTab.hd.id_voucher = bestVoucher.id_voucher;
+        // message.success(`Đã tự động áp dụng voucher...`);
+        // await updateVoucher(false);
     }
 });
 
@@ -2611,13 +2705,36 @@ onMounted(async () => {
     try {
         console.log('🚀 TheHeader-BanHang mounted - Starting enhanced initialization...');
 
-        // ✅ AUTO-RECOVERY: Check for pending payments on startup
-        const pendingPayment = await recoveryService.autoRecoverZaloPayPayment();
+        // ✅ CLEANUP: Clear stale payment protection flags
+        const checkPaymentStatus = localStorage.getItem('checkPaymentStatus');
+        const paymentTimestamp = localStorage.getItem('paymentTimestamp');
 
-        if (pendingPayment) {
-            console.log('🔄 Found pending payment, starting recovery...');
-            return;
+        if (checkPaymentStatus === 'true') {
+            if (!paymentTimestamp) {
+                // No timestamp - old payment, clear it
+                console.log('🧹 Clearing stale payment protection (no timestamp)');
+                localStorage.removeItem('checkPaymentStatus');
+                localStorage.removeItem('paymentMethod');
+                localStorage.removeItem('idHDPayMent');
+            } else {
+                const elapsed = Date.now() - parseInt(paymentTimestamp);
+                if (elapsed > 120000) { // 2 minutes
+                    console.log('🧹 Clearing stale payment protection (elapsed:', elapsed, 'ms)');
+                    localStorage.removeItem('checkPaymentStatus');
+                    localStorage.removeItem('paymentMethod');
+                    localStorage.removeItem('idHDPayMent');
+                    localStorage.removeItem('paymentTimestamp');
+                }
+            }
         }
+
+        // ✅ AUTO-RECOVERY: Disabled - service not configured
+        // const pendingPayment = await recoveryService.autoRecoverZaloPayPayment();
+
+        // if (pendingPayment) {
+        //     console.log('🔄 Found pending payment, starting recovery...');
+        //     return;
+        // }
 
         // ✅ RECOVER INVOICE STATE: Try to recover previous invoice
         const recoveredInvoice = await invoiceStateManager.recoverInvoice();
@@ -2630,7 +2747,7 @@ onMounted(async () => {
         }
 
         // ✅ INITIALIZE STORE: Load normal data if no recovery needed
-        if (!pendingPayment && !recoveredInvoice) {
+        if (!recoveredInvoice) {
             console.log('📊 Loading normal data...');
             store.initializeStore();
         }
@@ -3673,6 +3790,198 @@ const closeZaloPayModal = () => {
 .voucher-select :deep(.ant-select-arrow) {
     color: #ff6600 !important;
 }
+
+/* ✅ NEW: Highlight Animation for Voucher Select */
+.highlight-voucher :deep(.ant-select-selector) {
+    animation: voucherPulse 2s infinite;
+    border-color: #1890ff !important;
+}
+
+@keyframes voucherPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.7);
+    }
+
+    50% {
+        box-shadow: 0 0 0 10px rgba(24, 144, 255, 0);
+    }
+}
+
+/* ✨ PREMIUM: Voucher Suggestion Alert Styling */
+:deep(.ant-alert-success) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    border-radius: 16px !important;
+    padding: 20px !important;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    backdrop-filter: blur(10px) !important;
+    position: relative !important;
+    overflow: hidden !important;
+    animation: slideInDown 0.5s ease-out !important;
+}
+
+/* Shimmer effect overlay */
+:deep(.ant-alert-success::before) {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg,
+            transparent 30%,
+            rgba(255, 255, 255, 0.1) 50%,
+            transparent 70%);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Alert message styling */
+:deep(.ant-alert-success .ant-alert-message) {
+    color: #ffffff !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    margin-bottom: 8px !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* Animated icon in message */
+:deep(.ant-alert-success .ant-alert-message::before) {
+    content: '💡';
+    font-size: 20px;
+    margin-right: 8px;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-5px) scale(1.1);
+    }
+}
+
+/* Alert description */
+:deep(.ant-alert-success .ant-alert-description) {
+    color: rgba(255, 255, 255, 0.95) !important;
+    font-size: 14px !important;
+}
+
+:deep(.ant-alert-success .ant-alert-description > div) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+}
+
+:deep(.ant-alert-success .ant-alert-description span) {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 13px !important;
+}
+
+/* Premium button in alert */
+:deep(.ant-alert-success .ant-btn-primary),
+:deep(.ant-alert-success .ant-btn-default) {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border: 2px solid white !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 0 20px !important;
+    height: 32px !important;
+    line-height: 28px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+/* Shimmer effect on hover */
+:deep(.ant-alert-success .ant-btn-primary::before),
+:deep(.ant-alert-success .ant-btn-default::before) {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.4),
+            transparent);
+    transition: left 0.5s ease;
+}
+
+:deep(.ant-alert-success .ant-btn-primary:hover),
+:deep(.ant-alert-success .ant-btn-default:hover) {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-color: white !important;
+    transform: translateY(-2px) scale(1.05) !important;
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4),
+        0 0 30px rgba(255, 255, 255, 0.3) !important;
+}
+
+:deep(.ant-alert-success .ant-btn-primary:hover::before),
+:deep(.ant-alert-success .ant-btn-default:hover::before) {
+    left: 100%;
+}
+
+:deep(.ant-alert-success .ant-btn-primary:active),
+:deep(.ant-alert-success .ant-btn-default:active) {
+    transform: translateY(0) scale(1) !important;
+}
+
+/* Close button styling */
+:deep(.ant-alert-success .ant-alert-close-icon) {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 16px !important;
+    transition: all 0.3s ease !important;
+}
+
+:deep(.ant-alert-success .ant-alert-close-icon:hover) {
+    color: #ffffff !important;
+    transform: scale(1.2) !important;
+}
+
+/* Icon styling (if default icon shown) */
+:deep(.ant-alert-success .ant-alert-icon) {
+    color: #ffffff !important;
+    font-size: 20px !important;
+}
+
 
 /* Voucher Dropdown Options */
 :deep(.ant-select-dropdown .ant-select-item) {

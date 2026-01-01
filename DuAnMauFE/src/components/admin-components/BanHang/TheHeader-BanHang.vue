@@ -364,7 +364,8 @@
                                     <div class="payment-text">Tiền mặt</div>
                                 </label>
                             </div>
-                            <div class="payment-method-option"
+                            <!-- PayOS option hidden - keep for future use -->
+                            <!-- <div class="payment-method-option"
                                 :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'PayOS' }">
                                 <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
                                     :id="'payos_' + activeKey" value="PayOS"
@@ -373,7 +374,7 @@
                                     <div class="payment-icon">🏦</div>
                                     <div class="payment-text">PayOS</div>
                                 </label>
-                            </div>
+                            </div> -->
                             <div class="payment-method-option"
                                 :class="{ 'active': activeTabData.hd.hinh_thuc_thanh_toan === 'Chuyển khoản' }">
                                 <input class="form-check-input" type="radio" :name="'hinhThucThanhToan_' + activeKey"
@@ -381,7 +382,7 @@
                                     v-model="activeTabData.hd.hinh_thuc_thanh_toan" @change="updateHinhThucThanhToan" />
                                 <label class="payment-label" :for="'zalopay_' + activeKey">
                                     <div class="payment-icon">⚡</div>
-                                    <div class="payment-text">ZaloPay</div>
+                                    <div class="payment-text">Chuyển khoản</div>
                                 </label>
                             </div>
                         </div>
@@ -446,7 +447,7 @@
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                     <span style="color: #666;">Tổng tiền:</span>
                                     <strong style="color: #ff6600; font-size: 16px;">{{ formatCurrency(fe_tongThanhToan)
-                                    }}</strong>
+                                        }}</strong>
                                 </div>
                                 <div v-if="activeTabData?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt'"
                                     style="display: flex; justify-content: space-between;">
@@ -624,8 +625,7 @@ import { toast } from 'vue3-toastify';
 import { thanhToanService } from '@/services/thanhToan';
 import { banHangService } from '@/services/banHangService';
 
-// ✅ ENHANCED ZALOPAY HANDLER
-import { handleZaloPayPayment, checkZaloPayStatus, autoRecoverZaloPayPayment, handleZaloPayCallback } from './enhancedZaloPayService.js';
+// ✅ ZaloPay functions are defined locally below
 import FormKhachHangBH from './formKhachHangBH.vue';
 import { useRouter } from 'vue-router';
 import QRCode from 'qrcode';
@@ -776,14 +776,8 @@ const chonKhachHang = async (khachHang) => {
             localStorage.removeItem('walkInCustomer');
         }
 
-        Object.assign(activeTabData.value.hd, {
-            ten_khach_hang: khachHang.hoTen,
-            so_dien_thoai: khachHang.soDienThoai,
-            dia_chi: khachHang.diaChi || 'Chưa có địa chỉ',
-            id_khach_hang: khachHang.idKhachHang
-        });
-
-        await store.addKHHD(
+        // ✅ STEP 1: Call API - Backend returns HoaDonResponse
+        const response = await store.addKHHD(
             activeTabData.value.hd.id_hoa_don,
             khachHang.idKhachHang,
             khachHang.diaChi,
@@ -791,20 +785,29 @@ const chonKhachHang = async (khachHang) => {
             khachHang.soDienThoai
         );
 
+        if (!response) {
+            throw new Error('Thêm khách hàng thất bại');
+        }
+
+        // ✅ STEP 2: Update invoice from response
+        updateInvoiceFromResponse(response);
+
+        // ✅ STEP 3: Refresh customer list
         await store.getAllKhachHangNoPage();
 
+        // ✅ STEP 4: Update UI state
         open.value = false;
         if (!activeTabData.value.hd.isKhachLe) {
             handlePhuongThucChange();
         }
 
-        await refreshHoaDon(activeTabData.value.hd.id_hoa_don);
-
+        // ✅ STEP 5: Save to localStorage
         localStorage.setItem('khachHangBH', JSON.stringify(khachHang));
         localStorage.setItem('chonKH', true);
 
         message.success(`Đã chọn khách hàng: ${khachHang.hoTen}`);
         triggerUpdate.value = Date.now();
+
     } catch (error) {
         console.error('Lỗi khi chọn khách hàng:', error);
         message.error('Không thể chọn khách hàng. Vui lòng thử lại!');
@@ -839,48 +842,31 @@ const boChonKhachHang = async () => {
     try {
         const idHoaDon = activeTabData.value.hd.id_hoa_don;
 
-        // ✅ LƯU LẠI phương thức nhận hàng và phí ship hiện tại
-        const currentPhuongThuc = activeTabData.value.hd.phuong_thuc_nhan_hang;
-        const currentPhiShip = activeTabData.value.hd.phi_van_chuyen;
+        // ✅ STEP 1: Call API - Backend returns HoaDonResponse
+        const response = await store.removeCustomerFromHD(idHoaDon);
 
-        // Gọi API để reset khách hàng về khách lẻ
-        await store.removeCustomerFromHD(idHoaDon);
+        if (!response) {
+            throw new Error('Bỏ chọn khách hàng thất bại');
+        }
 
-        // Cập nhật UI - CHỈ reset thông tin khách hàng, GIỮ NGUYÊN phương thức nhận hàng
-        Object.assign(activeTabData.value.hd, {
-            ten_khach_hang: 'Khách lẻ',
-            ho_ten: 'Khách lẻ',
-            so_dien_thoai: null,
-            dia_chi: null,
-            email: null,
-            id_khach_hang: null,
-            // ✅ GIỮ NGUYÊN phương thức nhận hàng hiện tại
-            phuong_thuc_nhan_hang: currentPhuongThuc,
-            // ✅ Chỉ reset phí ship về 0 nếu là "Nhận tại cửa hàng"
-            phi_van_chuyen: currentPhuongThuc === 'Nhận tại cửa hàng' ? 0 : currentPhiShip
-        });
+        // ✅ STEP 2: Update invoice from response (includes customer reset + totals)
+        updateInvoiceFromResponse(response);
 
-        // Xóa localStorage
+        // ✅ STEP 3: Clear localStorage
         localStorage.removeItem('khachHangBH');
         localStorage.removeItem('chonKH');
         localStorage.removeItem('luuTTKHBH');
         localStorage.removeItem('shippingFeeUpdated');
         localStorage.removeItem('calculatedShippingFee');
 
-        // Reload hóa đơn để cập nhật tổng tiền
-        await refreshHoaDon(idHoaDon);
-
         message.success('Đã bỏ chọn khách hàng và chuyển về khách lẻ');
 
         // Trigger update cho form khách hàng
         triggerUpdate.value = Date.now();
 
-        // ✅ GIỮ NGUYÊN ptnh hiện tại
-        ptnh.value = currentPhuongThuc;
-
     } catch (error) {
         console.error('Lỗi khi bỏ chọn khách hàng:', error);
-        message.error('Không thể bỏ chọn khách hàng. Vui lòng thử lại!');
+        message.error('Không thể bỏ chọn khách hàng!');
     }
 };
 
@@ -939,6 +925,74 @@ const changeRoute = (path) => {
     store.getIndex(path);
     selectedKeys.value = store.indexMenu;
     router.push(path);
+};
+
+// ====================================================================================
+// ✅ HELPER: Update Invoice from HoaDonResponse
+// ====================================================================================
+/**
+ * Cập nhật toàn bộ invoice state từ HoaDonResponse (Backend as Source of Truth)
+ * Sử dụng cho TẤT CẢ API calls để đảm bảo state nhất quán
+ * 
+ * @param {Object} response - HoaDonResponse from backend API
+ * @param {String} tabKey - Optional tab key, defaults to active tab
+ */
+const updateInvoiceFromResponse = (response, tabKey = null) => {
+    if (!response) {
+        console.warn('⚠️ updateInvoiceFromResponse: response is null');
+        return;
+    }
+
+    // Find target tab
+    const targetTab = tabKey
+        ? panes.value.find(p => p.key === tabKey)
+        : activeTabData.value;
+
+    if (!targetTab) {
+        console.warn('⚠️ updateInvoiceFromResponse: target tab not found');
+        return;
+    }
+
+    // Update invoice header data
+    Object.assign(targetTab.hd, {
+        id_hoa_don: response.id_hoa_don,
+        ma_hoa_don: response.ma_hoa_don,
+
+        // Totals (Backend-calculated, NEVER recalculate in FE!)
+        tong_tien_truoc_giam: response.tong_tien_truoc_giam || 0,
+        tong_tien_sau_giam: response.tong_tien_sau_giam || 0,
+        phi_van_chuyen: response.phi_van_chuyen || 0,
+
+        // Delivery method
+        phuong_thuc_nhan_hang: response.phuong_thuc_nhan_hang,
+
+        // Voucher info
+        id_voucher: response.id_voucher,
+        ma_voucher: response.ma_voucher,
+        ten_voucher: response.ten_voucher,
+
+        // Customer info
+        id_khach_hang: response.id_khach_hang,
+        ten_khach_hang: response.ten_khach_hang,
+        ho_ten: response.ho_ten || response.ten_khach_hang,
+        email: response.email,
+        sdt: response.sdt,
+        dia_chi: response.dia_chi,
+
+        // Status
+        trang_thai: response.trang_thai
+    });
+
+    // Update UI reactive values
+    if (response.phuong_thuc_nhan_hang) {
+        ptnh.value = response.phuong_thuc_nhan_hang;
+    }
+
+    console.log(`✅ Updated invoice ${response.ma_hoa_don} from response:`, {
+        tongTienSauGiam: response.tong_tien_sau_giam,
+        phiVanChuyen: response.phi_van_chuyen,
+        voucher: response.ma_voucher || 'none'
+    });
 };
 
 
@@ -1528,20 +1582,24 @@ const addToBill = async (product) => {
     }
 
     try {
-        // ✅ REFACTORED: GỌI API TRƯỚC - KHÔNG optimistic UI
-        const result = await store.themSPHDMoi(
+        // ✅ STEP 1: Call API - Backend returns HoaDonResponse
+        const response = await store.themSPHDMoi(
             currentTab.hd.id_hoa_don,
             product.id_chi_tiet_san_pham,
             1
         );
 
-        if (!result) {
+        if (!response) {
             throw new Error("Thêm sản phẩm thất bại");
         }
 
-        // ✅ SAU KHI THÀNH CÔNG: Reload từ backend
+        // ✅ STEP 2: Update invoice state from response (Single Source of Truth)
+        updateInvoiceFromResponse(response);
+
+        // ✅ STEP 3: Reload cart items to get updated quantities
         await reloadCartFromBackend(currentTab.hd.id_hoa_don);
-        await refreshHoaDon(currentTab.hd.id_hoa_don);
+
+        // ✅ STEP 4: Refresh product list for updated stock
         store.getAllCTSPKM().then(p => allProducts.value = p);
 
         message.success(`Đã thêm "${product.ten_san_pham}"`);
@@ -1676,15 +1734,22 @@ const updateVoucher = async (isManualAction = false) => {
         userHasManuallyDeselectedVoucher.value = true;
     }
 
-    // Gọi API mới để áp dụng voucher
-    const updatedInvoice = await store.applyVoucherToInvoice(
-        currentTab.hd.id_hoa_don,
-        currentTab.hd.id_voucher
-    );
+    try {
+        // ✅ STEP 1: Call API - Backend returns HoaDonResponse
+        const response = await store.applyVoucherToInvoice(
+            currentTab.hd.id_hoa_don,
+            currentTab.hd.id_voucher
+        );
 
-    if (updatedInvoice) {
-        // Cập nhật hóa đơn với dữ liệu mới từ backend
-        Object.assign(currentTab.hd, updatedInvoice);
+        if (!response) {
+            throw new Error('Áp dụng voucher thất bại');
+        }
+
+        // ✅ STEP 2: Update invoice from response
+        updateInvoiceFromResponse(response);
+
+    } catch (error) {
+        console.error('Lỗi khi áp dụng voucher:', error);
     }
 };
 
@@ -1759,24 +1824,32 @@ watch(fe_tongTienHang, async (newTotal) => {
 
 
 // Cập nhật tổng tiền khi số lượng thay đổi trong bảng hóa đơn
-const updateItemTotal = (item) => {
-    // Gửi yêu cầu cập nhật lên backend ở chế độ nền
-    store.setSPHD(item.id_hoa_don, item.id_chi_tiet_san_pham, item.so_luong)
-        .then(() => {
-            console.log(`✅ Updated quantity for ${item.ten_san_pham} to ${item.so_luong} on backend.`);
-            // Sau khi backend cập nhật thành công, làm mới lại dữ liệu của hóa đơn
-            refreshHoaDon(item.id_hoa_don);
+const updateItemTotal = async (item) => {
+    try {
+        // ✅ STEP 1: Call API - Backend returns HoaDonResponse
+        const response = await store.setSPHD(
+            item.id_hoa_don,
+            item.id_chi_tiet_san_pham,
+            item.so_luong
+        );
 
-            // ✅ Reload allProducts để cập nhật stock trong search bar
-            store.getAllCTSPKM().then(p => {
-                allProducts.value = p;
-                console.log(`🔄 Reloaded allProducts after quantity update`);
-            });
-        })
-        .catch(err => {
-            console.error('Failed to update quantity on backend:', err);
-            message.error('Lỗi khi cập nhật số lượng trên máy chủ.');
+        if (!response) {
+            throw new Error('Cập nhật thất bại');
+        }
+
+        // ✅ STEP 2: Update invoice from response
+        updateInvoiceFromResponse(response);
+
+        // ✅ STEP 3: Reload products for updated stock
+        store.getAllCTSPKM().then(p => {
+            allProducts.value = p;
+            console.log(`✅ Updated ${item.ten_san_pham} to ${item.so_luong}`);
         });
+
+    } catch (err) {
+        console.error('Failed to update quantity:', err);
+        message.error('Lỗi khi cập nhật số lượng');
+    }
 };
 
 
@@ -1784,39 +1857,40 @@ const updateItemTotal = (item) => {
 
 
 // Xóa sản phẩm khỏi hóa đơn chi tiết của tab hiện tại
-const removeFromBill = (productId) => {
+const removeFromBill = async (productId) => {
     const currentTab = activeTabData.value;
     if (!currentTab?.items) return;
 
     const itemsArray = currentTab.items.value;
-    const itemIndex = itemsArray.findIndex(item => item.id_chi_tiet_san_pham === productId);
-    if (itemIndex === -1) return;
+    const item = itemsArray.find(item => item.id_chi_tiet_san_pham === productId);
+    if (!item) return;
 
-    // --- Optimistic UI Update ---
-    const removedItem = { ...itemsArray[itemIndex] }; // Sao chép item để có thể hoàn tác
-    itemsArray.splice(itemIndex, 1);
+    try {
+        // ✅ STEP 1: Call API - Backend NOW returns HoaDonResponse!
+        const response = await store.xoaSPHD(currentTab.hd.id_hoa_don, productId);
 
-    message.info(`Đã xóa "${removedItem.ten_san_pham}" khỏi hóa đơn.`);
-    // --- Kết thúc Optimistic UI Update ---
+        // Store returns {success, message} wrapper, check it
+        if (!response?.success && !response?.id_hoa_don) {
+            // If it's still old format
+            throw new Error(response?.message || "Xóa sản phẩm thất bại");
+        }
 
-    // --- Gửi yêu cầu lên backend ở chế độ nền ---
-    store.xoaSPHD(currentTab.hd.id_hoa_don, productId)
-        .then(result => {
-            if (!result?.success) {
-                throw new Error(result.message || "Xóa sản phẩm thất bại");
-            }
-            console.log('Backend updated successfully for remove.');
-            // Đồng bộ lại hóa đơn
-            refreshHoaDon(currentTab.hd.id_hoa_don);
-            // ✅ RELOAD products để cập nhật stock và getMaxQuantity chính xác
-            store.getAllCTSPKM().then(p => allProducts.value = p);
-        })
-        .catch(error => {
-            console.error('Lỗi khi xóa sản phẩm (backend):', error);
-            message.error('Lỗi: Không thể xóa sản phẩm.');
-            // --- Hoàn tác lại thay đổi trên UI nếu có lỗi ---
-            itemsArray.splice(itemIndex, 0, removedItem); // Thêm lại item vào vị trí cũ
-        });
+        // ✅ STEP 2: Update invoice from response
+        // Backend xoaSPHD now returns HoaDonResponse directly
+        updateInvoiceFromResponse(response);
+
+        // ✅ STEP 3: Reload cart items
+        await reloadCartFromBackend(currentTab.hd.id_hoa_don);
+
+        // ✅ STEP 4: Reload products for updated stock
+        store.getAllCTSPKM().then(p => allProducts.value = p);
+
+        message.success(`Đã xóa "${item.ten_san_pham}"`);
+
+    } catch (error) {
+        console.error('Lỗi khi xóa sản phẩm:', error);
+        message.error('Lỗi: Không thể xóa sản phẩm');
+    }
 };
 
 // ✅ Watch activeTabData để lưu ID hóa đơn hiện tại vào localStorage
@@ -2177,13 +2251,17 @@ const handlePayment = async () => {
     // ✅ Kiểm tra thông tin khách hàng
     const tenKhachHang = currentTab.hd.ho_ten;
     const isWalkInCustomer = !currentTab.hd.id_khach_hang || tenKhachHang === 'Khách lẻ';
+    const phuongThucNhanHang = currentTab.hd.phuong_thuc_nhan_hang || 'Nhận tại cửa hàng'; // Default
 
     console.log('👤 Tên khách hàng:', tenKhachHang);
     console.log('👤 Là khách lẻ?', isWalkInCustomer);
-    console.log('🚚 Phương thức nhận hàng:', currentTab.hd.phuong_thuc_nhan_hang);
+    console.log('🚚 Phương thức nhận hàng:', phuongThucNhanHang);
 
-    // ✅ CHỈ validate thông tin khách hàng nếu là khách lẻ VÀ chọn "Giao hàng"
-    if (isWalkInCustomer && currentTab.hd.phuong_thuc_nhan_hang === 'Giao hàng') {
+    // ✅ LOGIC FIX: CHỈ validate khi là khách lẻ VÀ chọn GIAO HÀNG
+    // Mọi trường hợp khác (nhận tại cửa hàng, null, undefined) → CHO PHÉP thanh toán!
+    if (isWalkInCustomer && phuongThucNhanHang === 'Giao hàng') {
+        console.log('📦 Khách lẻ chọn GIAO HÀNG → Cần validate thông tin');
+
         // Kiểm tra localStorage có thông tin khách lẻ không
         const walkInData = localStorage.getItem('walkInCustomer');
         console.log('💾 walkInCustomer từ localStorage:', walkInData);
@@ -2243,9 +2321,11 @@ const handlePayment = async () => {
             localStorage.removeItem('walkInCustomer');
             return;
         }
-    } else if (isWalkInCustomer && currentTab.hd.phuong_thuc_nhan_hang === 'Nhận tại cửa hàng') {
-        // ✅ Nhận tại cửa hàng: KHÔNG cần validate địa chỉ, cho phép thanh toán luôn
-        console.log('✅ Nhận tại cửa hàng - Bỏ qua validation địa chỉ, cho phép thanh toán');
+    } else {
+        // ✅ NHẬN TẠI CỬA HÀNG / NULL / UNDEFINED → CHO PHÉP thanh toán!
+        // Khách lẻ mua hàng tại quầy, nhận ngay → Không cần điền form
+        console.log(`✅ Phương thức: "${phuongThucNhanHang}" → Bỏ qua validation khách hàng`);
+        console.log('💡 Cho phép thanh toán ngay (không cần thông tin)');
     }
 
 
@@ -2275,6 +2355,7 @@ const proceedToPayment = async () => {
 
         const invoiceId = activeTabData.value.hd.id_hoa_don;
         const paymentAmount = fe_tongThanhToan.value;
+        const hinhThuc = activeTabData.value.hd.hinh_thuc_thanh_toan;
 
         // Validate payment amount
         if (paymentAmount <= 0) {
@@ -2588,44 +2669,6 @@ onMounted(async () => {
 });
 
 /**
- * Handle ZaloPay callback
- */
-// const handleZaloPayCallback = async (appTransId, invoiceId, status) => {
-//     try {
-//         console.log(`🔄 Handling ZaloPay callback:`, { appTransId, invoiceId, status });
-
-//         // Find invoice to update
-//         const invoice = invoiceStateManager.getInvoice(invoiceId);
-
-//         if (!invoice) {
-//             console.warn(`⚠️ Invoice ${invoiceId} not found for callback handling`);
-//             return;
-//         }
-
-//         switch (status) {
-//             case 'success':
-//                 await handleZaloPaySuccess(invoiceId, appTransId);
-//                 break;
-
-//             case 'failed':
-//                 await handleZaloPayFailure(invoiceId, appTransId);
-//                 break;
-
-//             case 'timeout':
-//                 await handleZaloPayTimeout(invoiceId, appTransId);
-//                 break;
-
-//             default:
-//                 console.warn(`⚠️ Unknown ZaloPay callback status: ${status}`);
-//                 break;
-//         }
-
-//     } catch (error) {
-//         console.error('❌ Error handling ZaloPay callback:', error);
-//     }
-// };
-
-/**
  * Handle ZaloPay success
  */
 const handleZaloPaySuccess = async (invoiceId, appTransId) => {
@@ -2817,13 +2860,30 @@ watch(() => activeKey.value, async (newKey) => {
         console.log('📡 WATCH: GỌI API getAllSPHD cho hóa đơn:', currentTab.hd.id_hoa_don);
 
         // ✅ LOAD phương thức nhận hàng từ DB
+        console.log('🔍 DEBUG - currentTab.hd.phuong_thuc_nhan_hang:', currentTab.hd.phuong_thuc_nhan_hang);
+        console.log('🔍 DEBUG - currentTab.hd:', currentTab.hd);
+
         if (currentTab.hd.phuong_thuc_nhan_hang) {
-            ptnh.value = currentTab.hd.phuong_thuc_nhan_hang;
-            console.log(`✅ Loaded delivery method from DB: ${ptnh.value}`);
+            // ✅ SYNC cả 2 variables để template binding hoạt động
+            const deliveryMethod = currentTab.hd.phuong_thuc_nhan_hang;
+
+            // Update activeTabData (template bind với biến này)
+            activeTabData.value.hd.phuong_thuc_nhan_hang = deliveryMethod;
+
+            // Also update ptnh for backward compatibility
+            ptnh.value = deliveryMethod;
+
+            console.log(`✅ Loaded delivery method from DB: ${deliveryMethod}`);
+            console.log(`✅ Synced to activeTabData.hd.phuong_thuc_nhan_hang: ${activeTabData.value.hd.phuong_thuc_nhan_hang}`);
         } else {
             // Fallback nếu chưa có trong data
-            ptnh.value = 'Nhận tại cửa hàng';
-            console.log('⚠️ No delivery method in DB, using default');
+            const defaultMethod = 'Nhận tại cửa hàng';
+
+            // Update cả 2
+            activeTabData.value.hd.phuong_thuc_nhan_hang = defaultMethod;
+            ptnh.value = defaultMethod;
+
+            console.log('⚠️ No delivery method in DB, using default:', defaultMethod);
         }
 
         // ✅ QUY TẮC MỚI: Reload products để lấy status mới nhất
@@ -3026,34 +3086,64 @@ const handleCustomerDataSaved = async (customerData) => {
 
 const handlePhuongThucChange = async () => {
     console.log('🔄 Phương thức nhận hàng đã thay đổi:', activeTabData.value.hd.phuong_thuc_nhan_hang);
-    ptnh.value = activeTabData.value.hd.phuong_thuc_nhan_hang;
+
     const idHoaDon = activeTabData.value.hd.id_hoa_don;
     const phuongThuc = activeTabData.value.hd.phuong_thuc_nhan_hang;
-    // ✅ GỌI API NGAY LẬP TỨC
-    if (phuongThuc === 'Nhận tại cửa hàng') {
-        activeTabData.value.hd.phi_van_chuyen = 0;
 
-        try {
-            await store.setTrangThaiNhanHang(idHoaDon, phuongThuc, 0);
-            console.log('✅ Đã cập nhật: Nhận tại cửa hàng');
-        } catch (error) {
-            console.error('❌ Lỗi:', error);
-            message.error('Không thể cập nhật phương thức nhận hàng!');
-        }
-    } else if (phuongThuc === 'Giao hàng') {
-        triggerUpdate.value = Date.now();
+    console.log('📋 DEBUG - idHoaDon:', idHoaDon);
+    console.log('📋 DEBUG - phuongThuc:', phuongThuc);
+    console.log('📋 DEBUG - phuongThuc type:', typeof phuongThuc);
 
-        // Nếu đã có phí ship (từ localStorage), gọi API luôn
-        const shippingData = localStorage.getItem('shippingFeeUpdated');
-        if (shippingData) {
-            try {
-                const { phiVanChuyen } = JSON.parse(shippingData);
-                await store.setTrangThaiNhanHang(idHoaDon, phuongThuc, phiVanChuyen);
-                console.log('✅ Đã cập nhật: Giao hàng, phí =', phiVanChuyen);
-            } catch (error) {
-                console.error('❌ Lỗi:', error);
+    try {
+        // ✅ STEP 1: Call API - Backend returns HoaDonResponse
+        let response;
+
+        if (phuongThuc === 'Nhận tại cửa hàng') {
+            console.log('🎯 Vào nhánh: Nhận tại cửa hàng');
+
+            // ✅ CLEAR localStorage khi chuyển về nhận tại cửa hàng
+            // Xóa thông tin khách lẻ từ lúc chọn "Giao hàng"
+            const walkInData = localStorage.getItem('walkInCustomer');
+            if (walkInData) {
+                localStorage.removeItem('walkInCustomer');
+                console.log('🗑️ Đã xóa walkInCustomer từ localStorage (không cần cho nhận tại quầy)');
             }
+
+            // Clear shipping-related data
+            localStorage.removeItem('shippingFeeUpdated');
+            localStorage.removeItem('calculatedShippingFee');
+
+            response = await store.setTrangThaiNhanHang(idHoaDon, phuongThuc, 0);
+            console.log('✅ Đã cập nhật: Nhận tại cửa hàng');
+
+        } else if (phuongThuc === 'Giao hàng') {
+            console.log('🎯 Vào nhánh: Giao hàng');
+            // Nếu đã có phí ship (từ localStorage), gọi API với phí
+            const shippingData = localStorage.getItem('shippingFeeUpdated');
+            const phiVanChuyen = shippingData ? JSON.parse(shippingData).phiVanChuyen : 0;
+
+            console.log('💰 DEBUG - phiVanChuyen:', phiVanChuyen);
+            response = await store.setTrangThaiNhanHang(idHoaDon, phuongThuc, phiVanChuyen);
+            console.log('✅ Đã cập nhật: Giao hàng, phí =', phiVanChuyen);
+
+            triggerUpdate.value = Date.now();
+        } else {
+            console.warn('⚠️ Không khớp if-else! phuongThuc =', phuongThuc);
         }
+
+        console.log('📦 DEBUG - response:', response);
+
+        // ✅ STEP 2: Update invoice from response
+        if (response) {
+            updateInvoiceFromResponse(response);
+            console.log('✅ Đã update invoice from response');
+        } else {
+            console.warn('⚠️ response is null/undefined!');
+        }
+
+    } catch (error) {
+        console.error('❌ Lỗi:', error);
+        message.error('Không thể cập nhật phương thức nhận hàng!');
     }
 };
 // ✅ Watch localStorage để tự động cập nhật phí vận chuyển
@@ -4324,9 +4414,12 @@ label.form-label {
 /* ===== MODERN PAYMENT METHODS GRID ===== */
 .payment-methods-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
     margin-top: 12px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .payment-method-option {

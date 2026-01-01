@@ -14,7 +14,7 @@ const getAllHoaDonCTT = async () => {
 
 const createHoaDon = async () => {
     try {
-        const { data } = await axiosInstance.get(banHang + `createHoaDon`);
+        const { data } = await axiosInstance.post(banHang + `createHoaDon`);
         return data;
     } catch (error) {
         console.error('Lỗi API tạo hoá đơn:', error);
@@ -132,7 +132,7 @@ const xoaSPHD = async (idHoaDon, idCTSP) => {
 
 const trangThaiDonHang = async (idHoaDon) => {
     try {
-        const { data } = await axiosInstance.get(banHang + `trangThaiDonHang?idHD=` + idHoaDon);
+        const { data } = await axiosInstance.put(banHang + `trangThaiDonHang?idHD=` + idHoaDon);
         return data;
     } catch (error) {
         console.error('Lỗi API trang thai don hang:', error);
@@ -293,6 +293,15 @@ const updateCustomerInfo = async (idHD, tenKhachHang, soDienThoai, email, diaChi
         return { error: true };
     }
 }
+const updatePhuongThucNhanHang = async (idHoaDon, phuongThucNhanHang) => {
+    try {
+        const { data } = await axiosInstance.post(banHang + `update-phuongThucNhanHang?idHoaDon=${idHoaDon}&phuongThuc=${phuongThucNhanHang}`);
+        return data;
+    } catch (error) {
+        console.error('Lỗi API update phuong thuc nhan hang:', error);
+        return { error: true };
+    }
+}
 export const banHangService = {
     getAllHoaDonCTT,
     createHoaDon,
@@ -317,5 +326,6 @@ export const banHangService = {
     getSuitableVouchers,
     applyVoucher,
     checkCartStock,
-    updateCustomerInfo
+    updateCustomerInfo,
+    updatePhuongThucNhanHang
 }

@@ -3,8 +3,8 @@
  * Handles payment recovery, state validation, and error recovery
  */
 
-import { invoiceStorage } from './invoiceStorage.js';
-import { paymentState } from './paymentState.js';
+// import { invoiceStorage } from './invoiceStorage.js';
+// import { paymentState } from './paymentState.js';
 import { banHangService } from '@/services/banHangService.js';
 import { thanhToanService } from '@/services/thanhToan.js';
 
@@ -20,10 +20,10 @@ export class RecoveryService {
   async checkPendingPayment() {
     try {
       console.log('🔄 Checking for pending payment recovery...');
-      
+
       // Get pending payment from storage
       const pendingPayment = invoiceStorage.getPendingPayment();
-      
+
       if (!pendingPayment) {
         console.log('✅ No pending payment found');
         return null;
@@ -33,7 +33,7 @@ export class RecoveryService {
 
       // Validate payment state
       const validation = await this.validatePaymentState(pendingPayment);
-      
+
       if (!validation.isValid) {
         console.warn('⚠️ Invalid payment state, cleaning up:', validation.errors);
         await this.cleanupInvalidPayment();
@@ -58,17 +58,17 @@ export class RecoveryService {
    */
   async validatePaymentState(paymentState) {
     const errors = [];
-    
+
     try {
       // Basic validation
       if (!paymentState.invoiceId) {
         errors.push('Missing invoice ID');
       }
-      
+
       if (!paymentState.paymentMethod) {
         errors.push('Missing payment method');
       }
-      
+
       if (!paymentState.amount || paymentState.amount <= 0) {
         errors.push('Invalid amount');
       }
@@ -79,7 +79,7 @@ export class RecoveryService {
 
       // Backend validation
       const invoiceValidation = await this.validateWithBackend(paymentState);
-      
+
       if (!invoiceValidation.isValid) {
         errors.push(...invoiceValidation.errors);
       }
@@ -100,10 +100,10 @@ export class RecoveryService {
   async validateWithBackend(paymentState) {
     try {
       console.log('🔍 Validating with backend:', paymentState.invoiceId);
-      
+
       // Check invoice exists and status
       const invoiceData = await banHangService.getHoaDonByIdHoaDon(paymentState.invoiceId);
-      
+
       if (!invoiceData || invoiceData.error) {
         return { isValid: false, errors: ['Invoice not found or invalid'] };
       }
@@ -115,15 +115,15 @@ export class RecoveryService {
 
       // Check payment status with payment provider
       let paymentStatus = null;
-      
+
       if (paymentState.paymentMethod === 'ZaloPay') {
         paymentStatus = await thanhToanService.checkZaloPayStatus(paymentState.invoiceId);
       }
 
       // Check if payment was actually successful
       if (paymentStatus && paymentStatus.return_code === 1) {
-        return { 
-          isValid: false, 
+        return {
+          isValid: false,
           errors: ['Payment already completed but not updated'],
           needsSync: true,
           paymentStatus
@@ -133,9 +133,9 @@ export class RecoveryService {
       return { isValid: true, invoiceData, paymentStatus };
     } catch (error) {
       console.error('❌ Backend validation error:', error);
-      return { 
-        isValid: false, 
-        errors: ['Backend validation failed: ' + error.message] 
+      return {
+        isValid: false,
+        errors: ['Backend validation failed: ' + error.message]
       };
     }
   }
@@ -146,10 +146,10 @@ export class RecoveryService {
   async resumePayment(paymentState) {
     try {
       console.log('🔄 Resuming payment:', paymentState.invoiceId);
-      
+
       // Import payment state
       paymentState.import(paymentState);
-      
+
       // Start monitoring
       return await this.startPaymentMonitoring(paymentState);
     } catch (error) {
@@ -165,14 +165,14 @@ export class RecoveryService {
     return new Promise((resolve, reject) => {
       let retryCount = 0;
       const maxRetries = 20; // 1 minute max
-      
+
       const monitor = setInterval(async () => {
         try {
           retryCount++;
-          
+
           // Check payment status
           let status = null;
-          
+
           if (paymentState.paymentMethod === 'ZaloPay') {
             status = await thanhToanService.checkZaloPayStatus(paymentState.invoiceId);
           }
@@ -214,16 +214,16 @@ export class RecoveryService {
   async handlePaymentSuccess(paymentState, status) {
     try {
       console.log('✅ Payment success from recovery:', paymentState.invoiceId);
-      
+
       // Update invoice status
       await banHangService.trangThaiDonHang(paymentState.invoiceId);
-      
+
       // Clear payment state
       await this.cleanupPaymentState();
-      
+
       // Show success message
       this.showSuccessMessage(paymentState, status);
-      
+
       return true;
     } catch (error) {
       console.error('❌ Error handling payment success:', error);
@@ -237,13 +237,13 @@ export class RecoveryService {
   async handlePaymentFailure(paymentState, status) {
     try {
       console.log('❌ Payment failure from recovery:', paymentState.invoiceId);
-      
+
       // Clear payment state
       await this.cleanupPaymentState();
-      
+
       // Show failure message
       this.showFailureMessage(paymentState, status);
-      
+
       return false;
     } catch (error) {
       console.error('❌ Error handling payment failure:', error);
@@ -257,13 +257,13 @@ export class RecoveryService {
   async handlePaymentTimeout(paymentState) {
     try {
       console.log('⏰ Payment timeout from recovery:', paymentState.invoiceId);
-      
+
       // Clear payment state
       await this.cleanupPaymentState();
-      
+
       // Show timeout message
       this.showTimeoutMessage(paymentState);
-      
+
       return false;
     } catch (error) {
       console.error('❌ Error handling payment timeout:', error);
@@ -339,7 +339,7 @@ export class RecoveryService {
    */
   getRecoveryOptions(paymentState) {
     const options = [];
-    
+
     if (paymentState.stale) {
       options.push({
         key: 'restart',
@@ -354,7 +354,7 @@ export class RecoveryService {
         type: 'primary',
         action: 'continue'
       });
-      
+
       options.push({
         key: 'cancel',
         label: 'Hủy thanh toán',
@@ -369,7 +369,7 @@ export class RecoveryService {
         action: 'retry',
         disabled: !paymentState.canRetry
       });
-      
+
       options.push({
         key: 'cancel',
         label: 'Hủy thanh toán',
@@ -389,16 +389,16 @@ export class RecoveryService {
       switch (action) {
         case 'continue':
           return await this.resumePayment(paymentState);
-          
+
         case 'retry':
           return await this.retryPayment(paymentState);
-          
+
         case 'cancel':
           return await this.cancelPayment(paymentState);
-          
+
         case 'restart':
           return await this.restartPayment(paymentState);
-          
+
         default:
           throw new Error(`Unknown recovery action: ${action}`);
       }
@@ -414,23 +414,23 @@ export class RecoveryService {
   async retryPayment(paymentState) {
     try {
       console.log('🔄 Retrying payment:', paymentState.invoiceId);
-      
+
       // Reset retry count
       paymentState.retryCount = 0;
-      
+
       // Update payment URL
       if (paymentState.paymentMethod === 'ZaloPay') {
         const response = await thanhToanService.handleZaloPayPayment(
           paymentState.invoiceId,
           paymentState.amount
         );
-        
+
         paymentState.updateWithZaloPayResponse(response);
-        
+
         // Open ZaloPay in new tab
         window.open(response.order_url, '_blank');
       }
-      
+
       return true;
     } catch (error) {
       console.error('❌ Error retrying payment:', error);
@@ -444,10 +444,10 @@ export class RecoveryService {
   async cancelPayment(paymentState) {
     try {
       console.log('❌ Cancelling payment:', paymentState.invoiceId);
-      
+
       // Clear payment state
       await this.cleanupPaymentState();
-      
+
       return { cancelled: true };
     } catch (error) {
       console.error('❌ Error cancelling payment:', error);
@@ -461,12 +461,12 @@ export class RecoveryService {
   async restartPayment(paymentState) {
     try {
       console.log('🔄 Restarting payment:', paymentState.invoiceId);
-      
+
       // Clear old payment state
       await this.cleanupPaymentState();
-      
+
       // Return instruction to start new payment
-      return { 
+      return {
         restart: true,
         invoiceId: paymentState.invoiceId,
         amount: paymentState.amount
@@ -483,9 +483,9 @@ export class RecoveryService {
   async autoRecovery() {
     try {
       console.log('🔄 Starting auto-recovery process...');
-      
+
       const pendingPayment = await this.checkPendingPayment();
-      
+
       if (!pendingPayment) {
         console.log('✅ No recovery needed');
         return null;

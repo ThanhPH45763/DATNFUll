@@ -819,11 +819,27 @@ public class BanHangController {
     @GetMapping("/get-suitable-vouchers")
     public ResponseEntity<?> getSuitableVouchers(@RequestParam("tongTien") BigDecimal tongTien) {
         try {
-            List<VoucherBHResponse> vouchers = voucherRepository.listVoucherHopLeTheoGia(tongTien);
+            List<VoucherBHResponse> vouchers = voucherRepository.listVoucherHopLeTheoGia(tongTien, LocalDateTime.now());
             return ResponseEntity.ok(vouchers);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi khi lấy danh sách voucher: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/update-phuongThucNhanHang")
+    public ResponseEntity<?> updatePhuongThuNhanHang(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam("phuongThuc") String phuongThuc) {
+        try {
+            HoaDon hoaDon = hoaDonRepo.findById(idHoaDon)
+                    .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại!"));
+            hoaDon.setPhuong_thuc_nhan_hang(phuongThuc);
+            hoaDonRepo.save(hoaDon);
+            return ResponseEntity.ok(hoaDonRepo.findHoaDonById(idHoaDon).get(0));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi cập nhật phương thức nhận hàng: " + e.getMessage());
         }
     }
 

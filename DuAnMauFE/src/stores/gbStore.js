@@ -2564,7 +2564,30 @@ export const useGbStore = defineStore('gbStore', {
         throw error
       }
     },
+    //update phương thức nhận hàng
+    async updatePhuongThucNhanHang(idHoaDon, phuongThucNhanHang) {
+      try {
+        const response = await banHangService.updatePhuongThucNhanHang(idHoaDon, phuongThucNhanHang)
 
+        if (response.error) {
+          toast.error(response.message || 'Không update được phương thức nhận hàng')
+          return null
+        }
+
+        // ⚠️ Backend trả về Optional<HoaDon>, cần extract HoaDon entity
+        // Response format: { present: true, empty: false, ... }
+        // Nhưng Spring Boot thường auto-serialize nên data ở top level
+        console.log('📦 Response từ API:', response);
+
+        // Return response trực tiếp (Spring đã unwrap Optional)
+        return response
+
+      } catch (error) {
+        console.error('❌ Lỗi update phương thức:', error)
+        toast.error('Có lỗi xảy ra')
+        throw error
+      }
+    },
     async thanhToanMomo(idHoaDon) {
       try {
         const result = await banHangService.thanhToanMomo(idHoaDon)

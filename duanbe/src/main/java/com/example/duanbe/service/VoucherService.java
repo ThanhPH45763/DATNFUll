@@ -125,7 +125,8 @@ public class VoucherService {
         if (request.getGiaTriGiam() == null || request.getGiaTriGiam().compareTo(BigDecimal.ZERO) <= 0) {
             return "Thêm thất bại: Giá trị giảm phải lớn hơn 0!";
         }
-        if ("Phần trăm".equals(request.getKieuGiamGia()) && request.getGiaTriGiam().compareTo(new BigDecimal("100")) > 0) {
+        if ("Phần trăm".equals(request.getKieuGiamGia())
+                && request.getGiaTriGiam().compareTo(new BigDecimal("100")) > 0) {
             return "Thêm thất bại: Giá trị giảm không được vượt quá 100 khi chọn Phần trăm!";
         }
         if (request.getKieuGiamGia() == null || request.getKieuGiamGia().trim().isEmpty()) {
@@ -188,7 +189,8 @@ public class VoucherService {
         if (voucher.getGiaTriGiam() == null || voucher.getGiaTriGiam().compareTo(BigDecimal.ZERO) <= 0) {
             return "Cập nhật thất bại: Giá trị giảm phải lớn hơn 0!";
         }
-        if ("Phần trăm".equals(voucher.getKieuGiamGia()) && voucher.getGiaTriGiam().compareTo(new BigDecimal("100")) > 0) {
+        if ("Phần trăm".equals(voucher.getKieuGiamGia())
+                && voucher.getGiaTriGiam().compareTo(new BigDecimal("100")) > 0) {
             return "Cập nhật thất bại: Giá trị giảm không được vượt quá 100 khi chọn Phần trăm!";
         }
         if (voucher.getKieuGiamGia() == null || voucher.getKieuGiamGia().trim().isEmpty()) {
@@ -245,7 +247,8 @@ public class VoucherService {
     }
 
     // 7️⃣ Tìm kiếm voucher theo khoảng ngày (có phân trang)
-    public Page<VoucherResponse> timKiemVoucherByDate(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+    public Page<VoucherResponse> timKiemVoucherByDate(LocalDateTime startDate, LocalDateTime endDate,
+            Pageable pageable) {
         if (startDate == null && endDate == null) {
             return getAllVouchers(pageable);
         } else if (startDate != null && endDate != null) {
@@ -295,7 +298,8 @@ public class VoucherService {
 
     public List<VoucherBHResponse> listVoucherTheoGiaTruyen(@RequestParam("giaTruyen") BigDecimal giaTruyen) {
         ArrayList<VoucherBHResponse> listVc = new ArrayList<>();
-        listVc = (ArrayList<VoucherBHResponse>) voucherRepository.listVoucherHopLeTheoGia(giaTruyen).stream()
+        listVc = (ArrayList<VoucherBHResponse>) voucherRepository
+                .listVoucherHopLeTheoGia(giaTruyen, LocalDateTime.now()).stream()
                 .sorted(Comparator.comparing(VoucherBHResponse::getSo_tien_giam).reversed())
                 .collect(Collectors.toList());
         return listVc;

@@ -134,14 +134,14 @@
                 <!-- <a-select class="mb-2 ms-2 custom-select" v-model:value="xemTheo" show-search placeholder="Xem theo"
                     style="width: 150px;" :options="listXemTheo" :filter-option="filterOption"></a-select> -->
 
-                <a-button v-if="store.id_roles !== 3" type="" class="d-flex align-items-center btn-filter"
+                <a-button hidden v-if="store.id_roles !== 3" type="" class="d-flex align-items-center btn-filter"
                     @click="showExportModal" :disabled="disabledByRoles">
                     <ExportOutlined class="icon-filler" />
                     <span class="button-text">Xuất excel</span>
                 </a-button>
             </template>
             <!-- Nhập excel button always visible -->
-            <a-button v-if="store.id_roles !== 3" type="" class="d-flex align-items-center btn-filter"
+            <a-button hidden v-if="store.id_roles !== 3" type="" class="d-flex align-items-center btn-filter"
                 @click="openModalImportExcel = true">
                 <ImportOutlined class="icon-filler" />
                 <span class="button-text">Nhập excel</span>
@@ -315,8 +315,9 @@
                 <template #footer>
                     <div class="d-flex justify-content-end align-items-center">
                         <a-button key="back" @click="importExcelModal = false">Hủy</a-button>
-                    <a-button key="submit" style="background-color: #ff6600" type="primary" :loading="uploadLoading" :disabled="countValidRows() === 0"
-                            @click="saveExcelImport" class="d-flex align-items-center">
+                        <a-button key="submit" style="background-color: #ff6600" type="primary" :loading="uploadLoading"
+                            :disabled="countValidRows() === 0" @click="saveExcelImport"
+                            class="d-flex align-items-center">
                             <save-outlined class="icon-filler" />
                             Lưu {{ countValidRows() }} sản phẩm
                         </a-button>
@@ -1358,7 +1359,7 @@ const handleExportExcel = async () => {
         for (const product of productsToExport) {
             try {
                 const ctsp = await store.getCTSPBySanPham(product.id_san_pham);
-                
+
                 console.log(`Chi tiết sản phẩm cho ${product.id_san_pham}:`, ctsp);
 
                 // Xử lý nhiều trường hợp trả về
@@ -1380,7 +1381,7 @@ const handleExportExcel = async () => {
         const excelData = chiTietSanPhams.map(ct => {
             const row = {};
             selectedFields.forEach(field => {
-                switch(field) {
+                switch (field) {
                     case 'ma_san_pham':
                         row['Mã sản phẩm'] = ct.ma_san_pham || '';
                         break;
@@ -1436,7 +1437,7 @@ const handleExportExcel = async () => {
         // Xuất Excel
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.json_to_sheet(excelData);
-        
+
         // Điều chỉnh độ rộng cột
         const colWidths = [
             { wch: 15 },  // Mã sản phẩm
@@ -1458,7 +1459,7 @@ const handleExportExcel = async () => {
         ws['!cols'] = colWidths;
 
         XLSX.utils.book_append_sheet(wb, ws, "Chi tiết sản phẩm");
-        
+
         const fileName = `chi-tiet-san-pham-${new Date().toISOString().split('T')[0]}.xlsx`;
         XLSX.writeFile(wb, fileName);
 
@@ -1770,7 +1771,7 @@ const downloadTemplate = () => {
 
         // Xuất file
         XLSX.writeFile(wb, "mau_nhap_san_pham.xlsx");
-        
+
         message.success('Đã tải xuống file mẫu thành công!');
     } catch (error) {
         console.error('Lỗi khi tạo file mẫu:', error);
@@ -1812,7 +1813,8 @@ watch(() => luuBien.value, (newValue) => {
 
 /* Primary buttons - Deep orange theme */
 :deep(.ant-btn-primary) {
-    background: #ff6600 !important; /* Deep orange */
+    background: #ff6600 !important;
+    /* Deep orange */
     border-color: #ff6600 !important;
     color: white !important;
     box-shadow: 0 2px 8px rgba(255, 102, 0, 0.3) !important;
@@ -1823,7 +1825,8 @@ watch(() => luuBien.value, (newValue) => {
 
 :deep(.ant-btn-primary:hover),
 :deep(.ant-btn-primary:focus) {
-    background: #e55a00 !important; /* Darker orange */
+    background: #e55a00 !important;
+    /* Darker orange */
     border-color: #e55a00 !important;
     box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4) !important;
     transform: translateY(-2px);
@@ -1837,7 +1840,8 @@ watch(() => luuBien.value, (newValue) => {
 /* Filter buttons - White background with orange border */
 .btn-filter,
 .filter-btn-custom {
-    color: #ff6600 !important; /* Deep orange text */
+    color: #ff6600 !important;
+    /* Deep orange text */
     background: white !important;
     border-color: #ff6600 !important;
     border-radius: 8px !important;
@@ -1861,7 +1865,8 @@ watch(() => luuBien.value, (newValue) => {
 .filter-btn-custom .icon-filler,
 .btn-filter .anticon,
 .filter-btn-custom .anticon {
-    color: #ff6600 !important; /* Deep orange icons */
+    color: #ff6600 !important;
+    /* Deep orange icons */
     transition: all 0.3s ease !important;
 }
 
@@ -1869,7 +1874,8 @@ watch(() => luuBien.value, (newValue) => {
 .btn-filter:hover .anticon,
 .filter-btn-custom:hover .icon-filler,
 .filter-btn-custom:hover .anticon {
-    color: #e55a00 !important; /* Darker orange on hover */
+    color: #e55a00 !important;
+    /* Darker orange on hover */
     transform: scale(1.1);
 }
 

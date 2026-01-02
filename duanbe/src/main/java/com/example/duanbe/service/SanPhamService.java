@@ -487,4 +487,28 @@ public class SanPhamService {
     public List<SanPhamView> getSanPhamMoiNhat() {
         return sanPhamRepo.listSanPhamMoiNhat();
     }
+
+    public ResponseEntity<?> checkStatusSPByCTSP(@RequestParam("id_san_pham") Integer idSanPham) {
+        Integer count = 0;
+        for (ChiTietSanPham ctsp : chiTietSanPhamRepo.findBySanPhamIdSanPham(idSanPham)) {
+            if (ctsp.getTrang_thai()) {
+                count++;
+            }
+        }
+        SanPham spreturn = new SanPham();
+        if (count > 0) {
+            SanPham sp = sanPhamRepo.findById(idSanPham).get();
+            sp.setTrang_thai(true);
+            sanPhamRepo.save(sp);
+            spreturn = sp;
+        } else {
+            SanPham sp = sanPhamRepo.findById(idSanPham).get();
+            sp.setTrang_thai(false);
+            sanPhamRepo.save(sp);
+            spreturn = sp;
+        }
+
+        return ResponseEntity.ok(spreturn);
+    }
+
 }

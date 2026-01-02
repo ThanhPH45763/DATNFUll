@@ -595,7 +595,18 @@ const getSanPhamMoiNhat = async () => {
     }
   }
 }
-
+const checkStatusSPByCTSP = async (idSanPham) => {
+  try {
+    const response = await axiosInstance.put(qlsp + 'checkStatusSPByCTSP?id_san_pham=' + idSanPham)
+    return response.data
+  } catch (error) {
+    console.error('Lỗi khi lấy sản phẩm mới nhất:', error)
+    return {
+      error: true,
+      message: error.message || 'Có lỗi xảy ra khi lấy sản phẩm mới nhất',
+    }
+  }
+}
 export const sanPhamService = {
   getAllSanPham,
   getAllChiTietSanPham,
@@ -646,6 +657,7 @@ export const sanPhamService = {
   getSanPhamByTenDM,
   getSanPhamSieuSale,
   getSanPhamBanChayNhat,
-  getSanPhamMoiNhat
+  getSanPhamMoiNhat,
+  checkStatusSPByCTSP
 }
 

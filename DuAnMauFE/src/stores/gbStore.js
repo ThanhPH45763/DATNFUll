@@ -3339,6 +3339,21 @@ export const useGbStore = defineStore('gbStore', {
         console.error('Lỗi khi tìm kiếm sản phẩm:', error)
       }
     },
+    //check trạng thái sản phẩm bằng ctsp
+    async checkStatusSPByCTSP(idSanPham) {
+      try {
+        const result = await sanPhamService.checkStatusSPByCTSP(idSanPham)
+        if (result.error) {
+          toast.error(result.message || 'lỗi api check trạng thái sản phẩm')
+          return null
+        }
+        return result
+      } catch (error) {
+        console.error(error)
+        toast.error('Có lị xảy ra')
+        throw error
+      }
+    },
     getLangue(check) {
       const vni = {
         nguoiDung: 'Đăng nhập',

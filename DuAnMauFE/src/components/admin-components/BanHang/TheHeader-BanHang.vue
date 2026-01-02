@@ -259,7 +259,7 @@
                             <div class="info-content">
                                 <span class="info-label">Tên khách hàng</span>
                                 <span class="info-value">
-                                    {{ activeTabData.hd.ten_khach_hang || activeTabData.hd.ho_ten || 'Khách lẻ' }}
+                                    {{ displayCustomerName }}
                                 </span>
                             </div>
                             <a-space>
@@ -270,10 +270,8 @@
                                     </template>
                                     Chọn
                                 </a-button>
-                                <a-button
-                                    v-if="activeTabData.hd.ten_khach_hang && activeTabData.hd.ten_khach_hang !== 'Khách lẻ'"
-                                    type="default" danger size="small" class="remove-customer-btn"
-                                    @click="confirmBoChonKhachHang"
+                                <a-button v-if="hasSelectedCustomer" type="default" danger size="small"
+                                    class="remove-customer-btn" @click="confirmBoChonKhachHang"
                                     style="display: inline-flex; align-items: center; justify-content: center; line-height: 1;">
                                     <template #icon>
                                         <close-circle-outlined />
@@ -884,17 +882,47 @@ const confirmBoChonKhachHang = () => {
 // Hàm bỏ chọn khách hàng
 const boChonKhachHang = async () => {
     try {
+        // ✅ PHASE 2: Validation trước khi gọi API
+        if (!activeTabData.value?.hd?.id_hoa_don) {
+            throw new Error('Không tìm thấy hóa đơn');
+        }
+
+        if (!hasSelectedCustomer.value) {
+            console.warn('⚠️ Không có khách hàng để bỏ chọn');
+            return;
+        }
+
         const idHoaDon = activeTabData.value.hd.id_hoa_don;
+
+        // ✅ PHASE 3: Logging trạng thái BEFORE
+        console.group('🗑️ Bỏ chọn khách hàng');
+        console.log('Hóa đơn ID:', idHoaDon);
+        console.log('BEFORE:', {
+            ten_khach_hang: activeTabData.value.hd.ten_khach_hang,
+            ho_ten: activeTabData.value.hd.ho_ten,
+            id_khach_hang: activeTabData.value.hd.id_khach_hang
+        });
 
         // ✅ STEP 1: Call API - Backend returns HoaDonResponse
         const response = await store.removeCustomerFromHD(idHoaDon);
 
-        if (!response) {
-            throw new Error('Bỏ chọn khách hàng thất bại');
+        if (!response || !response.id_hoa_don) {
+            throw new Error('Backend response không hợp lệ');
         }
+
+        // ✅ PHASE 3: Log response
+        console.log('API Response:', response);
 
         // ✅ STEP 2: Update invoice from response (includes customer reset + totals)
         updateInvoiceFromResponse(response);
+
+        // ✅ PHASE 3: Log AFTER
+        console.log('AFTER:', {
+            ten_khach_hang: activeTabData.value.hd.ten_khach_hang,
+            ho_ten: activeTabData.value.hd.ho_ten,
+            id_khach_hang: activeTabData.value.hd.id_khach_hang
+        });
+        console.groupEnd();
 
         // ✅ STEP 3: Clear localStorage
         localStorage.removeItem('khachHangBH');
@@ -906,11 +934,13 @@ const boChonKhachHang = async () => {
         message.success('Đã bỏ chọn khách hàng và chuyển về khách lẻ');
 
         // Trigger update cho form khách hàng
-        triggerUpdate.value = Date.now();
+        nextTick(() => {
+            triggerUpdate.value = Date.now();
+        });
 
     } catch (error) {
         console.error('Lỗi khi bỏ chọn khách hàng:', error);
-        message.error('Không thể bỏ chọn khách hàng!');
+        message.error(error.message || 'Không thể bỏ chọn khách hàng!');
     }
 };
 
@@ -1015,13 +1045,13 @@ const updateInvoiceFromResponse = (response, tabKey = null) => {
         ma_voucher: response.ma_voucher,
         ten_voucher: response.ten_voucher,
 
-        // Customer info
-        id_khach_hang: response.id_khach_hang,
-        ten_khach_hang: response.ten_khach_hang,
-        ho_ten: response.ho_ten || response.ten_khach_hang,
-        email: response.email,
-        sdt: response.sdt,
-        dia_chi: response.dia_chi,
+        // Customer info - ✅ PHASE 2: Force clear cả 2 fields
+        id_khach_hang: response.id_khach_hang || null,
+        ten_khach_hang: response.id_khach_hang ? response.ten_khach_hang : 'Khách lẻ',
+        ho_ten: response.id_khach_hang ? (response.ho_ten || response.ten_khach_hang) : 'Khách lẻ',
+        email: response.id_khach_hang ? response.email : null,
+        sdt: response.id_khach_hang ? response.sdt : null,
+        dia_chi: response.id_khach_hang ? response.dia_chi : null,
 
         // Status
         trang_thai: response.trang_thai
@@ -1663,9 +1693,24 @@ const tienKhachDua = ref(0);
 
 // Tính toán tiền thừa trả khách (calculatedChange) dựa trên tong_tien_sau_giam
 const calculatedChange = computed(() => {
-    const total = fe_tongThanhToan.value || 0;
-    const cash = tienKhachDua.value || 0;
-    return cash >= total ? cash - total : 0;
+    if (!tienKhachDua.value || !fe_tongThanhToan.value) return 0;
+    return Math.max(0, tienKhachDua.value - fe_tongThanhToan.value);
+});
+
+// ✅ PHASE 1: Consistent customer state management
+const hasSelectedCustomer = computed(() => {
+    if (!activeTabData.value?.hd) return false;
+
+    const customerName = (activeTabData.value.hd.ten_khach_hang ||
+        activeTabData.value.hd.ho_ten || '').trim();
+
+    return customerName.length > 0 && customerName !== 'Khách lẻ';
+});
+
+const displayCustomerName = computed(() => {
+    const name = activeTabData.value?.hd?.ten_khach_hang ||
+        activeTabData.value?.hd?.ho_ten;
+    return name && name !== 'Khách lẻ' ? name : 'Khách lẻ';
 });
 
 // ✅ NEW: Check for inactive products (handles both string and boolean)
@@ -2061,11 +2106,12 @@ const add = async () => {
             })
         };
 
-        // Thêm hóa đơn mới vào đầu danh sách
-        panes.value.unshift(newInvoice);
+        // ✅ THÊM VÀO CUỐI danh sách (hóa đơn mới nhất ở cuối)
+        panes.value.push(newInvoice);
         // ✅ Chỉ set default khi TẠO MỚI (backend sẽ tự set mặc định)
         ptnh.value = newInvoice.hd.phuong_thuc_nhan_hang;
-        activeKey.value = newKey;
+        // ❌ KHÔNG auto-switch sang tab mới - vẫn ở tab hiện tại
+        // activeKey.value = newKey;
 
         // Nếu có >= 5 hóa đơn, hóa đơn thứ 5 (index 4) sẽ vào suspended
         if (panes.value.length > MAX_ACTIVE_INVOICES) {

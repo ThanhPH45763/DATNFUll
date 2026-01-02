@@ -218,4 +218,9 @@ public class SanPhamController {
         excelSaveDB.saveToDB(list);
         return ResponseEntity.ok("ok");
     }
+
+    @PutMapping("/checkStatusSPByCTSP")
+    public ResponseEntity<?> checkStatusSPByCTSP(@RequestParam("id_san_pham") Integer idSanPham) {
+        return sanPhamService.checkStatusSPByCTSP(idSanPham);
+    }
 }

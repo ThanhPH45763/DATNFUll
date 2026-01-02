@@ -10,7 +10,7 @@
                 </a-form-item>
                 <a-form-item label="Tên sản phẩm" name="ten_san_pham" :rules="[
                     { required: true, message: 'Vui lòng nhập tên sản phẩm!' },
-                    
+
                 ]">
                     <a-input readonly v-model:value="formState.ten_san_pham" />
                 </a-form-item>
@@ -45,14 +45,8 @@
                 </a-form-item>
 
                 <a-form-item label="Mô tả" name="mo_ta">
-                    <QuillEditor
-                        v-model:content="formState.mo_ta"
-                        contentType="html"
-                        toolbar="full" 
-                        theme="snow"
-                        placeholder="Nhập mô tả sản phẩm..."
-                        class="editor-container"
-                    />
+                    <QuillEditor v-model:content="formState.mo_ta" contentType="html" toolbar="full" theme="snow"
+                        placeholder="Nhập mô tả sản phẩm..." class="editor-container" />
                 </a-form-item>
 
                 <a-form-item label="Hình ảnh" name="hinh_anh">
@@ -106,8 +100,8 @@
             </div>
 
             <template v-if="isProductValidated">
-                <div v-for="(variant, index) in variants" :key="index" 
-                     :class="['variant-item', 'mb-3', 'p-3', 'border', 'rounded', { 'variant-disabled': !variant.trang_thai_boolean }]">
+                <div v-for="(variant, index) in variants" :key="index"
+                    :class="['variant-item', 'mb-3', 'p-3', 'border', 'rounded', { 'variant-disabled': !variant.trang_thai_boolean }]">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6>Biến thể #{{ index + 1 }} <span v-if="variant.isExisting" class="badge badge-info">Đã tồn
                                 tại</span></h6>
@@ -119,15 +113,11 @@
                     <!-- ✅ MOVED: Nút gạt trạng thái CTSP lên đầu -->
                     <a-form-item label="Trạng thái" class="mb-3">
                         <div class="d-flex align-items-center gap-2">
-                            <a-switch 
-                                v-model:checked="variant.trang_thai_boolean"
+                            <a-switch v-model:checked="variant.trang_thai_boolean"
                                 @change="() => handleCTSPStatusChange(variant, index)"
                                 :style="{ backgroundColor: variant.trang_thai_boolean ? '#ff6600' : '#ccc' }"
-                                class="custom-orange-switch"
-                                :checked-children="'Hoạt động'"
-                                :un-checked-children="'Không hoạt động'"
-                                :disabled="!variant.isExisting"
-                            />
+                                class="custom-orange-switch" :checked-children="'Hoạt động'"
+                                :un-checked-children="'Không hoạt động'" :disabled="!variant.isExisting" />
                             <span class="ms-2" :style="{ color: variant.trang_thai_boolean ? '#52c41a' : '#ff4d4f' }">
                                 {{ variant.trang_thai_boolean ? 'Hoạt động' : 'Không hoạt động' }}
                             </span>
@@ -171,8 +161,7 @@
                                     :help="variant.soLuongHelp">
                                     <a-input-number v-model:value="variant.so_luong" class="w-full" :controls="false"
                                         :formatter="formatSoLuong" :parser="parseSoLuong"
-                                        placeholder="Nhập số lượng sản phẩm" 
-                                        :disabled="!variant.trang_thai_boolean"
+                                        placeholder="Nhập số lượng sản phẩm" :disabled="!variant.trang_thai_boolean"
                                         @blur="validateSoLuong(variant, index)"
                                         @change="validateSoLuong(variant, index)" />
                                 </a-form-item>
@@ -181,8 +170,8 @@
                             <div class="col-md-6">
                                 <a-form-item label="Giá" :validate-status="variant.giaBanValidateStatus"
                                     :help="variant.giaBanHelp">
-                                    <a-input-number v-model:value="variant.gia_ban"
-                                        class="w-full" :controls="false" :formatter="formatGiaBan" :parser="parseGiaBan"
+                                    <a-input-number v-model:value="variant.gia_ban" class="w-full" :controls="false"
+                                        :formatter="formatGiaBan" :parser="parseGiaBan"
                                         placeholder="Nhập giá bán sản phẩm"
                                         :disabled="useCommonPrice || !variant.trang_thai_boolean"
                                         @blur="validateGiaBan(variant, index)"
@@ -194,50 +183,40 @@
                         <a-form-item label="Hình ảnh biến thể"
                             :rules="[{ required: true, message: 'Vui lòng chọn ít nhất 1 hình ảnh!' }]"
                             class="variant-images-form-item">
-                            <a-upload 
-                                v-model:file-list="variant.fileList" 
-                                list-type="picture-card" 
-                                :max-count="2"
-                                :multiple="true"
-                                :disabled="!variant.trang_thai_boolean"
+                            <a-upload v-model:file-list="variant.fileList" list-type="picture-card" :max-count="2"
+                                :multiple="true" :disabled="!variant.trang_thai_boolean"
                                 :before-upload="(file) => beforeUpload(file, variant.fileList ? variant.fileList.length : 0)"
                                 :customRequest="(options) => handleVariantCustomRequest(options, index)"
-                                @change="(info) => handleVariantImageChange(info, index)" 
-                                @preview="handlePreview"
+                                @change="(info) => handleVariantImageChange(info, index)" @preview="handlePreview"
                                 @remove="(file) => handleRemoveImage(file, index)">
                                 <div v-if="!variant.fileList || variant.fileList.length < 2">
                                     <plus-outlined />
                                     <div style="margin-top: 8px">Upload</div>
                                 </div>
-                                
+
                                 <!-- Custom render cho mỗi ảnh -->
                                 <template #itemRender="{ file, actions }">
-                                    <div class="custom-image-item" @click="() => variant.trang_thai_boolean ? setPrimaryImage(index, file) : null">
+                                    <div class="custom-image-item"
+                                        @click="() => variant.trang_thai_boolean ? setPrimaryImage(index, file) : null">
                                         <img :src="file.url || file.thumbUrl" alt="variant image" />
-                                        
+
                                         <!-- Badge ảnh chính -->
-                                        <div v-if="file.anh_chinh === '1' || file.anh_chinh === 1 || file.anh_chinh === true" 
-                                             class="primary-image-badge">
+                                        <div v-if="file.anh_chinh === '1' || file.anh_chinh === 1 || file.anh_chinh === true"
+                                            class="primary-image-badge">
                                             <star-filled /> Ảnh chính
                                         </div>
-                                        
+
                                         <!-- Action buttons - DISABLED khi variant không hoạt động -->
                                         <div class="image-actions-overlay" v-if="variant.trang_thai_boolean">
-                                            <a-button 
-                                                type="text" 
-                                                size="small" 
-                                                @click.stop="() => handlePreview(file)">
+                                            <a-button type="text" size="small" @click.stop="() => handlePreview(file)">
                                                 <eye-outlined style="color: white;" />
                                             </a-button>
-                                            <a-button 
-                                                type="text" 
-                                                size="small" 
-                                                danger
+                                            <a-button type="text" size="small" danger
                                                 @click.stop="() => handleRemoveImage(file, index)">
                                                 <delete-outlined style="color: white;" />
                                             </a-button>
                                         </div>
-                                        
+
                                         <!-- Hiển thị thông báo khi disabled -->
                                         <div v-else class="image-disabled-overlay">
                                             <lock-outlined style="font-size: 24px; color: white;" />
@@ -422,7 +401,7 @@ const validateForm = async () => {
         await formRef.value.validate();
         console.log('Form validated successfully');
         isProductValidated.value = true;
-        
+
         message.success('Thông tin sản phẩm hợp lệ, bạn có thể thêm biến thể');
     } catch (errorInfo) {
         console.log('Validation failed:', errorInfo);
@@ -477,7 +456,7 @@ const addVariant = async () => {
 const handleCTSPStatusChange = async (variant, index) => {
     try {
         const newStatus = variant.trang_thai_boolean;
-        
+
         if (!newStatus) {
             // Khi chuyển sang không hoạt động - cần confirm
             Modal.confirm({
@@ -492,7 +471,7 @@ const handleCTSPStatusChange = async (variant, index) => {
                 onOk: async () => {
                     variant.trang_thai = 'Không hoạt động';
                     variant.trang_thai_boolean = false;
-                    
+
                     // Nếu là biến thể đã tồn tại, call API
                     if (variant.id_chi_tiet_san_pham) {
                         try {
@@ -518,7 +497,7 @@ const handleCTSPStatusChange = async (variant, index) => {
             // Khi chuyển sang hoạt động - không cần confirm
             variant.trang_thai = 'Hoạt động';
             variant.trang_thai_boolean = true;
-            
+
             // Nếu là biến thể đã tồn tại, call API
             if (variant.id_chi_tiet_san_pham) {
                 try {
@@ -847,32 +826,32 @@ const uploadImageToCloud = async (file) => {
 const handleVariantCustomRequest = async (options, variantIndex) => {
     const { file, onSuccess, onError, onProgress } = options;
     const variant = variants.value[variantIndex];
-    
+
     try {
         console.log('Upload ảnh cho biến thể:', variantIndex, file.name);
-        
+
         // Kiểm tra số lượng ảnh đã upload xong (không đếm ảnh đang upload)
         const currentDoneCount = variant.fileList ? variant.fileList.filter(f => f.status === 'done').length : 0;
         const MAX_IMAGES = 2; // Giới hạn tối đa 2 ảnh cho mỗi biến thể
-        
+
         if (currentDoneCount >= MAX_IMAGES) {
             message.error(`Chỉ được upload tối đa ${MAX_IMAGES} ảnh cho mỗi biến thể!`);
             onError(new Error('Max count reached'));
             return;
         }
-        
+
         // Thêm loading message
         const loadingKey = 'uploadingImage';
         message.loading({ content: 'Đang tải ảnh lên...', key: loadingKey });
-        
+
         // Upload lên Cloudinary
         const imageUrl = await uploadImageToCloud(file);
-        
+
         if (imageUrl) {
             // Tạo file object mới
             // Đếm số ảnh đã done để xác định ảnh chính
             const currentDoneCountForPrimary = variant.fileList ? variant.fileList.filter(f => f.status === 'done').length : 0;
-            
+
             const newFile = {
                 uid: file.uid,
                 name: file.name,
@@ -882,29 +861,29 @@ const handleVariantCustomRequest = async (options, variantIndex) => {
                 anh_chinh: currentDoneCountForPrimary === 0 ? '1' : '0', // Ảnh đầu tiên = ảnh chính
                 id_hinh_anh: null // Ảnh mới chưa có trong DB
             };
-            
+
             // ✅ FIX: Remove file gốc (uploading) và chỉ giữ file đã upload xong
             // Ant Design tự động thêm file vào fileList khi upload → có duplicate
             // Phải remove file gốc trước khi thêm newFile
             if (!variant.fileList) {
                 variant.fileList = [];
             }
-            
+
             // Lọc bỏ file đang upload (cùng uid nhưng chưa done)
             const filteredFileList = variant.fileList.filter(f => f.uid !== file.uid);
-            
+
             // Thêm file đã upload xong
             const newFileList = [...filteredFileList, newFile];
-            
+
             // ✅ Cập nhật lại toàn bộ variant trong variants array
             variants.value[variantIndex] = {
                 ...variant,
                 fileList: newFileList
             };
-            
+
             console.log('✅ Đã thêm ảnh vào variant:', variantIndex);
             console.log('FileList sau khi thêm:', variants.value[variantIndex].fileList);
-            
+
             message.success({ content: 'Tải ảnh lên thành công!', key: loadingKey });
             onSuccess(imageUrl, file);
         } else {
@@ -920,7 +899,7 @@ const handleVariantCustomRequest = async (options, variantIndex) => {
 // Xóa ảnh biến thể (giống themSanPham.vue)
 const handleRemoveImage = async (file, variantIndex) => {
     const variant = variants.value[variantIndex];
-    
+
     Modal.confirm({
         title: () => h('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
             h(DeleteOutlined, { style: 'color: #ff4d4f; font-size: 22px;' }),
@@ -989,16 +968,16 @@ const handleRemoveImage = async (file, variantIndex) => {
 // Helper: Xóa file khỏi fileList và xử lý ảnh chính
 const removeFileFromList = (variant, file) => {
     const wasMain = file.anh_chinh === '1' || file.anh_chinh === 1 || file.anh_chinh === true;
-    
+
     // Xóa file và tạo mảng mới
     const newFileList = variant.fileList.filter(f => f.uid !== file.uid);
-    
+
     // Nếu xóa ảnh chính và còn ảnh khác → chọn ảnh đầu tiên làm ảnh chính
     if (wasMain && newFileList.length > 0) {
         newFileList[0].anh_chinh = '1';
         message.info('Đã tự động chọn ảnh đầu tiên làm ảnh chính');
     }
-    
+
     // ✅ Cập nhật lại variant trong mảng variants
     const variantIndex = variants.value.findIndex(v => v.id_chi_tiet_san_pham === variant.id_chi_tiet_san_pham);
     if (variantIndex !== -1) {
@@ -1012,23 +991,23 @@ const removeFileFromList = (variant, file) => {
 // Chọn lại ảnh chính
 const setPrimaryImage = (variantIndex, file) => {
     const variant = variants.value[variantIndex];
-    
+
     if (!variant.fileList || variant.fileList.length === 0) {
         return;
     }
-    
+
     // Tạo mảng mới với ảnh chính được cập nhật
     const newFileList = variant.fileList.map(f => ({
         ...f,
         anh_chinh: f.uid === file.uid ? '1' : '0'
     }));
-    
+
     // ✅ Cập nhật lại variant trong mảng variants
     variants.value[variantIndex] = {
         ...variant,
         fileList: newFileList
     };
-    
+
     message.success('Đã chọn làm ảnh chính');
 };
 
@@ -1345,7 +1324,7 @@ const validateSoLuong = async (variant, index) => {
     // Reset trạng thái validate
     variant.soLuongValidateStatus = '';
     variant.soLuongHelp = '';
-    
+
     const soLuong = variant.so_luong;
 
     // Kiểm tra trống
@@ -1377,7 +1356,7 @@ const validateSoLuong = async (variant, index) => {
     if (numericValue === 0) {
         variant.trang_thai = 'Không hoạt động';
         variant.trang_thai_boolean = false;
-        
+
         // Nếu là CTSP đã tồn tại, call API ngay
         if (variant.id_chi_tiet_san_pham) {
             try {
@@ -1460,12 +1439,12 @@ const convertPriceToNumber = (value) => {
     if (value === undefined || value === null || value === '') {
         return 0;
     }
-    
+
     // Nếu đã là số, trả về luôn
     if (typeof value === 'number') {
         return value;
     }
-    
+
     // Nếu là chuỗi, loại bỏ dấu phẩy và chuyển sang số
     const strValue = String(value);
     const numValue = Number(strValue.replace(/,/g, ''));
@@ -1486,20 +1465,20 @@ const onFinish = async () => {
     let hasError = false;
     for (let i = 0; i < variants.value.length; i++) {
         const variant = variants.value[i];
-        
+
         // Validate các trường bắt buộc
         if (!variant.id_mau_sac) {
             message.error(`Biến thể ${i + 1}: Vui lòng chọn màu sắc!`);
             hasError = true;
             break;
         }
-        
+
         if (!variant.id_kich_thuoc) {
             message.error(`Biến thể ${i + 1}: Vui lòng chọn kích thước!`);
             hasError = true;
             break;
         }
-        
+
         // ✅ FIX: Await async validation
         const soLuongValid = await validateSoLuong(variant, i);
         if (!soLuongValid) {
@@ -1507,13 +1486,13 @@ const onFinish = async () => {
             hasError = true;
             break;
         }
-        
+
         if (!validateGiaBan(variant, i)) {
             message.error(`Biến thể ${i + 1}: Giá bán không hợp lệ!`);
             hasError = true;
             break;
         }
-        
+
         // Kiểm tra phải có ít nhất 1 ảnh
         if (!variant.fileList || variant.fileList.length === 0) {
             message.error(`Biến thể ${i + 1}: Vui lòng chọn ít nhất 1 hình ảnh!`);
@@ -1546,7 +1525,7 @@ const onFinish = async () => {
 
         // ✅ Update sản phẩm chính
         await axiosInstance.put('/admin/quan_ly_san_pham/updateSanPham', sanPhamData);
-        
+
         console.log(`💾 Bắt đầu lưu ${variants.value.length} biến thể...`);
 
         // Lưu từng biến thể
@@ -1579,27 +1558,29 @@ const onFinish = async () => {
             console.log(`💾 Lưu biến thể ${idx + 1}/${variants.value.length}:`, variantData);
             const response = await axiosInstance.post('/admin/quan_ly_san_pham/saveCTSP', variantData);
             console.log(`✅ Đã lưu biến thể ${idx + 1}:`, response.data);
+            const checkStatus = await store.checkStatusSPByCTSP(formState.id_san_pham);
+            console.log(`✅ Đã lưu biến thể ${idx + 1}:`, response.data);
             return response.data;
         });
 
         await Promise.all(savePromises);
 
         message.success('Cập nhật sản phẩm thành công!');
-        
+
         // Clear cache và search/filter params
         localStorage.removeItem('products_data');
-        
+
         // Clear search/filter params trong store để table không trigger API filter
         if (store.searchFilterParams) {
             store.searchFilterParams = { keyword: '' };
         }
-        
+
         // ✅ SET FLAG để table load theo ngày sửa!
         store.justAddedProduct = true;
-        
+
         // Refresh danh sách theo ngày sửa
         await store.getAllSanPhamNgaySua();
-        
+
         // Chuyển về trang danh sách
         router.push('/admin/quanlysanpham');
 
@@ -1720,57 +1701,58 @@ const resetForm = () => {
 
 /* Rich Text Editor styles */
 .editor-container {
-  height: 300px;
-  border-radius: 6px;
-  margin-bottom: 16px;
+    height: 300px;
+    border-radius: 6px;
+    margin-bottom: 16px;
 }
 
 :deep(.ql-toolbar) {
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
-  background-color: #f6f6f6;
-  border-color: #d9d9d9;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    background-color: #f6f6f6;
+    border-color: #d9d9d9;
 }
 
 :deep(.ql-container) {
-  border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 6px;
-  border-color: #d9d9d9;
-  min-height: 250px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    border-color: #d9d9d9;
+    min-height: 250px;
 }
 
 :deep(.ql-editor) {
-  font-family: 'Roboto', sans-serif;
-  font-size: 14px;
-  line-height: 1.6;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
 }
 
-:deep(.ql-container:hover), :deep(.ql-toolbar:hover) {
-  border-color: #ff6600;
+:deep(.ql-container:hover),
+:deep(.ql-toolbar:hover) {
+    border-color: #ff6600;
 }
 
 :deep(.ql-toolbar .ql-stroke) {
-  stroke: #333;
+    stroke: #333;
 }
 
 :deep(.ql-toolbar .ql-fill) {
-  fill: #333;
+    fill: #333;
 }
 
 :deep(.ql-toolbar button:hover .ql-stroke) {
-  stroke: #ff6600;
+    stroke: #ff6600;
 }
 
 .ql-toolbar button:hover .ql-fill {
-  fill: #ff6600;
+    fill: #ff6600;
 }
 
 .ql-toolbar button.ql-active .ql-stroke {
-  stroke: #ff6600;
+    stroke: #ff6600;
 }
 
 .ql-toolbar button.ql-active .ql-fill {
-  fill: #ff6600;
+    fill: #ff6600;
 }
 
 /* ============ CUSTOM IMAGE ITEM WITH BADGE ============ */
@@ -2101,5 +2083,4 @@ const resetForm = () => {
 .custom-orange-switch.ant-switch-checked:hover:not(.ant-switch-disabled) {
     background-color: #e55a00 !important;
 }
-
 </style>

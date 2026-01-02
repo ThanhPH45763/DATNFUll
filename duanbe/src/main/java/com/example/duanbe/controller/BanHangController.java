@@ -195,8 +195,11 @@ public class BanHangController {
                 } else {
                     // Trường hợp 2: Offline + Giao hàng
                     // → Đã thanh toán nhưng CHƯA giao → ĐÃ XÁC NHẬN
-                    trangThaiMoi = "Hoàn thành";
+                    trangThaiMoi = "Đã xác nhận";
                     hoaDon.setTrang_thai(trangThaiMoi);
+                    // TheoDoiDonHang tdhd = theoDoiDonHangRepo.findByIdHoaDon(idHD).get(0);
+                    // tdhd.setTrang_thai(trangThaiMoi);
+                    // theoDoiDonHangRepo.save(tdhd);
                 }
             } else {
                 // Trường hợp 3: Online (đã được xử lý trong callback ZaloPay/PayOS)

@@ -195,8 +195,9 @@ public class BanHangController {
                 } else {
                     // Trường hợp 2: Offline + Giao hàng
                     // → Đã thanh toán nhưng CHƯA giao → ĐÃ XÁC NHẬN
-                    trangThaiMoi = "Đã xác nhận";
+                    trangThaiMoi = "Hoàn thành";
                     hoaDon.setTrang_thai(trangThaiMoi);
+                    trangThaiMoi = "Đã xác nhận";
                     // TheoDoiDonHang tdhd = theoDoiDonHangRepo.findByIdHoaDon(idHD).get(0);
                     // tdhd.setTrang_thai(trangThaiMoi);
                     // theoDoiDonHangRepo.save(tdhd);

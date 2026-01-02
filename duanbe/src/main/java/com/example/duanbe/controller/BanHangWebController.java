@@ -104,30 +104,30 @@ public class BanHangWebController {
     hoaDonAdd.setLoai_hoa_don("Online");
     hoaDonAdd.setNgay_tao(LocalDateTime.now());
     hoaDonAdd.setNgay_sua(LocalDateTime.now());
-    
+
     // 🔍 DEBUG LOGGING - STEP 1: Check delivery method from request
     System.out.println("🔍 [DEBUG] BanHangWebController.createOrder() - Checking delivery method");
     System.out.println("  - Delivery method from request: '" + hoaDon.getPhuong_thuc_nhan_hang() + "'");
-    
+
     // ❌ REMOVED HARDCODE - Use FE value instead
     // OLD: hoaDonAdd.setPhuong_thuc_nhan_hang("Giao hàng");
     hoaDonAdd.setPhuong_thuc_nhan_hang(hoaDon.getPhuong_thuc_nhan_hang());
-    
+
     System.out.println("  - Setting delivery method to: '" + hoaDonAdd.getPhuong_thuc_nhan_hang() + "'");
-    
+
     hoaDonAdd.setVoucher(
         hoaDon.getVoucher().getId() != 0 ? voucherRepository.findById(hoaDon.getVoucher().getId()).get()
             : null);
     hoaDonAdd.setKhachHang(
         hoaDon.getId_khach_hang() == 0 ? null : khachHangRepo.findById(hoaDon.getId_khach_hang()).get());
     hoaDonRepo.save(hoaDonAdd);
-    
+
     // 🔍 DEBUG LOGGING - STEP 2: After Save Verification
     System.out.println("🔍 [DEBUG] BanHangWebController - State after save:");
     System.out.println("  - Saved Invoice ID: " + hoaDonAdd.getId_hoa_don());
     System.out.println("  - Saved Delivery Method: '" + hoaDonAdd.getPhuong_thuc_nhan_hang() + "'");
     System.out.println("  - Saved Order Type: '" + hoaDonAdd.getLoai_hoa_don() + "'");
-    
+
     idHoaDon = hoaDonAdd.getId_hoa_don();
     idKhachHang = hoaDonAdd.getKhachHang() == null || hoaDonAdd.getKhachHang().getIdKhachHang() == null ? 0
         : hoaDonAdd.getKhachHang().getIdKhachHang();
@@ -181,14 +181,14 @@ public class BanHangWebController {
     hoaDonAdd.setLoai_hoa_don("Online");
     hoaDonAdd.setNgay_tao(LocalDateTime.now());
     hoaDonAdd.setNgay_sua(LocalDateTime.now());
-// 🔍 DEBUG LOGGING - Check delivery method from request
+    // 🔍 DEBUG LOGGING - Check delivery method from request
     System.out.println("🔍 [DEBUG] BanHangWebController - Checking delivery method");
     System.out.println("  - Delivery method from request: '" + hoaDon.getPhuong_thuc_nhan_hang() + "'");
-    
+
     // ❌ REMOVED HARDCODE - Use FE value instead
     // OLD: hoaDonAdd.setPhuong_thuc_nhan_hang("Giao hàng");
     hoaDonAdd.setPhuong_thuc_nhan_hang(hoaDon.getPhuong_thuc_nhan_hang());
-    
+
     System.out.println("  - Setting delivery method to: '" + hoaDonAdd.getPhuong_thuc_nhan_hang() + "'");
     hoaDonAdd.setVoucher(
         hoaDon.getVoucher().getId() != null ? voucherRepository.findById(hoaDon.getVoucher().getId()).get()
@@ -196,13 +196,13 @@ public class BanHangWebController {
     hoaDonAdd.setKhachHang(hoaDon.getKhachHang().getIdKhachHang() == 0 ? null
         : khachHangRepo.findById(hoaDon.getKhachHang().getIdKhachHang()).get());
     hoaDonRepo.save(hoaDonAdd);
-    
+
     // 🔍 DEBUG LOGGING - STEP 2: After Save Verification (suaHoaDon)
     System.out.println("🔍 [DEBUG] BanHangWebController.suaHoaDon() - State after save:");
     System.out.println("  - Saved Invoice ID: " + hoaDonAdd.getId_hoa_don());
     System.out.println("  - Saved Delivery Method: '" + hoaDonAdd.getPhuong_thuc_nhan_hang() + "'");
     System.out.println("  - Saved Order Type: '" + hoaDonAdd.getLoai_hoa_don() + "'");
-    
+
     idHoaDon = hoaDonAdd.getId_hoa_don();
     TheoDoiDonHang theoDoiDonHang = new TheoDoiDonHang();
     theoDoiDonHang.setHoaDon(hoaDonAdd);
@@ -269,28 +269,28 @@ public class BanHangWebController {
     hoaDonAdd.setMa_hoa_don(generateUniqueMaHoaDon());
     hoaDonAdd.setLoai_hoa_don("Online");
     hoaDonAdd.setNgay_sua(LocalDateTime.now());
-    
+
     // 🔍 DEBUG LOGGING - STEP 1: Check delivery method from request (suaHoaDon)
     System.out.println("🔍 [DEBUG] BanHangWebController.suaHoaDon() - Checking delivery method");
     System.out.println("  - Delivery method from request: '" + hoaDon.getPhuong_thuc_nhan_hang() + "'");
-    
+
     // ❌ REMOVED HARDCODE - Use FE value instead
     // OLD: hoaDonAdd.setPhuong_thuc_nhan_hang("Giao hàng");
     hoaDonAdd.setPhuong_thuc_nhan_hang(hoaDon.getPhuong_thuc_nhan_hang());
-    
+
     System.out.println("  - Setting delivery method to: '" + hoaDonAdd.getPhuong_thuc_nhan_hang() + "'");
-    
+
     hoaDonAdd.setVoucher(
         hoaDon.getVoucher().getId() != null ? voucherRepository.findById(hoaDon.getVoucher().getId()).get()
             : null);
     hoaDonRepo.save(hoaDonAdd);
-    
+
     // 🔍 DEBUG LOGGING - STEP 2: After Save Verification (suaHoaDon)
     System.out.println("🔍 [DEBUG] BanHangWebController.suaHoaDon() - State after save:");
     System.out.println("  - Saved Invoice ID: " + hoaDonAdd.getId_hoa_don());
     System.out.println("  - Saved Delivery Method: '" + hoaDonAdd.getPhuong_thuc_nhan_hang() + "'");
     System.out.println("  - Saved Order Type: '" + hoaDonAdd.getLoai_hoa_don() + "'");
-    
+
     idHoaDon = hoaDonAdd.getId_hoa_don();
     TheoDoiDonHang theoDoiDonHang = new TheoDoiDonHang();
     theoDoiDonHang.setHoaDon(hoaDonAdd);

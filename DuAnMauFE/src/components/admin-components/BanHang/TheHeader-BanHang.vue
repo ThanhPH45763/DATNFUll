@@ -417,10 +417,15 @@
 
                         <div v-if="activeTabData.hd.hinh_thuc_thanh_toan === 'Tiền mặt'" class="mt-2">
                             <label class="form-label">Tiền khách đưa (VNĐ)</label>
-                            <a-input-number v-model:value="tienKhachDua" :min="0"
+                            <a-input-number v-model:value="tienKhachDua" :min="0" @change="handleCashInputChange"
                                 :formatter="value => `${Number(value).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}`"
                                 :parser="value => value.replace(/[^\d]/g, '')" placeholder="Nhập số tiền khách đưa"
+                                :class="{ 'input-error': paymentValidation.errors.value.tien_khach_dua }"
                                 style="width: 100%" />
+                            <!-- Error message -->
+                            <div v-if="paymentValidation.errors.value.tien_khach_dua" class="error-message">
+                                {{ paymentValidation.errors.value.tien_khach_dua }}
+                            </div>
                             <label class="form-label mt-2">Tiền dư trả khách (VNĐ)</label>
                             <input type="text" class="form-control" :value="formatCurrency(calculatedChange)" disabled>
                         </div>
@@ -475,7 +480,7 @@
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                     <span style="color: #666;">Tổng tiền:</span>
                                     <strong style="color: #ff6600; font-size: 16px;">{{ formatCurrency(fe_tongThanhToan)
-                                    }}</strong>
+                                        }}</strong>
                                 </div>
                                 <div v-if="activeTabData?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt'"
                                     style="display: flex; justify-content: space-between;">
@@ -671,6 +676,7 @@ import { invoiceStateManager } from '@/stores/invoiceStateManager.js';
 import { paymentState } from '@/utils/paymentState.js';
 import { recoveryService } from '@/services/recoveryService.js';
 import { paymentPollingService } from '@/services/paymentPollingService.js';
+import { usePaymentValidation } from '@/composables/usePaymentValidation.js';
 // Thêm state cho quét QR
 const qrScannerVisible = ref(false);
 const qrScanResult = ref('');
@@ -791,6 +797,9 @@ const stopQrScanner = () => {
 const simpleImage = Empty.PRESENTED_IMAGE_SIMPLE;
 const pageSize = ref(5);
 const store = useGbStore();
+
+// ✅ Payment Validation Composable
+const paymentValidation = usePaymentValidation();
 const scrollContainer = ref(null);
 
 const danhSachKhachHang = computed(() => {
@@ -1684,6 +1693,9 @@ const isPaymentDisabled = computed(() => {
 
     // ✅ NEW: Block payment if has inactive products
     if (hasInactiveProducts.value) return true;
+
+    // ✅ VALIDATION: Block payment if validation errors exist
+    if (paymentValidation.hasErrors.value) return true;
 
     // Nếu là tiền mặt, kiểm tra tiền khách đưa
     if (activeTabData.value?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt') {
@@ -2595,6 +2607,21 @@ const confirmPrint = async (shouldPrint) => {
         router.push('/admin/banhang');
         window.location.reload();
     }, 1500);
+};
+
+// ✅ VALIDATION: Handle cash input change
+const handleCashInputChange = () => {
+    // Only validate if payment method is cash
+    if (activeTabData.value?.hd?.hinh_thuc_thanh_toan === 'Tiền mặt') {
+        const cashGiven = tienKhachDua.value;
+        const totalAmount = fe_tongThanhToan.value;
+
+        // Run validation
+        paymentValidation.validateCashPayment(cashGiven, totalAmount);
+    } else {
+        // Clear error if not cash payment
+        paymentValidation.clearCashError();
+    }
 };
 
 const updateHinhThucThanhToan = async () => {
@@ -5102,5 +5129,35 @@ label.form-label {
     background: linear-gradient(135deg, #73d13d 0%, #95de64 100%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+}
+
+/* ✅ Payment Validation Error Styles */
+.error-message {
+    color: #ff4d4f;
+    font-size: 13px;
+    margin-top: 4px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.input-error :deep(.ant-input-number) {
+    border-color: #ff4d4f !important;
+}
+
+.input-error :deep(.ant-input-number:focus),
+.input-error :deep(.ant-input-number-focused) {
+    border-color: #ff4d4f !important;
+    box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.1) !important;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 </style>

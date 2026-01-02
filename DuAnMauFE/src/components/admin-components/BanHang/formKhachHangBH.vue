@@ -123,7 +123,8 @@
                         Thêm khách mới
                     </a-button>
 
-                    <a-button type="primary" size="large" class="btn-save-info" @click="luuThongTinKhachHang">
+                    <a-button type="primary" size="large" class="btn-save-info" @click="luuThongTinKhachHang"
+                        :disabled="hasFormErrors">
                         <template #icon>
                             <save-outlined />
                         </template>
@@ -158,10 +159,33 @@ import {
     RedoOutlined
 } from '@ant-design/icons-vue';
 import { calculateShippingFee, formatVND } from '@/utils/shippingFeeCalculator';
+import { validationRules } from '@/utils/validationRules';
 
 const emit = defineEmits(['shippingFeeCalculated', 'customerDataSaved']);
 
 const gbStore = useGbStore();
+
+// ✅ VALIDATION: Check if form has errors (disable save button)
+const hasFormErrors = computed(() => {
+    // Check basic field errors - explicit non-empty check
+    if (errors.tenKhachHang && errors.tenKhachHang.trim().length > 0) return true;
+    if (errors.soDienThoai && errors.soDienThoai.trim().length > 0) return true;
+    if (errors.email && errors.email.trim().length > 0) return true;
+
+    // Check address errors - ONLY active items in diaChiList (not stale errors!)
+    for (let i = 0; i < formData.diaChiList.length; i++) {
+        const addrErr = errors.diaChiErrors[i];
+        if (!addrErr) continue;
+
+        if (addrErr.tinhThanhPho && addrErr.tinhThanhPho.trim().length > 0) return true;
+        if (addrErr.quanHuyen && addrErr.quanHuyen.trim().length > 0) return true;
+        if (addrErr.xaPhuong && addrErr.xaPhuong.trim().length > 0) return true;
+        if (addrErr.soNha && addrErr.soNha.trim().length > 0) return true;
+    }
+
+    return false;
+});
+
 const calculatedShippingFee = ref(0);
 const provinces = ref([]);
 const districts = ref([]);
@@ -611,9 +635,31 @@ const themKhachHang = async () => {
 };
 
 const luuThongTinKhachHang = async () => {
-    // Validate form trước khi lưu
-    if (!formData.tenKhachHang || !formData.soDienThoai) {
-        toast.error('Vui lòng nhập đầy đủ họ tên và số điện thoại');
+    // ✅ VALIDATION: Call comprehensive validation
+    const isValid = validateForm();
+
+    if (!isValid) {
+        // Show error toast with first error found
+        if (errors.tenKhachHang) {
+            toast.error(errors.tenKhachHang);
+        } else if (errors.soDienThoai) {
+            toast.error(errors.soDienThoai);
+        } else if (errors.email) {
+            toast.error(errors.email);
+        } else if (errors.diaChiErrors && errors.diaChiErrors.length > 0) {
+            const firstAddressError = errors.diaChiErrors.find(err =>
+                err.tinhThanhPho || err.quanHuyen || err.xaPhuong || err.diaChiChiTiet
+            );
+            if (firstAddressError) {
+                const errorMsg = firstAddressError.tinhThanhPho ||
+                    firstAddressError.quanHuyen ||
+                    firstAddressError.xaPhuong ||
+                    firstAddressError.diaChiChiTiet;
+                toast.error(errorMsg);
+            }
+        } else {
+            toast.error('Vui lòng điền đầy đủ thông tin hợp lệ');
+        }
         return;
     }
 
@@ -968,6 +1014,104 @@ watch(
     },
     { immediate: true }
 );
+
+// ✅ REAL-TIME VALIDATION: Watch form fields and validate on change
+watch(() => formData.tenKhachHang, (newValue) => {
+    if (newValue) {
+        // Clear error and re-validate
+        const trimmed = newValue.replace(/\s+/g, ' ').trim();
+        if (!trimmed) {
+            errors.tenKhachHang = 'Tên khách hàng không được để trống';
+        } else if (!/^[a-zA-Z\s\u00C0-\u1EF9]+$/.test(trimmed)) {
+            errors.tenKhachHang = 'Tên chỉ được chứa chữ cái';
+        } else if (trimmed.length > 100) {
+            errors.tenKhachHang = 'Tên khách hàng không được vượt quá 100 ký tự';
+        } else if (trimmed.length < 2) {
+            errors.tenKhachHang = 'Tên khách hàng không được nhỏ hơn 2 ký tự';
+        } else {
+            errors.tenKhachHang = ''; // ✅ Clear error when valid
+        }
+    }
+});
+
+watch(() => formData.soDienThoai, (newValue) => {
+    if (newValue) {
+        const trimmed = newValue.replace(/\s+/g, '').trim();
+        if (!trimmed) {
+            errors.soDienThoai = 'Số điện thoại không được để trống';
+        } else if (!validatePhoneNumber(trimmed)) {
+            errors.soDienThoai = 'Số điện thoại phải bắt đầu bằng 0 và đúng 10 chữ số (VD: 0912345678)';
+        } else {
+            errors.soDienThoai = ''; // ✅ Clear error when valid
+        }
+    }
+});
+
+watch(() => formData.email, (newValue) => {
+    if (newValue) {
+        const trimmed = newValue.replace(/\s+/g, '').trim();
+        if (!trimmed) {
+            errors.email = 'Email không được để trống';
+        } else if (!validateEmail(trimmed)) {
+            errors.email = 'Email không hợp lệ (VD: example@gmail.com)';
+        } else if (trimmed.length > 100) {
+            errors.email = 'Email không được vượt quá 100 ký tự';
+        } else {
+            errors.email = ''; // ✅ Clear error when valid
+        }
+    }
+});
+
+// ✅ REAL-TIME VALIDATION: Watch address fields (deep watch for nested data)
+watch(() => formData.diaChiList, (newAddresses) => {
+    newAddresses.forEach((diaChi, index) => {
+        // Ensure error object exists for this index
+        if (!errors.diaChiErrors[index]) {
+            errors.diaChiErrors[index] = {};
+        }
+
+        // ✅ SMART: Only validate if user has started filling
+        const hasStartedFilling = diaChi.tinhThanhPho || diaChi.quanHuyen ||
+            diaChi.xaPhuong || diaChi.diaChiChiTiet;
+
+        if (!hasStartedFilling) {
+            errors.diaChiErrors[index].tinhThanhPho = '';
+            errors.diaChiErrors[index].quanHuyen = '';
+            errors.diaChiErrors[index].xaPhuong = '';
+            errors.diaChiErrors[index].soNha = '';
+            return;
+        }
+
+        // Validate Tỉnh/Thành phố
+        if (diaChi.tinhThanhPho) {
+            errors.diaChiErrors[index].tinhThanhPho = '';
+        } else {
+            errors.diaChiErrors[index].tinhThanhPho = 'Vui lòng chọn tỉnh/thành phố';
+        }
+
+        // Validate Quận/Huyện
+        if (diaChi.quanHuyen) {
+            errors.diaChiErrors[index].quanHuyen = '';
+        } else {
+            errors.diaChiErrors[index].quanHuyen = 'Vui lòng chọn quận/huyện';
+        }
+
+        // Validate Xã/Phường
+        if (diaChi.xaPhuong) {
+            errors.diaChiErrors[index].xaPhuong = '';
+        } else if (hasStartedFilling) {
+            errors.diaChiErrors[index].xaPhuong = 'Vui lòng chọn xã/phường';
+        }
+
+        // Validate Địa chỉ chi tiết (soNha)
+        const soNha = diaChi.soNha?.trim();
+        if (soNha && soNha.length > 0) {
+            errors.diaChiErrors[index].soNha = '';
+        } else if (hasStartedFilling) {
+            errors.diaChiErrors[index].soNha = 'Vui lòng nhập số nhà, tên đường';
+        }
+    });
+}, { deep: true }); // Deep watch to catch nested property changes
 
 </script>
 

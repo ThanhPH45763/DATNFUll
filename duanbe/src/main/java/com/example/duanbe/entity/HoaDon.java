@@ -1,5 +1,6 @@
 package com.example.duanbe.entity;
 
+import com.example.duanbe.config.TimezoneConfig;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
@@ -96,7 +97,8 @@ public class HoaDon {
 
   public HoaDon(String ma_hoa_don) {
     this.ma_hoa_don = ma_hoa_don;
-    this.ngay_tao = LocalDateTime.now();
+    // ✅ Use Vietnam timezone explicitly via TimezoneConfig
+    this.ngay_tao = LocalDateTime.now(TimezoneConfig.VIETNAM_ZONE);
     this.trang_thai = "Đang chờ";
     this.hinh_thuc_thanh_toan = "Tiền mặt";
     this.phuong_thuc_nhan_hang = "Nhận tại cửa hàng";

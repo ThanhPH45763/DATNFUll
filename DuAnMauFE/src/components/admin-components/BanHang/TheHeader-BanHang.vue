@@ -675,6 +675,8 @@ import { paymentState } from '@/utils/paymentState.js';
 import { recoveryService } from '@/services/recoveryService.js';
 import { paymentPollingService } from '@/services/paymentPollingService.js';
 import { usePaymentValidation } from '@/composables/usePaymentValidation.js';
+// ✅ PHASE 2: Timezone-aware date utilities
+import { formatDateTime as formatDateTimeVN, formatDate as formatDateVN } from '@/utils/dateUtils';
 // Thêm state cho quét QR
 const qrScannerVisible = ref(false);
 const qrScanResult = ref('');

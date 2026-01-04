@@ -17,7 +17,7 @@
             <div class="login-box">
                 <div class="login-header">
                     <a href="">
-                        <img src="../../images/logo/LogoM.png" alt="Logo M"
+                        <img src="../../images/logo/anhLogoMenWear-1-removebg-preview.png" alt="Logo M"
                             class="container-fluid d-flex justify-content-center align-items-center mb-3"
                             style="width:150px">
                     </a>

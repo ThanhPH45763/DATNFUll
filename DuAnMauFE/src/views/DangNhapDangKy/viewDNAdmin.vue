@@ -17,7 +17,7 @@
             <div class="login-box">
                 <div class="login-header">
                     <a href="">
-                        <img src="../../images/logo/LogoM.png" alt="Logo"
+                        <img src="../../images/logo/anhLogoMenWear-1-removebg-preview.png" alt="Logo"
                             class="container-fluid d-flex justify-content-center align-items-center mb-3"
                             style="width:150px">
                     </a>
@@ -254,7 +254,7 @@ const handleLogin = async () => {
 
         // Chuyển đến trang phù hợp với role
         console.log('Đăng nhập thành công với vai trò:', result.id_roles);
-        
+
         // Nhân viên (role 3) chuyển thẳng đến trang bán hàng
         if (result.id_roles === 3) {
             router.push('/admin/banhang');

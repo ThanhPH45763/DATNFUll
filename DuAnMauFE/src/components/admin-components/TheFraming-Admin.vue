@@ -2,8 +2,9 @@
     <a-layout class="" style="min-height: 100vh">
         <a-layout-sider class="sider " v-model:collapsed="collapsed" :trigger="null" collapsible theme="light">
             <div class="logo p-3 " style="text-align: center;">
-                <img class="w-50 " style="cursor: pointer;" src="../../images/logo/LogoM.png"
-                    @click="changeRoute('/home')" alt="Logo" />
+                <img class="w-50 " style="cursor: pointer;"
+                    src="../../images/logo/anhLogoMenWear-1-removebg-preview.png" @click="changeRoute('/home')"
+                    alt="Logo" />
             </div>
 
             <a-menu class="" v-model:selectedKeys="selectedKeys" v-model:openKeys="openKeys" theme="light"
@@ -86,7 +87,7 @@
                 </div>
             </a-layout-content>
             <a-layout-footer style="text-align: center">
-              ©2025 Created by
+                ©2025 Created by
             </a-layout-footer>
         </a-layout>
     </a-layout>
@@ -94,7 +95,7 @@
 <script setup>
 
 import { computed, onMounted, ref, watch } from 'vue';
-import { HomeOutlined, AreaChartOutlined, UserOutlined, ReconciliationOutlined, MenuUnfoldOutlined, MenuFoldOutlined, LaptopOutlined, LogoutOutlined, AccountBookOutlined, RollbackOutlined  } from '@ant-design/icons-vue';
+import { HomeOutlined, AreaChartOutlined, UserOutlined, ReconciliationOutlined, MenuUnfoldOutlined, MenuFoldOutlined, LaptopOutlined, LogoutOutlined, AccountBookOutlined, RollbackOutlined } from '@ant-design/icons-vue';
 import { useRouter } from 'vue-router';
 import TheAvatarAdmin from './TheAvatar-Admin.vue';
 import TheSearchAdmin from './TheSearch-Admin.vue';
@@ -199,22 +200,26 @@ onMounted(() => {
 :deep(.ant-menu-item-selected) {
     box-shadow: 0 0 1px rgba(255, 102, 0, 0.6);
     border-radius: 5px;
-    background-color: #ff6600 !important; /* Deep orange */
+    background-color: #ff6600 !important;
+    /* Deep orange */
     color: white !important;
 }
 
 :deep(.ant-menu-light .ant-menu-submenu-selected>.ant-menu-submenu-title) {
-    color: #ff6600 !important; /* Deep orange */
+    color: #ff6600 !important;
+    /* Deep orange */
 }
 
 /* Hover effects for menu items */
 :deep(.ant-menu-light .ant-menu-item:hover) {
-    background-color: rgba(255, 102, 0, 0.1) !important; /* Light orange hover */
+    background-color: rgba(255, 102, 0, 0.1) !important;
+    /* Light orange hover */
     color: #ff6600 !important;
 }
 
 :deep(.ant-menu-light .ant-menu-submenu-title:hover) {
-    background-color: rgba(255, 102, 0, 0.1) !important; /* Light orange hover */
+    background-color: rgba(255, 102, 0, 0.1) !important;
+    /* Light orange hover */
     color: #ff6600 !important;
 }
 
@@ -240,11 +245,13 @@ onMounted(() => {
 .trigger {
     font-size: 20px;
     margin-left: 1rem;
-    color: #ff6600 !important; /* Deep orange for trigger icons */
+    color: #ff6600 !important;
+    /* Deep orange for trigger icons */
 }
 
 .trigger:hover {
-    color: #e55a00 !important; /* Darker orange on hover */
+    color: #e55a00 !important;
+    /* Darker orange on hover */
 }
 
 /* Thiết lập thanh menu đứng yên và cố định vị trí */
@@ -264,13 +271,16 @@ onMounted(() => {
 }
 
 .header-admin {
-    border-bottom: 3px solid #ff6600 !important; /* Deep orange accent border */
+    border-bottom: 3px solid #ff6600 !important;
+    /* Deep orange accent border */
     border-bottom-right-radius: 10px;
-    box-shadow: 0 4px 15px -5px rgba(255, 102, 0, 0.4), 0 0 20px rgba(255, 102, 0, 0.1); /* Orange focused shadow */
+    box-shadow: 0 4px 15px -5px rgba(255, 102, 0, 0.4), 0 0 20px rgba(255, 102, 0, 0.1);
+    /* Orange focused shadow */
     position: sticky;
     top: 0;
     z-index: 99;
-    background: rgba(255, 255, 255, 0.98) !important; /* Slight transparency for depth */
+    background: rgba(255, 255, 255, 0.98) !important;
+    /* Slight transparency for depth */
 }
 
 .content-admin {
@@ -279,32 +289,40 @@ onMounted(() => {
 }
 
 .logo {
-    border-bottom: 2px solid rgba(255, 102, 0, 0.3); /* Orange accent border */
-    filter: drop-shadow(0 0 8px rgba(255, 102, 0, 0.2)); /* Orange glow */
+    border-bottom: 2px solid rgba(255, 102, 0, 0.3);
+    /* Orange accent border */
+    filter: drop-shadow(0 0 8px rgba(255, 102, 0, 0.2));
+    /* Orange glow */
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.95) !important; /* White background */
+    background: rgba(255, 255, 255, 0.95) !important;
+    /* White background */
 }
 
 .logo:hover {
-    background: rgba(255, 102, 0, 0.05) !important; /* Light orange hover */
+    background: rgba(255, 102, 0, 0.05) !important;
+    /* Light orange hover */
 }
 
 /* Footer styling */
 :deep(.ant-layout-footer) {
-    background: rgba(255, 102, 0, 0.05) !important; /* Light orange background */
-    color: #ff6600 !important; /* Deep orange text */
+    background: rgba(255, 102, 0, 0.05) !important;
+    /* Light orange background */
+    color: #ff6600 !important;
+    /* Deep orange text */
     border-top: 2px solid rgba(255, 102, 0, 0.2);
 }
 
 /* Content area with orange accent */
-.content-admin > div {
-    box-shadow: 0 0 15px rgba(255, 102, 0, 0.1) inset !important; /* Inner orange glow */
+.content-admin>div {
+    box-shadow: 0 0 15px rgba(255, 102, 0, 0.1) inset !important;
+    /* Inner orange glow */
 }
 
 /* Responsive design improvements */
 @media (max-width: 768px) {
     .header-admin {
-        border-bottom: 2px solid #ff6600 !important; /* Thinner border on mobile */
+        border-bottom: 2px solid #ff6600 !important;
+        /* Thinner border on mobile */
         border-bottom-right-radius: 5px;
     }
 
@@ -329,7 +347,8 @@ onMounted(() => {
     }
 
     .logo img {
-        width: 40px !important; /* Slightly larger logo on mobile */
+        width: 40px !important;
+        /* Slightly larger logo on mobile */
     }
 }
 
@@ -343,7 +362,11 @@ onMounted(() => {
 }
 
 /* Improved transitions */
-.sider, .header-admin, .trigger, :deep(.ant-menu-item), :deep(.ant-menu-submenu-title) {
+.sider,
+.header-admin,
+.trigger,
+:deep(.ant-menu-item),
+:deep(.ant-menu-submenu-title) {
     transition: all 0.3s ease !important;
 }
 </style>

@@ -17,11 +17,11 @@
             <div class="login-box">
                 <div class="login-header">
                     <a href="">
-                        <img src="../../images/logo/LogoM.png" alt="Logo MenWear"
+                        <img src="../../images/logo/anhLogoMenWear-1-removebg-preview.png" alt="Logo MenWear"
                             class="container-fluid d-flex justify-content-center align-items-center mb-3"
                             style="width:150px">
                     </a>
-                    <p>Chào mừng bạn đến với G&B SPORTS! 👋</p>
+                    <p>Chào mừng bạn đến với MenWear 👋</p>
                 </div>
 
                 <form @submit.prevent="handleRegister" class="login-form">

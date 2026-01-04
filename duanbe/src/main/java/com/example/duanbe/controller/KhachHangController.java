@@ -134,7 +134,8 @@ public class KhachHangController {
 
   @GetMapping("/getAllKH")
   public ResponseEntity<Map<String, Object>> getAllKhachHang() {
-    List<KhachHang> khachHangList = khachHangRepo.findAll(Sort.by(Sort.Direction.DESC, "idKhachHang"));
+    List<KhachHang> khachHangList = khachHangRepo.locKhachHangTheoTrangThai("Đang hoạt động", Pageable.unpaged())
+        .getContent();
 
     // Map để lưu địa chỉ mặc định của từng khách hàng
     Map<Integer, String> diaChiMap = new HashMap<>();
